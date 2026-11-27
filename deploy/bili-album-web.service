@@ -1,6 +1,8 @@
 # systemd user unit for the bili-album web page (not installed by the repo).
 #
 # Install by hand when the owner asks:
+#   git -C ~/Dev/bili-album worktree add --detach ~/Dev/bili-album-live
+#   uv --directory ~/Dev/bili-album-live sync --frozen
 #   mkdir -p ~/.config/systemd/user
 #   cp deploy/bili-album-web.service ~/.config/systemd/user/
 #   systemctl --user daemon-reload
@@ -19,10 +21,10 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=%h/Dev/bili-album
-# Loopback (IPv4 and IPv6) for the owner's reverse proxy, which reaches http://localhost:5191 (= ::1),
-# plus the Tailscale address. Sign-in with Jellyfin accounts is on by default.
-ExecStart=%h/.local/bin/uv run --frozen bili-album serve --host 127.0.0.1 --host ::1 --port 5191
+WorkingDirectory=%h/Dev/bili-album-live
+# Loopback (IPv4 and IPv6) for the owner's reverse proxy, which reaches http://localhost:5191 (= ::1).
+# Add another --host <address> for a private interface. Sign-in with Jellyfin accounts is on by default.
+ExecStart=%h/.local/bin/uv run --frozen bili-album serve --host 127.0.0.1 --host ::1 --port 5191 --data-dir %h/Dev/bili-album/.work/web
 # The Tailscale address may not exist yet right after boot: a failed bind fails the start; keep retrying.
 Restart=on-failure
 RestartSec=10
