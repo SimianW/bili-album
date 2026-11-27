@@ -254,7 +254,10 @@ def map_result(res: Any) -> MappedResult:
     imp = _get(res, "import_result", default=None)
     result = None
     if isinstance(imp, dict):
-        folder = " / ".join(x for x in (imp.get("album_artist"), imp.get("album")) if x)
+        # The real folder (<first album artist>/<album>), not the tag text: "周杰伦/费玉清" is filed under 周杰伦.
+        dest = Path(str(imp.get("dest") or ""))
+        folder = " / ".join(dest.parts[-2:]) if imp.get("dest") else \
+            " / ".join(x for x in (imp.get("album_artist"), imp.get("album")) if x)
         result = {
             "album_url": str(imp.get("web_url") or ""),
             "imported": True,

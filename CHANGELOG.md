@@ -14,7 +14,4 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Changed
 
 - Track times posted by the uploader as a reply under another comment, or outside the top comments, are now found and used.
-
-### Changed
-
 - Albums and songs with several artists now show each artist separately in Jellyfin (for example 周杰伦 and 费玉清 instead of one combined "周杰伦 & 费玉清"), and the album is filed under its first artist's folder.

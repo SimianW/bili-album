@@ -11,7 +11,7 @@ turns on the library's custom tag delimiters (default ``/ | ; \\``). So the tool
 - files an album under its first album artist (``LIBRARY_DIR/<first>/<album>``).
 
 :func:`split_artists` recognises names joined with Jellyfin's delimiters (``/ | ; \\`` and their
-full-width forms), ``、``, and ``feat.`` / ``ft.``. ``&`` and commas are part of many names
+full-width forms), ``、``, and ``feat.`` / ``ft.`` / ``featuring``. ``&`` and commas are part of many names
 (Simon & Garfunkel, Earth, Wind & Fire), so they split only when every part is written in CJK
 script, as in ``周杰伦 & 费玉清`` from a storefront. ``NO_SPLIT`` holds names that contain a
 delimiter themselves.
@@ -22,15 +22,29 @@ from __future__ import annotations
 import re
 
 ARTIST_SEP = "/"
-NO_SPLIT = ("AC/DC", "AC／DC")
-_DELIMS = re.compile(r"\s*[/／|｜;；\\、]\s*|(?:\s+|\s*[(（\[【]\s*)(?:feat\.?|ft\.?|featuring)\s+", re.I)
+NO_SPLIT = ("AC/DC", "AC／DC", "K/DA", "K／DA")
+_DELIMS = re.compile(r"\s*[/／|｜;；\\＼、]\s*|(?:\s+|\s*[(（\[【]\s*)(?:feat\.?|ft\.?|featuring)\s+", re.I)
 _CJK_JOIN = re.compile(r"\s*(?:&|＆|,|，)\s*")
 _CJK = re.compile(r"[぀-ヿ㐀-鿿가-힯豈-﫿]")
 _LATIN = re.compile(r"[A-Za-z]")
 
 
-def _cjk_name(s: str) -> bool:
+def cjk_name(s: str) -> bool:
     return bool(_CJK.search(s)) and not _LATIN.search(s)
+
+
+_PAIRS = {"(": ")", "（": "）", "[": "]", "【": "】"}
+
+
+def _drop_unmatched(p: str) -> str:
+    """Remove only a bracket a feat. split left without its partner ("杨瑞代)" -> "杨瑞代");
+    names like "IU (아이유)" or "(G)I-DLE" keep theirs."""
+    for o, c in _PAIRS.items():
+        if p.endswith(c) and p.count(c) > p.count(o):
+            p = p[:-1].rstrip()
+        if p.startswith(o) and p.count(o) > p.count(c):
+            p = p[1:].lstrip()
+    return p
 
 
 def split_artists(value: str) -> list[str]:
@@ -47,12 +61,12 @@ def split_artists(value: str) -> list[str]:
     out: list[str] = []
     for part in _DELIMS.split(s):
         pieces = _CJK_JOIN.split(part)
-        if len(pieces) > 1 and not all(_cjk_name(p) for p in pieces if p.strip()):
+        if len(pieces) > 1 and not all(cjk_name(p) for p in pieces if p.strip()):
             pieces = [part]
         for p in pieces:
             for token, name in keep.items():
                 p = p.replace(token, name)
-            p = p.strip().strip("()（）[]【】").strip()
+            p = _drop_unmatched(p.strip())
             if p and p.casefold() not in {x.casefold() for x in out}:
                 out.append(p)
     return out

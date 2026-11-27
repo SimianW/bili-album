@@ -9,7 +9,7 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 
-from .artists import join_artists, split_artists
+from .artists import cjk_name, join_artists, split_artists
 from .textnorm import fold, norm
 
 # ----------------------------------------------------------------------------- timestamps
@@ -300,6 +300,11 @@ def derivative_cues(title: str) -> list[str]:
     return out
 
 
+# Words a title puts before an artist with "/" that are not artists themselves.
+_LABEL = re.compile(r"国语|國語|粤语|粵語|华语|華語|闽南语|台语|日语|韩语|英语|中文|纯音乐|伴奏|现场|无损|高音质|"
+                    r"原唱|翻唱|歌词|合集|专辑|单曲|热歌|新歌|经典|怀旧|欧美|日韩|港台|内地")
+
+
 def guess_from_title(title: str) -> TitleGuess:
     t = fold(title)
     g = TitleGuess()
@@ -316,7 +321,8 @@ def guess_from_title(title: str) -> TitleGuess:
         before = _META_BRACKETS.sub(" ", t[: first.start()])
         before = _NOISE_RE.sub(" | ", before)
         # Separators kept: "周杰伦/费玉清《…》" names two artists joined by "/" (or "／"), and the
-        # name right before the bracket must not lose the one before it.
+        # name right before the bracket must not lose the one before it. Only CJK names that are not
+        # labels join: "国语/周杰伦" and "Jay Chou/周杰伦" (an alias) stay one artist, the last.
         parts = re.split(f"({_SEP.pattern})", before)
         for i in range(len(parts) - 1, -1, -2):
             frag = clean_artist(_denoise(_YEAR.sub(" ", parts[i])))
@@ -326,7 +332,8 @@ def guess_from_title(title: str) -> TitleGuess:
             j = i - 2
             while j >= 0 and len(names) < 4 and parts[j + 1].strip() in ("/", "／"):
                 prev = clean_artist(_denoise(_YEAR.sub(" ", parts[j])))
-                if not (_meaningful(prev) and name_like(prev) and name_like(names[0])):
+                if not (_meaningful(prev) and name_like(prev) and cjk_name(prev) and cjk_name(names[0])
+                        and not _LABEL.search(prev)):
                     break
                 names.insert(0, prev)
                 j -= 2

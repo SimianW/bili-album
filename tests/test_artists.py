@@ -26,6 +26,15 @@ from bili_album.artists import first_artist, join_artists, split_artists
     ("Soft Cell", ["Soft Cell"]),
     ("周杰伦/周杰伦", ["周杰伦"]),
     ("", []),
+    # review round 1
+    ("IU (아이유)", ["IU (아이유)"]),                    # brackets that belong to the name stay
+    ("邓紫棋 (G.E.M.)", ["邓紫棋 (G.E.M.)"]),
+    ("(G)I-DLE", ["(G)I-DLE"]),
+    ("A＼B", ["A", "B"]),                               # full-width backslash
+    ("K/DA", ["K/DA"]),
+    ("AC/DC Tribute", ["AC/DC Tribute"]),
+    ("A featuring B", ["A", "B"]),
+    ("周杰伦 [feat. 杨瑞代]", ["周杰伦", "杨瑞代"]),
 ])
 def test_split_artists(value, names):
     assert split_artists(value) == names
@@ -44,6 +53,9 @@ def test_join_and_first():
     ("【无损】周杰伦、费玉清 - 千里之外", ["周杰伦/费玉清", "周杰伦", "费玉清"]),
     ("HiRes无损 / 周杰伦《范特西》", ["周杰伦"]),
     ("Simon & Garfunkel《Bookends》", ["Simon & Garfunkel"]),
+    ("国语/周杰伦《范特西》", ["周杰伦"]),                 # a label before "/" is not an artist
+    ("华语经典/周杰伦《范特西》", ["周杰伦"]),
+    ("Jay Chou/周杰伦《晴天》", ["周杰伦"]),               # an alias in another script: one artist
 ])
 def test_title_guess_keeps_every_artist(title, artists):
     from bili_album.hints import guess_from_title
@@ -97,3 +109,26 @@ def test_single_file_name_lists_every_artist(tmp_path):
     plan = {"kind": "single", "album": {"title": ""}, "tracks": [{"title": "千里之外", "artist": "周杰伦/费玉清"}]}
     _, [f] = output_paths(plan, tmp_path)
     assert f.name == "周杰伦、费玉清 - 千里之外.m4a"
+
+
+def test_import_result_names_the_real_folder():
+    from types import SimpleNamespace
+    from bili_album.web.runner import map_result
+    res = SimpleNamespace(status="imported", message="", error="",
+                          import_result={"album_artist": "周杰伦/费玉清", "album": "千里之外",
+                                         "dest": "/music/周杰伦/千里之外", "files": ["a"], "status": "imported"})
+    assert map_result(res).result["folder"] == "周杰伦 / 千里之外"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_page_preview_uses_the_same_first_artist_rule():
+    import json
+    import re
+    html = (Path(__file__).parents[1] / "src/bili_album/web/static/index.html").read_text(encoding="utf-8")
+    fn = re.search(r"safeFolder\((\(s => \{.*?\|\| s; \}\))\(artist\)\)", html).group(1)
+    cases = ["周杰伦/费玉清", "周杰伦 & 费玉清", "周杰伦、费玉清", "周杰伦，费玉清", "Simon & Garfunkel", "AC/DC",
+             "AC/DC Tribute", "K/DA", "A featuring B", "Lady Gaga feat. Bruno Mars", "周杰伦 [feat. 杨瑞代]",
+             "周杰伦【feat. 杨瑞代】", "A＼B", "a|b", "IU (아이유)", "周杰伦 & Lara", "周杰伦"]
+    out = subprocess.run(["node", "-e", f"const f = {fn}; console.log(JSON.stringify({json.dumps(cases)}.map(f)))"],
+                         capture_output=True, text=True, check=True).stdout
+    assert json.loads(out) == [first_artist(c) for c in cases]
