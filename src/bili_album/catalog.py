@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 NETEASE_HEADERS = {"Referer": "https://music.163.com/"}
 _CJK = re.compile(r"[぀-ヿ㐀-鿿가-힯]")
 _LRC_TS = re.compile(r"\[\d{1,3}:\d{2}(?:[.:]\d{1,3})?\]")
+_EDITION = re.compile(r"伴奏|纯音乐|instrumental|karaoke|off\s*vocal|\binst\.?\b|\(inst\)", re.I)
 _FULL_LENGTH = re.compile(r"专辑全长|全长版|full\s*album|album\s*mix|continuous mix", re.I)
 
 
@@ -442,10 +443,23 @@ def score_album(a: CatAlbum, *, duration: float, artists=(), works=(), titles=()
         score = 0.5 * nscore + 0.5 * dscore
     if n_tracks and a.tracks and abs(len(a.tracks) - n_tracks) > 1:
         score -= 0.1
+    # Tie-break towards the spelling the uploader used (same script: 张杰 rather than 張杰).
+    score += 0.015 * same_script(a.artist, artists) + 0.015 * same_script(a.title, works)
+    # Instrumental / karaoke editions share names and lengths with the real album.
+    if _EDITION.search(a.title) and not any(_EDITION.search(w) for w in works):
+        score -= 0.15
     reason = (f"{a.provider}:{a.artist} - {a.title} ({len(a.tracks)} tracks, {T:.0f}s vs video {duration:.0f}s; "
               f"name {nscore:.2f}, duration {dscore:.2f}" + (f", tracklist {lscore:.2f}" if lscore is not None else "")
               + ")")
     return AlbumMatch(a, score, nscore, dscore, lscore, reason)
+
+
+def same_script(name: str, candidates) -> bool:
+    import unicodedata
+
+    n = re.sub(r"\W+", "", unicodedata.normalize("NFKC", name or "")).casefold()
+    return bool(n) and any(re.sub(r"\W+", "", unicodedata.normalize("NFKC", c or "")).casefold() == n
+                           for c in candidates)
 
 
 def is_cjk(s: str) -> bool:

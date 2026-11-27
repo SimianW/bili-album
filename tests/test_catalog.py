@@ -42,3 +42,11 @@ def test_score_album_prefers_duration_fit():
     a = score_album(std, duration=D, works=["Starboy"])
     b = score_album(deluxe, duration=D, works=["Starboy"])
     assert a.score > b.score
+
+
+def test_score_album_prefers_uploader_script():
+    simp = _album("要得", "张杰", [240.0] * 10)
+    trad = _album("要得", "張杰", [240.0] * 10)
+    a = score_album(simp, duration=2400, artists=["张杰"], works=["要得"])
+    b = score_album(trad, duration=2400, artists=["张杰"], works=["要得"])
+    assert a.score > b.score
