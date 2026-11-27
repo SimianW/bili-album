@@ -110,9 +110,15 @@ def validate_repo(repo: str) -> str:
 def validate_health_url(url: str) -> str:
     if not url:
         return ""
-    parsed = urllib.parse.urlsplit(url)
-    if parsed.scheme not in ("http", "https") or not parsed.netloc:
-        raise UpdateError(f"invalid health URL (expected http:// or https://): {url!r}")
+    if any(c.isspace() or ord(c) < 32 for c in url):
+        raise UpdateError(f"invalid health URL (contains whitespace/control characters): {url!r}")
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        port = parsed.port
+    except ValueError as exc:
+        raise UpdateError(f"invalid health URL ({exc}): {url!r}") from exc
+    if parsed.scheme not in ("http", "https") or not parsed.hostname or (port is not None and not (1 <= port <= 65535)):
+        raise UpdateError(f"invalid health URL (expected http:// or https:// with valid host/port): {url!r}")
     return url
 
 
@@ -352,8 +358,9 @@ def _recover_pending(cfg: UpdaterConfig, state: dict) -> UpdateResult | None:
         return None
     phase, prev, target, tag = pending.get("phase"), pending.get("previous_commit"), pending.get("target_commit"), pending.get("tag")
     if not (isinstance(prev, str) and isinstance(target, str) and isinstance(tag, str)) or prev.startswith("-") or target.startswith("-"):
-        state["pending_deploy"] = None
-        save_state(cfg.state_file, state)
+        if not cfg.dry_run:
+            state["pending_deploy"] = None
+            save_state(cfg.state_file, state)
         return None
     if cfg.dry_run:
         log.info("[dry-run] would recover pending %s for %s", phase or "deploy", tag)

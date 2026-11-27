@@ -389,12 +389,23 @@ def test_completes_interrupted_rollback_without_redeploying_failed_target(env):
     assert U.run_update(_cfg(env)).action == "skipped_failed"
 
 
-def test_rejects_malformed_health_url_before_mutating(env):
+@pytest.mark.parametrize("bad_url", ["localhost/", "http://127.0.0.1:invalid/", "http://127.0.0.1:99999/", "http:///", "http://127.0.0.1:5191/\n"])
+def test_rejects_malformed_health_url_before_mutating(env, bad_url):
     with pytest.raises(U.UpdateError, match="invalid health URL"):
-        U.run_update(_cfg(env, health_url="localhost/"))
+        U.run_update(_cfg(env, health_url=bad_url))
     assert _git(env["live"], "rev-parse", "HEAD") == env["c1"]
     assert not env["log"].exists()
     assert not env["state_file"].exists()
+
+
+def test_dry_run_does_not_rewrite_incomplete_pending_deploy(env):
+    raw_state = {"repo": "SimianW/bili-album", "pending_deploy": {"phase": "deploy"}}
+    U.save_state(env["state_file"], raw_state)
+    before = env["state_file"].read_text(encoding="utf-8")
+
+    res = U.run_update(_cfg(env, dry_run=True))
+    assert res.action == "would_update"
+    assert env["state_file"].read_text(encoding="utf-8") == before
 
 
 def test_shipped_systemd_units_match_paths_port_and_rate_budget():
