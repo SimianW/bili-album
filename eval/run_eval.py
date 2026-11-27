@@ -487,6 +487,7 @@ def build_results(cases: list[dict]) -> dict:
         "src_dirty": dirty,
         "modes": list(MODES),
         "review": {"enabled": review_enabled, "label": REVIEW_LABEL},
+        "run_notes": (read_json(RESULTS / "run_notes.json") or {}).get("notes", []),
         "scoring": {"match_window_s": scoring.MATCH_WINDOW, "hit_tolerances_s": list(scoring.HIT_TOLERANCES),
                     "f_tolerance_s": scoring.F_TOL, "problem_tolerance_s": scoring.PROBLEM_TOL,
                     "title_ratio": scoring.TITLE_RATIO,
@@ -524,10 +525,17 @@ def main() -> int:
     ap.add_argument("--force", action="store_true", help="re-run even if a result exists (wipes the work dir)")
     ap.add_argument("--score-only", action="store_true", help="only rescore stored runs and rewrite results.json")
     ap.add_argument("--no-review", action="store_true", help="skip the model review (reviewed: null)")
+    ap.add_argument("--note", action="append", default=[],
+                    help="add a note about the run conditions (kept in <results-dir>/run_notes.json)")
     ap.add_argument("--results-dir", type=Path, default=RESULTS,
                     help="where runs/, plans/ and results.json live (default eval/results; e.g. eval/results/baseline)")
     a = ap.parse_args()
     REVIEW = not a.no_review
+    if a.note:
+        notes_path = RESULTS / "run_notes.json"
+        notes = (read_json(notes_path) or {}).get("notes", [])
+        notes += [f"{now_iso()}: {n}" for n in a.note if n not in " ".join(notes)]
+        write_json(notes_path, {"notes": notes})
     RESULTS = a.results_dir.resolve()
     cases = load_cases()
     if a.case:
