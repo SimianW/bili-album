@@ -52,12 +52,15 @@ def _add_plan_flags(p: argparse.ArgumentParser) -> None:
     p.add_argument("--title", help="offline mode: the video title")
     p.add_argument("--description", default="", help="offline mode: the video description")
     p.add_argument("--no-recognize", action="store_true", help="do not call the recognition service")
+    p.add_argument("--no-refine", action="store_true",
+                   help="keep boundaries as placed on the 10 Hz analysis (no millisecond refinement)")
 
 
 def _plan_opts(a) -> PlanOptions:
     return PlanOptions(workdir=a.workdir, text_hints=not a.no_text_hints, cookies=a.cookies,
                        album_hint=a.album_hint, tracklist=a.tracklist, audio=a.audio, title=a.title,
-                       description=a.description, recognize=not a.no_recognize, repo_root=REPO_ROOT)
+                       description=a.description, recognize=not a.no_recognize,
+                       refine=not a.no_refine, repo_root=REPO_ROOT)
 
 
 def _print_plan_summary(path: Path) -> None:
