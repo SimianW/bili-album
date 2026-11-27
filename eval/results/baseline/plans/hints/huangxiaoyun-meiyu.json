@@ -6,13 +6,13 @@
     "title": "Hi·Res | 黄霄雲 原创专辑《没语季节》超高音质+歌词纯享，恭喜霄雲发布自己第一张专辑！「个人原创·首张专辑｜Hi-Res无损音质 全专分享」",
     "uploader": "不怕冻的皮托管",
     "duration": 2740.288,
-    "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/huangxiaoyun-meiyu/source.m4a",
+    "audio_path": ".work/eval/hints/huangxiaoyun-meiyu/source.m4a",
     "audio_format": {
       "codec": "aac",
       "bitrate_kbps": 187,
       "sample_rate": 48000
     },
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huangxiaoyun-meiyu/bili_cover.jpg",
+    "cover_path": ".work/eval/hints/huangxiaoyun-meiyu/bili_cover.jpg",
     "parts": 1,
     "trim_head": 0.0,
     "trim_tail": 0.388,
@@ -27,7 +27,7 @@
     "genre": "",
     "track_total": 10,
     "disc_total": 1,
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
+    "cover_path": ".work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
     "catalog": {
       "provider": "",
       "id": "",
@@ -50,7 +50,7 @@
       "genre": "",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
+      "cover_path": ".work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
       "catalog": {
         "provider": "",
         "id": ""
@@ -89,7 +89,7 @@
       "genre": "",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
+      "cover_path": ".work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
       "catalog": {
         "provider": "",
         "id": ""
@@ -132,7 +132,7 @@
       "genre": "",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
+      "cover_path": ".work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
       "catalog": {
         "provider": "",
         "id": ""
@@ -175,7 +175,7 @@
       "genre": "",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
+      "cover_path": ".work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
       "catalog": {
         "provider": "",
         "id": ""
@@ -218,7 +218,7 @@
       "genre": "",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
+      "cover_path": ".work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
       "catalog": {
         "provider": "",
         "id": ""
@@ -261,7 +261,7 @@
       "genre": "",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
+      "cover_path": ".work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
       "catalog": {
         "provider": "",
         "id": ""
@@ -304,7 +304,7 @@
       "genre": "",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
+      "cover_path": ".work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
       "catalog": {
         "provider": "",
         "id": ""
@@ -347,7 +347,7 @@
       "genre": "",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
+      "cover_path": ".work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
       "catalog": {
         "provider": "",
         "id": ""
@@ -394,7 +394,7 @@
       "genre": "",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
+      "cover_path": ".work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
       "catalog": {
         "provider": "",
         "id": ""
@@ -437,7 +437,7 @@
       "genre": "",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
+      "cover_path": ".work/eval/hints/huangxiaoyun-meiyu/cover.jpg",
       "catalog": {
         "provider": "",
         "id": ""

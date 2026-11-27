@@ -26,7 +26,7 @@
       "wall_seconds": 13.81,
       "stderr_tail": "WARNING bili_album.catalog: catalog: NetEase: netease /api/search/get: code 200\nkind: single (duration 4:00.35 <= 9:00.00 and no tracklist hints)\nalbum: 周杰倫 - 七里香 [2004-08-03] itunes\n#  start    end      title  artist  conf\n-  -------  -------  -----  ------  ----\n1  0:00.00  4:00.35  擱淺   周杰倫  0.95\ntimings: fetch 2.49s, download 3.46s, analyze 0.0s, catalog 7.13s, recognize 0.26s, total 13.53s\n",
       "step": "plan",
-      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/blind/jaychou-geqian/plan.json\n"
+      "stdout_tail": ".work/eval/blind/jaychou-geqian/plan.json\n"
     }
   ],
   "source_prep": null,

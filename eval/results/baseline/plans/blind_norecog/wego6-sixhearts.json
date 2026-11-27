@@ -6,7 +6,7 @@
     "title": "WE GO-6  出道专辑《SIX HEARTS》全专音源",
     "uploader": "",
     "duration": 869.473,
-    "audio_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/source.m4a",
+    "audio_path": ".work/eval/blind_norecog/wego6-sixhearts/source.m4a",
     "audio_format": {
       "codec": "aac",
       "bitrate_kbps": 209,
@@ -27,7 +27,7 @@
     "genre": "K-Pop",
     "track_total": 5,
     "disc_total": 1,
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
+    "cover_path": ".work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
     "catalog": {
       "provider": "netease",
       "id": "409419869",
@@ -50,7 +50,7 @@
       "genre": "K-Pop",
       "composer": "네이슨 (NATHAN)/이범훈/동경(Full8loom)/Summer Soul/Paran/Roho/chAN's (TAKE A CHANCE)/Hiily (TAKE A CHANCE)/강히아(HYA)/sid/황순규/Roar/Nino/Benji Bae",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
+      "cover_path": ".work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "3460495713"
@@ -85,7 +85,7 @@
       "genre": "K-Pop",
       "composer": "네이슨 (NATHAN)/yuka/Myrhee (644ultramarine)/Coll’ 8va (644ultramarine)/sid",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
+      "cover_path": ".work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "3460496527"
@@ -120,7 +120,7 @@
       "genre": "K-Pop",
       "composer": "네이슨 (NATHAN)/yuka/Likey",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
+      "cover_path": ".work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "3460495715"
@@ -155,7 +155,7 @@
       "genre": "K-Pop",
       "composer": "네이슨 (NATHAN)/yuka/Roar",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
+      "cover_path": ".work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "3460495716"
@@ -190,7 +190,7 @@
       "genre": "K-Pop",
       "composer": "네이슨 (NATHAN)/Hey Farmer",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
+      "cover_path": ".work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "3460496528"

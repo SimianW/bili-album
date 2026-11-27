@@ -6,7 +6,7 @@
     "title": "【Hi-Res无损】张杰最新专辑《要得》全专分P纯享",
     "uploader": "",
     "duration": 2476.306,
-    "audio_path": "/home/simon/Dev/bili-album/.work/eval/blind/zhangjie-yaode/source.m4a",
+    "audio_path": ".work/eval/blind/zhangjie-yaode/source.m4a",
     "audio_format": {
       "codec": "aac",
       "bitrate_kbps": 207,
@@ -27,7 +27,7 @@
     "genre": "华语流行乐",
     "track_total": 10,
     "disc_total": 1,
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/zhangjie-yaode/cover.jpg",
+    "cover_path": ".work/eval/blind/zhangjie-yaode/cover.jpg",
     "catalog": {
       "provider": "netease",
       "id": "190109820",
@@ -50,7 +50,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/blind/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139343449"
@@ -85,7 +85,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/blind/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348812"
@@ -124,7 +124,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/blind/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348171"
@@ -163,7 +163,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/blind/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348100"
@@ -202,7 +202,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/blind/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348117"
@@ -241,7 +241,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/blind/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348134"
@@ -280,7 +280,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/blind/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348855"
@@ -319,7 +319,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/blind/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348815"
@@ -358,7 +358,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/blind/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348158"
@@ -397,7 +397,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/blind/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2670915936"

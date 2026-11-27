@@ -30,7 +30,7 @@
       "wall_seconds": 22.58,
       "stderr_tail": "kind: compilation (long video (14:29.47) without hints; catalog album fits: netease:WE GO-6 - SIX HEARTS (5 tracks, 869s vs video 869s; name 1.00, duration 0.98))\nalbum: WE GO-6 - SIX HEARTS [2026-11-17] netease\n#  start     end       title                artist   conf\n-  --------  --------  -------------------  -------  ----\n1  0:00.00   3:11.60   괴물(Monster)        WE GO-6  0.7\n2  3:11.60   5:17.70   Lucky Charm          WE GO-6  0.8\n3  5:17.70   8:09.60   처음이자 마지막으로  WE GO-6  0.8\n4  8:09.60   11:21.60  Luminaria            WE GO-6  0.8\n5  11:21.60  14:29.10  1004                 WE GO-6  0.8\ntimings: fetch 0.0s, download 0.2s, analyze 2.63s, catalog 19.3s, recognize 0.0s, total 22.35s\n",
       "step": "plan",
-      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/plan.json\n"
+      "stdout_tail": ".work/eval/blind_norecog/wego6-sixhearts/plan.json\n"
     }
   ],
   "source_prep": {

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-27T00:29:24-05:00",
+  "generated_at": "2026-11-27T01:32:10-05:00",
   "partial": true,
   "not_run": [
     "huangxiaoyun-meiyu/blind",
@@ -24,7 +24,7 @@
   "tool_commits": {
     "c06e92d510f11ddbd447106bad98eea8d1414a73": 28
   },
-  "head_commit": "4682e9069450ce973641d5a812a523aeedfa4f06",
+  "head_commit": "754e9e9ac7be59dd917f3dda6fd36eb1479999f0",
   "src_dirty": false,
   "modes": [
     "hints",
@@ -35,6 +35,7 @@
     "enabled": false,
     "label": "Sol"
   },
+  "run_notes": [],
   "scoring": {
     "match_window_s": 15.0,
     "hit_tolerances_s": [

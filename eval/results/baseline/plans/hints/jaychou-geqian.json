@@ -6,13 +6,13 @@
     "title": "在专业录音棚听 周杰伦《搁浅》｜Hi-Res 无损",
     "uploader": "陈知许",
     "duration": 240.35,
-    "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/jaychou-geqian/source.m4a",
+    "audio_path": ".work/eval/hints/jaychou-geqian/source.m4a",
     "audio_format": {
       "codec": "aac",
       "bitrate_kbps": 188,
       "sample_rate": 44100
     },
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/jaychou-geqian/bili_cover.jpg",
+    "cover_path": ".work/eval/hints/jaychou-geqian/bili_cover.jpg",
     "parts": 1,
     "trim_head": 0.0,
     "trim_tail": -0.0,
@@ -27,7 +27,7 @@
     "genre": "華語流行樂",
     "track_total": 10,
     "disc_total": 1,
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/jaychou-geqian/cover.jpg",
+    "cover_path": ".work/eval/hints/jaychou-geqian/cover.jpg",
     "catalog": {
       "provider": "itunes",
       "id": "536114662@TW",
@@ -50,7 +50,7 @@
       "genre": "華語流行樂",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/jaychou-geqian/cover.jpg",
+      "cover_path": ".work/eval/hints/jaychou-geqian/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "536115199"

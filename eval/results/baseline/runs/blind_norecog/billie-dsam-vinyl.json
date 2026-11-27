@@ -30,7 +30,7 @@
       "wall_seconds": 43.1,
       "stderr_tail": "WARNING bili_album.catalog: catalog: NetEase: netease /api/search/get: code 200\nkind: compilation (long video (26:05.21) without hints; recognition found 0 different songs at 20/50/80%)\nalbum: Billie Eilish - dont smile at me [2017-08-11] itunes\n#  start     end       title                   artist                         conf\n-  --------  --------  ----------------------  -----------------------------  ----\n1  0:03.10   3:14.80   COPYCAT                 Billie Eilish                  0.8\n2  3:14.80   6:39.40   idontwannabeyouanymore  Billie Eilish                  0.8\n3  6:39.40   9:30.40   my boy                  Billie Eilish                  0.8\n4  9:30.40   12:58.00  party favor             Billie Eilish                  0.8\n5  12:58.00  15:54.80  bellyache               Billie Eilish                  0.8\n6  15:54.80  19:15.00  ocean eyes              Billie Eilish                  0.8\n7  19:15.00  23:04.80  hostage                 Billie Eilish                  0.6\n8  23:04.80  26:04.90  &burn                   Billie Eilish & Vince Staples  0.8\nneeds_review:\n  - catalog track 4 'watch' was not found in the audio\ntimings: fetch 0.0s, download 0.35s, analyze 5.35s, catalog 36.55s, recognize 0.0s, total 42.82s\n",
       "step": "plan",
-      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/billie-dsam-vinyl/plan.json\n"
+      "stdout_tail": ".work/eval/blind_norecog/billie-dsam-vinyl/plan.json\n"
     }
   ],
   "source_prep": {

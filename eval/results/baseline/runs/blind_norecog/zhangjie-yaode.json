@@ -30,7 +30,7 @@
       "wall_seconds": 32.22,
       "stderr_tail": "kind: compilation (long video (41:16.31) without hints; catalog album fits: netease:张杰 - 要得 (10 tracks, 2476s vs video 2476s; name 1.00, duration 1.00))\nalbum: 张杰 - 要得 [2024-04-01] netease\n#   start     end       title       artist  conf\n--  --------  --------  ----------  ------  ----\n1   0:00.00   3:54.40   回          张杰    0.7\n2   3:54.40   7:44.40   再生之地    张杰    0.8\n3   7:44.40   11:24.20  宿命之眼    张杰    0.8\n4   11:24.20  15:39.40  穿堂风      张杰    0.8\n5   15:39.40  19:43.20  老子数道三  张杰    0.8\n6   19:43.20  22:58.10  张三丰      张杰    0.8\n7   22:58.10  26:17.50  来我家      张杰    0.8\n8   26:17.50  30:33.20  月光下      张杰    0.8\n9   30:33.20  36:04.30  轻舟        张杰    0.8\n10  36:04.30  41:16.00  树呢        张杰    0.8\ntimings: fetch 0.0s, download 0.48s, analyze 7.68s, catalog 22.91s, recognize 0.0s, total 31.99s\n",
       "step": "plan",
-      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/zhangjie-yaode/plan.json\n"
+      "stdout_tail": ".work/eval/blind_norecog/zhangjie-yaode/plan.json\n"
     }
   ],
   "source_prep": {

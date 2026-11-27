@@ -6,13 +6,13 @@
     "title": "胡彦斌2023新专辑「是一场烟火」全专完整版无损纯享",
     "uploader": "开酒馆的谢梦离",
     "duration": 2378.791,
-    "audio_path": "/home/simon/Dev/bili-album/.work/eval/blind/huyanbin-fireworks/source.m4a",
+    "audio_path": ".work/eval/blind/huyanbin-fireworks/source.m4a",
     "audio_format": {
       "codec": "aac",
       "bitrate_kbps": 119,
       "sample_rate": 44100
     },
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/huyanbin-fireworks/bili_cover.jpg",
+    "cover_path": ".work/eval/blind/huyanbin-fireworks/bili_cover.jpg",
     "parts": 1,
     "trim_head": 0.0,
     "trim_tail": 0.391,
@@ -27,7 +27,7 @@
     "genre": "流行樂",
     "track_total": 10,
     "disc_total": 1,
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/huyanbin-fireworks/cover.jpg",
+    "cover_path": ".work/eval/blind/huyanbin-fireworks/cover.jpg",
     "catalog": {
       "provider": "itunes",
       "id": "1702978283@TW",
@@ -50,7 +50,7 @@
       "genre": "流行樂",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/huyanbin-fireworks/cover.jpg",
+      "cover_path": ".work/eval/blind/huyanbin-fireworks/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1702978284"
@@ -85,7 +85,7 @@
       "genre": "流行樂",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/huyanbin-fireworks/cover.jpg",
+      "cover_path": ".work/eval/blind/huyanbin-fireworks/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1702978285"
@@ -124,7 +124,7 @@
       "genre": "流行樂",
       "composer": "胡彦斌",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/huyanbin-fireworks/cover.jpg",
+      "cover_path": ".work/eval/blind/huyanbin-fireworks/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1702978290"
@@ -163,7 +163,7 @@
       "genre": "流行樂",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/huyanbin-fireworks/cover.jpg",
+      "cover_path": ".work/eval/blind/huyanbin-fireworks/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1702978673"
@@ -202,7 +202,7 @@
       "genre": "流行樂",
       "composer": "胡彦斌",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/huyanbin-fireworks/cover.jpg",
+      "cover_path": ".work/eval/blind/huyanbin-fireworks/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1702978674"
@@ -241,7 +241,7 @@
       "genre": "流行樂",
       "composer": "胡彦斌",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/huyanbin-fireworks/cover.jpg",
+      "cover_path": ".work/eval/blind/huyanbin-fireworks/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1702978675"
@@ -280,7 +280,7 @@
       "genre": "流行樂",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/huyanbin-fireworks/cover.jpg",
+      "cover_path": ".work/eval/blind/huyanbin-fireworks/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1702978833"
@@ -319,7 +319,7 @@
       "genre": "流行樂",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/huyanbin-fireworks/cover.jpg",
+      "cover_path": ".work/eval/blind/huyanbin-fireworks/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1702978842"
@@ -358,7 +358,7 @@
       "genre": "流行樂",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/huyanbin-fireworks/cover.jpg",
+      "cover_path": ".work/eval/blind/huyanbin-fireworks/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1702978844"
@@ -397,7 +397,7 @@
       "genre": "流行樂",
       "composer": "胡彦斌",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/huyanbin-fireworks/cover.jpg",
+      "cover_path": ".work/eval/blind/huyanbin-fireworks/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1702978845"

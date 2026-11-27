@@ -12,20 +12,20 @@
       "bitrate_kbps": 317,
       "sample_rate": 48000
     },
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/bili_cover.jpg",
+    "cover_path": ".work/eval/hints/billie-dsam-vinyl/bili_cover.jpg",
     "parts": 8,
     "trim_head": 0.0,
     "trim_tail": 0.0,
     "text_hints": true,
     "part_paths": [
-      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part001.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part002.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part003.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part004.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part005.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part006.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part007.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part008.m4a"
+      ".work/eval/hints/billie-dsam-vinyl/part001.m4a",
+      ".work/eval/hints/billie-dsam-vinyl/part002.m4a",
+      ".work/eval/hints/billie-dsam-vinyl/part003.m4a",
+      ".work/eval/hints/billie-dsam-vinyl/part004.m4a",
+      ".work/eval/hints/billie-dsam-vinyl/part005.m4a",
+      ".work/eval/hints/billie-dsam-vinyl/part006.m4a",
+      ".work/eval/hints/billie-dsam-vinyl/part007.m4a",
+      ".work/eval/hints/billie-dsam-vinyl/part008.m4a"
     ]
   },
   "kind": "multipart",
@@ -37,7 +37,7 @@
     "genre": "Alternative",
     "track_total": 9,
     "disc_total": 1,
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+    "cover_path": ".work/eval/hints/billie-dsam-vinyl/cover.jpg",
     "catalog": {
       "provider": "itunes",
       "id": "1440898929@US",
@@ -60,7 +60,7 @@
       "genre": "Alternative",
       "composer": "FINNEAS/Billie Eilish",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/hints/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899117"
@@ -76,7 +76,7 @@
           "detail": "length 193.2s vs catalog 193.4s (-0.2s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part001.m4a"
+      "audio_path": ".work/eval/hints/billie-dsam-vinyl/part001.m4a"
     },
     {
       "index": 2,
@@ -92,7 +92,7 @@
       "genre": "Alternative",
       "composer": "Finneas O'Connell/Billie Eilish O'Connell",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/hints/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899127"
@@ -108,7 +108,7 @@
           "detail": "length 205.9s vs catalog 203.6s (+2.3s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part002.m4a"
+      "audio_path": ".work/eval/hints/billie-dsam-vinyl/part002.m4a"
     },
     {
       "index": 3,
@@ -124,7 +124,7 @@
       "genre": "Alternative",
       "composer": "Finneas O'Connell/Billie Eilish O'Connell",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/hints/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899130"
@@ -140,7 +140,7 @@
           "detail": "length 171.6s vs catalog 170.9s (+0.7s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part003.m4a"
+      "audio_path": ".work/eval/hints/billie-dsam-vinyl/part003.m4a"
     },
     {
       "index": 4,
@@ -156,7 +156,7 @@
       "genre": "Alternative",
       "composer": "Finneas O'Connell/Billie Eilish O'Connell",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/hints/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899140"
@@ -172,7 +172,7 @@
           "detail": "length 206.4s vs catalog 204.8s (+1.6s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part004.m4a"
+      "audio_path": ".work/eval/hints/billie-dsam-vinyl/part004.m4a"
     },
     {
       "index": 5,
@@ -188,7 +188,7 @@
       "genre": "Alternative",
       "composer": "FINNEAS",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/hints/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899134"
@@ -204,7 +204,7 @@
           "detail": "length 177.8s vs catalog 177.5s (+0.3s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part005.m4a"
+      "audio_path": ".work/eval/hints/billie-dsam-vinyl/part005.m4a"
     },
     {
       "index": 6,
@@ -220,7 +220,7 @@
       "genre": "Alternative",
       "composer": "Finneas O'Connell/Billie Eilish O'Connell",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/hints/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899447"
@@ -236,7 +236,7 @@
           "detail": "length 179.5s vs catalog 179.2s (+0.4s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part006.m4a"
+      "audio_path": ".work/eval/hints/billie-dsam-vinyl/part006.m4a"
     },
     {
       "index": 7,
@@ -252,7 +252,7 @@
       "genre": "Alternative",
       "composer": "FINNEAS",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/hints/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899467"
@@ -268,7 +268,7 @@
           "detail": "length 200.5s vs catalog 200.4s (+0.1s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part007.m4a"
+      "audio_path": ".work/eval/hints/billie-dsam-vinyl/part007.m4a"
     },
     {
       "index": 8,
@@ -284,7 +284,7 @@
       "genre": "Alternative",
       "composer": "Finneas O'Connell/Billie Eilish O'Connell",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/hints/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899606"
@@ -300,7 +300,7 @@
           "detail": "length 230.3s vs catalog 229.4s (+0.9s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part008.m4a"
+      "audio_path": ".work/eval/hints/billie-dsam-vinyl/part008.m4a"
     }
   ],
   "needs_review": false,

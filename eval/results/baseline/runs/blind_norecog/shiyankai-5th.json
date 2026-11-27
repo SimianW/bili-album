@@ -27,7 +27,7 @@
       "wall_seconds": 12.39,
       "stderr_tail": "kind: single (duration 3:25.33 <= 9:00.00 and no tracklist hints)\nalbum: 石衍恺 - 5th [2023-12-18] netease\n#  start    end      title  artist  conf\n-  -------  -------  -----  ------  ----\n1  0:00.00  3:25.33  5th    石衍恺  0.75\ntimings: fetch 2.42s, download 4.39s, analyze 0.0s, catalog 5.29s, recognize 0.0s, total 12.14s\n",
       "step": "plan",
-      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/shiyankai-5th/plan.json\n"
+      "stdout_tail": ".work/eval/blind_norecog/shiyankai-5th/plan.json\n"
     }
   ],
   "source_prep": null,

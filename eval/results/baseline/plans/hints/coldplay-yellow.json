@@ -6,13 +6,13 @@
     "title": "百万级装备听《Yellow》- Coldplay【Hi-Res】",
     "uploader": "JLRS日落fm",
     "duration": 269.952,
-    "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/coldplay-yellow/source.m4a",
+    "audio_path": ".work/eval/hints/coldplay-yellow/source.m4a",
     "audio_format": {
       "codec": "aac",
       "bitrate_kbps": 249,
       "sample_rate": 48000
     },
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/coldplay-yellow/bili_cover.jpg",
+    "cover_path": ".work/eval/hints/coldplay-yellow/bili_cover.jpg",
     "parts": 1,
     "trim_head": 0.0,
     "trim_tail": 0.0,
@@ -27,7 +27,7 @@
     "genre": "",
     "track_total": 22,
     "disc_total": 1,
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/coldplay-yellow/cover.jpg",
+    "cover_path": ".work/eval/hints/coldplay-yellow/cover.jpg",
     "catalog": {
       "provider": "netease",
       "id": "121218701",
@@ -50,7 +50,7 @@
       "genre": "",
       "composer": "Chris Martin/Guy Berryman/Jonny Buckland/Will Champion",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/coldplay-yellow/cover.jpg",
+      "cover_path": ".work/eval/hints/coldplay-yellow/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "1809627093"

@@ -6,7 +6,7 @@
     "title": "【黑胶试听】Billie Eilish 《Don't Smile at Me》全专辑无损黑胶试听（分p）",
     "uploader": "",
     "duration": 1565.205,
-    "audio_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/billie-dsam-vinyl/source.m4a",
+    "audio_path": ".work/eval/blind_norecog/billie-dsam-vinyl/source.m4a",
     "audio_format": {
       "codec": "aac",
       "bitrate_kbps": 317,
@@ -27,7 +27,7 @@
     "genre": "Alternative",
     "track_total": 9,
     "disc_total": 1,
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
+    "cover_path": ".work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
     "catalog": {
       "provider": "itunes",
       "id": "1440898929@US",
@@ -50,7 +50,7 @@
       "genre": "Alternative",
       "composer": "FINNEAS/Billie Eilish",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899117"
@@ -85,7 +85,7 @@
       "genre": "Alternative",
       "composer": "Finneas O'Connell/Billie Eilish O'Connell",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899127"
@@ -120,7 +120,7 @@
       "genre": "Alternative",
       "composer": "Finneas O'Connell/Billie Eilish O'Connell",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899130"
@@ -155,7 +155,7 @@
       "genre": "Alternative",
       "composer": "Finneas O'Connell/Billie Eilish O'Connell",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899140"
@@ -190,7 +190,7 @@
       "genre": "Alternative",
       "composer": "Finneas O'Connell/Billie Eilish O'Connell",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899447"
@@ -225,7 +225,7 @@
       "genre": "Alternative",
       "composer": "FINNEAS",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899467"
@@ -256,7 +256,7 @@
       "genre": "Alternative",
       "composer": "Finneas O'Connell/Billie Eilish O'Connell",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899606"
@@ -291,7 +291,7 @@
       "genre": "Alternative",
       "composer": "Finneas O'Connell/Vince Staples",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
+      "cover_path": ".work/eval/blind_norecog/billie-dsam-vinyl/cover.jpg",
       "catalog": {
         "provider": "itunes",
         "id": "1440899628"

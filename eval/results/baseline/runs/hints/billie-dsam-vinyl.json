@@ -25,7 +25,7 @@
       "wall_seconds": 237.13,
       "stderr_tail": "WARNING bili_album.catalog: catalog: NetEase: netease /api/search/get: code 200\nkind: multipart (8 parts (分P); one track per part)\nalbum: Billie Eilish - dont smile at me [2017-08-11] itunes\n#  start    end      title                   artist         conf\n-  -------  -------  ----------------------  -------------  ----\n1  0:00.00  3:13.17  COPYCAT                 Billie Eilish  0.85\n2  0:00.00  3:25.89  idontwannabeyouanymore  Billie Eilish  0.85\n3  0:00.00  2:51.58  my boy                  Billie Eilish  0.85\n4  0:00.00  3:26.38  party favor             Billie Eilish  0.85\n5  0:00.00  2:57.84  watch                   Billie Eilish  0.85\n6  0:00.00  2:59.54  bellyache               Billie Eilish  0.85\n7  0:00.00  3:20.51  ocean eyes              Billie Eilish  0.85\n8  0:00.00  3:50.29  hostage                 Billie Eilish  0.85\ntimings: fetch 2.41s, download 196.02s, analyze 0.0s, catalog 37.51s, recognize 0.0s, total 236.85s\n",
       "step": "plan",
-      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/plan.json\n"
+      "stdout_tail": ".work/eval/hints/billie-dsam-vinyl/plan.json\n"
     },
     {
       "cmd": [
@@ -63,14 +63,14 @@
   ],
   "source_prep": null,
   "part_offsets": {
-    "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part001.m4a": 0.0,
-    "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part002.m4a": 193.173,
-    "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part003.m4a": 399.061,
-    "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part004.m4a": 570.645,
-    "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part005.m4a": 777.024,
-    "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part006.m4a": 954.859,
-    "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part007.m4a": 1134.4,
-    "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part008.m4a": 1334.912
+    ".work/eval/hints/billie-dsam-vinyl/part001.m4a": 0.0,
+    ".work/eval/hints/billie-dsam-vinyl/part002.m4a": 193.173,
+    ".work/eval/hints/billie-dsam-vinyl/part003.m4a": 399.061,
+    ".work/eval/hints/billie-dsam-vinyl/part004.m4a": 570.645,
+    ".work/eval/hints/billie-dsam-vinyl/part005.m4a": 777.024,
+    ".work/eval/hints/billie-dsam-vinyl/part006.m4a": 954.859,
+    ".work/eval/hints/billie-dsam-vinyl/part007.m4a": 1134.4,
+    ".work/eval/hints/billie-dsam-vinyl/part008.m4a": 1334.912
   },
   "source_probe": {
     "codec": "aac",

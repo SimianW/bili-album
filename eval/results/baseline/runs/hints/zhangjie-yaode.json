@@ -25,7 +25,7 @@
       "wall_seconds": 111.73,
       "stderr_tail": "kind: multipart (10 parts (分P); one track per part)\nalbum: 张杰 - 要得 [2024-04-01] netease\n#   start    end      title       artist  conf\n--  -------  -------  ----------  ------  ----\n1   0:00.00  3:53.69  回          张杰    0.85\n2   0:00.00  3:49.74  再生之地    张杰    0.85\n3   0:00.00  3:37.19  宿命之眼    张杰    0.85\n4   0:00.00  4:16.81  穿堂风      张杰    0.85\n5   0:00.00  4:05.84  老子数道三  张杰    0.85\n6   0:00.00  3:14.88  张三丰      张杰    0.85\n7   0:00.00  3:19.44  来我家      张杰    0.85\n8   0:00.00  4:15.57  月光下      张杰    0.85\n9   0:00.00  5:27.47  轻舟        张杰    0.85\n10  0:00.00  5:15.67  树呢        张杰    0.85\ntimings: fetch 2.54s, download 84.83s, analyze 0.0s, catalog 23.06s, recognize 0.0s, total 111.4s\n",
       "step": "plan",
-      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/plan.json\n"
+      "stdout_tail": ".work/eval/hints/zhangjie-yaode/plan.json\n"
     },
     {
       "cmd": [
@@ -63,16 +63,16 @@
   ],
   "source_prep": null,
   "part_offsets": {
-    "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part001.m4a": 0.0,
-    "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part002.m4a": 233.685,
-    "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part003.m4a": 463.423,
-    "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part004.m4a": 680.617,
-    "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part005.m4a": 937.428,
-    "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part006.m4a": 1183.273,
-    "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part007.m4a": 1378.153,
-    "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part008.m4a": 1577.598,
-    "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part009.m4a": 1833.171,
-    "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part010.m4a": 2160.637
+    ".work/eval/hints/zhangjie-yaode/part001.m4a": 0.0,
+    ".work/eval/hints/zhangjie-yaode/part002.m4a": 233.685,
+    ".work/eval/hints/zhangjie-yaode/part003.m4a": 463.423,
+    ".work/eval/hints/zhangjie-yaode/part004.m4a": 680.617,
+    ".work/eval/hints/zhangjie-yaode/part005.m4a": 937.428,
+    ".work/eval/hints/zhangjie-yaode/part006.m4a": 1183.273,
+    ".work/eval/hints/zhangjie-yaode/part007.m4a": 1378.153,
+    ".work/eval/hints/zhangjie-yaode/part008.m4a": 1577.598,
+    ".work/eval/hints/zhangjie-yaode/part009.m4a": 1833.171,
+    ".work/eval/hints/zhangjie-yaode/part010.m4a": 2160.637
   },
   "source_probe": {
     "codec": "aac",

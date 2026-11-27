@@ -12,22 +12,22 @@
       "bitrate_kbps": 203,
       "sample_rate": 48000
     },
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/bili_cover.jpg",
+    "cover_path": ".work/eval/hints/zhangjie-yaode/bili_cover.jpg",
     "parts": 10,
     "trim_head": 0.0,
     "trim_tail": 0.0,
     "text_hints": true,
     "part_paths": [
-      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part001.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part002.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part003.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part004.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part005.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part006.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part007.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part008.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part009.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part010.m4a"
+      ".work/eval/hints/zhangjie-yaode/part001.m4a",
+      ".work/eval/hints/zhangjie-yaode/part002.m4a",
+      ".work/eval/hints/zhangjie-yaode/part003.m4a",
+      ".work/eval/hints/zhangjie-yaode/part004.m4a",
+      ".work/eval/hints/zhangjie-yaode/part005.m4a",
+      ".work/eval/hints/zhangjie-yaode/part006.m4a",
+      ".work/eval/hints/zhangjie-yaode/part007.m4a",
+      ".work/eval/hints/zhangjie-yaode/part008.m4a",
+      ".work/eval/hints/zhangjie-yaode/part009.m4a",
+      ".work/eval/hints/zhangjie-yaode/part010.m4a"
     ]
   },
   "kind": "multipart",
@@ -39,7 +39,7 @@
     "genre": "华语流行乐",
     "track_total": 10,
     "disc_total": 1,
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+    "cover_path": ".work/eval/hints/zhangjie-yaode/cover.jpg",
     "catalog": {
       "provider": "netease",
       "id": "190109820",
@@ -62,7 +62,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/hints/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139343449"
@@ -78,7 +78,7 @@
           "detail": "length 233.7s vs catalog 233.7s (+0.0s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part001.m4a"
+      "audio_path": ".work/eval/hints/zhangjie-yaode/part001.m4a"
     },
     {
       "index": 2,
@@ -94,7 +94,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/hints/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348812"
@@ -110,7 +110,7 @@
           "detail": "length 229.7s vs catalog 229.7s (+0.0s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part002.m4a"
+      "audio_path": ".work/eval/hints/zhangjie-yaode/part002.m4a"
     },
     {
       "index": 3,
@@ -126,7 +126,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/hints/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348171"
@@ -142,7 +142,7 @@
           "detail": "length 217.2s vs catalog 217.2s (+0.0s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part003.m4a"
+      "audio_path": ".work/eval/hints/zhangjie-yaode/part003.m4a"
     },
     {
       "index": 4,
@@ -158,7 +158,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/hints/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348100"
@@ -174,7 +174,7 @@
           "detail": "length 256.8s vs catalog 256.8s (+0.0s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part004.m4a"
+      "audio_path": ".work/eval/hints/zhangjie-yaode/part004.m4a"
     },
     {
       "index": 5,
@@ -190,7 +190,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/hints/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348117"
@@ -206,7 +206,7 @@
           "detail": "length 245.8s vs catalog 245.8s (+0.0s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part005.m4a"
+      "audio_path": ".work/eval/hints/zhangjie-yaode/part005.m4a"
     },
     {
       "index": 6,
@@ -222,7 +222,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/hints/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348134"
@@ -238,7 +238,7 @@
           "detail": "length 194.9s vs catalog 194.9s (+0.0s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part006.m4a"
+      "audio_path": ".work/eval/hints/zhangjie-yaode/part006.m4a"
     },
     {
       "index": 7,
@@ -254,7 +254,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/hints/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348855"
@@ -270,7 +270,7 @@
           "detail": "length 199.4s vs catalog 199.4s (+0.0s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part007.m4a"
+      "audio_path": ".work/eval/hints/zhangjie-yaode/part007.m4a"
     },
     {
       "index": 8,
@@ -286,7 +286,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/hints/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348815"
@@ -302,7 +302,7 @@
           "detail": "length 255.6s vs catalog 255.6s (+0.0s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part008.m4a"
+      "audio_path": ".work/eval/hints/zhangjie-yaode/part008.m4a"
     },
     {
       "index": 9,
@@ -318,7 +318,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/hints/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2139348158"
@@ -334,7 +334,7 @@
           "detail": "length 327.5s vs catalog 327.5s (+0.0s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part009.m4a"
+      "audio_path": ".work/eval/hints/zhangjie-yaode/part009.m4a"
     },
     {
       "index": 10,
@@ -350,7 +350,7 @@
       "genre": "华语流行乐",
       "composer": "",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "cover_path": ".work/eval/hints/zhangjie-yaode/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "2670915936"
@@ -366,7 +366,7 @@
           "detail": "length 315.7s vs catalog 315.6s (+0.0s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part010.m4a"
+      "audio_path": ".work/eval/hints/zhangjie-yaode/part010.m4a"
     }
   ],
   "needs_review": false,

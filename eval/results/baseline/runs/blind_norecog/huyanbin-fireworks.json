@@ -27,7 +27,7 @@
       "wall_seconds": 256.41,
       "stderr_tail": "kind: compilation (long video (39:38.79) without hints; catalog album fits: itunes:胡彥斌 - 是一场烟火 (10 tracks, 2379s vs video 2379s; name 0.65, duration 1.00))\nalbum: 胡彥斌 - 是一场烟火 [2023-08-18] itunes\n#   start     end       title                         artist  conf\n--  --------  --------  ----------------------------  ------  ----\n1   0:00.00   3:40.40   你若是風                      胡彥斌  0.7\n2   3:40.40   7:38.40   不去管                        胡彥斌  0.8\n3   7:38.40   11:55.20  是一場煙火                    胡彥斌  0.8\n4   11:55.20  15:22.90  世界中心                      胡彥斌  0.8\n5   15:22.90  19:57.80  我們還會一起走到那裡去嗎      胡彥斌  0.8\n6   19:57.80  23:32.70  擁過                          胡彥斌  0.8\n7   23:32.70  27:26.30  荒原狼                        胡彥斌  0.8\n8   27:26.30  31:24.60  敬自己不為誰 (feat. GAI周延)  胡彥斌  0.8\n9   31:24.60  34:52.40  人人                          胡彥斌  0.8\n10  34:52.40  39:38.40  開花的星星                    胡彥斌  0.8\ntimings: fetch 1.92s, download 205.7s, analyze 6.65s, catalog 41.06s, recognize 0.0s, total 256.16s\n",
       "step": "plan",
-      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/huyanbin-fireworks/plan.json\n"
+      "stdout_tail": ".work/eval/blind_norecog/huyanbin-fireworks/plan.json\n"
     }
   ],
   "source_prep": null,

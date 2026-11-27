@@ -255,7 +255,7 @@ def test_limiter_by_name_and_address_and_expiry():
 
 
 def test_client_address_and_https_rules():
-    tp = A.TrustedProxies(["127.0.0.1", "::1", "100.87.146.105"], "10.8.0.0/16 bogus")
+    tp = A.TrustedProxies(["127.0.0.1", "::1", "100.64.0.10"], "10.8.0.0/16 bogus")
     # from the reverse proxy on loopback (either family): the right-most untrusted XFF entry
     assert A.client_address("127.0.0.1", "203.0.113.9", tp) == "203.0.113.9"
     assert A.client_address("::1", "198.51.100.1, 203.0.113.9", tp) == "203.0.113.9"
@@ -364,8 +364,8 @@ def test_sign_in_guarded_like_other_writes(site):
     _, _, srv = site
     assert login(srv, headers={"Content-Type": "text/plain"})[0] == 415
     assert login(srv, headers={"Origin": "https://evil.example"})[0] == 403
-    assert login(srv, headers={"Origin": "https://music-add.20age1million.com",
-                               "Host": "music-add.20age1million.com"})[0] == 200
+    assert login(srv, headers={"Origin": "https://music-add.example.com",
+                               "Host": "music-add.example.com"})[0] == 200
 
 
 def test_every_api_route_needs_a_session(site):
@@ -411,7 +411,7 @@ def test_limit_by_address_and_success_clears_name(site):
 def test_secure_cookie_only_over_https_from_proxy(site):
     _, _, srv = site
     proxied = {"X-Forwarded-Proto": "https", "X-Forwarded-For": "203.0.113.20",
-               "Host": "music-add.20age1million.com", "Origin": "https://music-add.20age1million.com",
+               "Host": "music-add.example.com", "Origin": "https://music-add.example.com",
                "X-Real-IP": "172.18.0.1", "X-Forwarded-Port": "443", "REMOTE-HOST": "172.18.0.1"}
     code, _, r = login(srv, headers=proxied)
     assert code == 200 and "Secure" in cookie_of(r)[1]
@@ -509,7 +509,7 @@ def test_two_loopback_families_share_one_state(tmp_path):
         # from the proxy over ::1: secure cookie, client address from X-Forwarded-For
         code, _, r = call(v6, "POST", "/api/login", {"username": "x", "password": "demo"},
                           {"X-Forwarded-Proto": "https", "X-Forwarded-For": "203.0.113.30",
-                           "Host": "music-add.20age1million.com"}, host="::1")
+                           "Host": "music-add.example.com"}, host="::1")
         assert code == 200 and "Secure" in cookie_of(r)[1]
     finally:
         stop(servers)

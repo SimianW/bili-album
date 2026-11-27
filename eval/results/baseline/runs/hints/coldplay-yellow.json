@@ -25,7 +25,7 @@
       "wall_seconds": 19.62,
       "stderr_tail": "kind: single (duration 4:29.95 <= 9:00.00 and no tracklist hints)\nalbum: Various Artists - Best 00s Pop Ever [2021-01-08] netease\n#  start    end      title   artist    conf\n-  -------  -------  ------  --------  ----\n1  0:00.00  4:29.95  Yellow  Coldplay  0.95\ntimings: fetch 3.52s, download 4.53s, analyze 0.0s, catalog 10.84s, recognize 0.25s, total 19.33s\n",
       "step": "plan",
-      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/hints/coldplay-yellow/plan.json\n"
+      "stdout_tail": ".work/eval/hints/coldplay-yellow/plan.json\n"
     },
     {
       "cmd": [

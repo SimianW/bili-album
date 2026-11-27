@@ -25,7 +25,7 @@
       "wall_seconds": 18.62,
       "stderr_tail": "kind: single (duration 2:00.79 <= 9:00.00 and no tracklist hints)\nalbum: 苏也莉 - 520am [2026-11-25] netease\n#  start    end      title  artist  conf\n-  -------  -------  -----  ------  ----\n1  0:00.00  2:00.79  520am  苏也莉  0.5\nneeds_review:\n  - track 1: matched 苏也莉 - 520am on title and length only; the video title names no artist and recognition found nothing, so this may be a different version (cover, fan edit, AI remake)\n  - track 1 '520am': low confidence 0.50\ntimings: fetch 2.95s, download 3.31s, analyze 0.0s, catalog 5.52s, recognize 6.33s, total 18.3s\n",
       "step": "plan",
-      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/hints/user-520am-derivative/plan.json\n"
+      "stdout_tail": ".work/eval/hints/user-520am-derivative/plan.json\n"
     },
     {
       "cmd": [

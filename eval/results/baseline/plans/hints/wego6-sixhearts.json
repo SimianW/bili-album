@@ -12,17 +12,17 @@
       "bitrate_kbps": 205,
       "sample_rate": 44100
     },
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/bili_cover.jpg",
+    "cover_path": ".work/eval/hints/wego6-sixhearts/bili_cover.jpg",
     "parts": 5,
     "trim_head": 0.0,
     "trim_tail": 0.0,
     "text_hints": true,
     "part_paths": [
-      "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part001.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part002.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part003.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part004.m4a",
-      "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part005.m4a"
+      ".work/eval/hints/wego6-sixhearts/part001.m4a",
+      ".work/eval/hints/wego6-sixhearts/part002.m4a",
+      ".work/eval/hints/wego6-sixhearts/part003.m4a",
+      ".work/eval/hints/wego6-sixhearts/part004.m4a",
+      ".work/eval/hints/wego6-sixhearts/part005.m4a"
     ]
   },
   "kind": "multipart",
@@ -34,7 +34,7 @@
     "genre": "K-Pop",
     "track_total": 5,
     "disc_total": 1,
-    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/cover.jpg",
+    "cover_path": ".work/eval/hints/wego6-sixhearts/cover.jpg",
     "catalog": {
       "provider": "netease",
       "id": "409419869",
@@ -57,7 +57,7 @@
       "genre": "K-Pop",
       "composer": "네이슨 (NATHAN)/이범훈/동경(Full8loom)/Summer Soul/Paran/Roho/chAN's (TAKE A CHANCE)/Hiily (TAKE A CHANCE)/강히아(HYA)/sid/황순규/Roar/Nino/Benji Bae",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/cover.jpg",
+      "cover_path": ".work/eval/hints/wego6-sixhearts/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "3460495713"
@@ -73,7 +73,7 @@
           "detail": "length 191.7s vs catalog 191.4s (+0.2s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part001.m4a"
+      "audio_path": ".work/eval/hints/wego6-sixhearts/part001.m4a"
     },
     {
       "index": 2,
@@ -89,7 +89,7 @@
       "genre": "K-Pop",
       "composer": "네이슨 (NATHAN)/yuka/Myrhee (644ultramarine)/Coll’ 8va (644ultramarine)/sid",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/cover.jpg",
+      "cover_path": ".work/eval/hints/wego6-sixhearts/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "3460496527"
@@ -105,7 +105,7 @@
           "detail": "length 125.9s vs catalog 125.8s (+0.1s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part002.m4a"
+      "audio_path": ".work/eval/hints/wego6-sixhearts/part002.m4a"
     },
     {
       "index": 3,
@@ -121,7 +121,7 @@
       "genre": "K-Pop",
       "composer": "네이슨 (NATHAN)/yuka/Likey",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/cover.jpg",
+      "cover_path": ".work/eval/hints/wego6-sixhearts/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "3460495715"
@@ -137,7 +137,7 @@
           "detail": "length 171.4s vs catalog 172.1s (-0.8s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part003.m4a"
+      "audio_path": ".work/eval/hints/wego6-sixhearts/part003.m4a"
     },
     {
       "index": 4,
@@ -153,7 +153,7 @@
       "genre": "K-Pop",
       "composer": "네이슨 (NATHAN)/yuka/Roar",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/cover.jpg",
+      "cover_path": ".work/eval/hints/wego6-sixhearts/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "3460495716"
@@ -169,7 +169,7 @@
           "detail": "length 192.7s vs catalog 191.7s (+1.0s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part004.m4a"
+      "audio_path": ".work/eval/hints/wego6-sixhearts/part004.m4a"
     },
     {
       "index": 5,
@@ -185,7 +185,7 @@
       "genre": "K-Pop",
       "composer": "네이슨 (NATHAN)/Hey Farmer",
       "lyrics": "",
-      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/cover.jpg",
+      "cover_path": ".work/eval/hints/wego6-sixhearts/cover.jpg",
       "catalog": {
         "provider": "netease",
         "id": "3460496528"
@@ -201,7 +201,7 @@
           "detail": "length 187.9s vs catalog 187.6s (+0.4s)"
         }
       ],
-      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part005.m4a"
+      "audio_path": ".work/eval/hints/wego6-sixhearts/part005.m4a"
     }
   ],
   "needs_review": false,

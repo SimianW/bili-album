@@ -25,7 +25,7 @@
       "wall_seconds": 36.3,
       "stderr_tail": "kind: multipart (5 parts (分P); one track per part)\nalbum: WE GO-6 - SIX HEARTS [2026-11-17] netease\n#  start    end      title                artist   conf\n-  -------  -------  -------------------  -------  ----\n1  0:00.00  3:11.66  괴물(Monster)        WE GO-6  0.85\n2  0:00.00  2:05.85  Lucky Charm          WE GO-6  0.85\n3  0:00.00  2:51.36  처음이자 마지막으로  WE GO-6  0.85\n4  0:00.00  3:12.66  Luminaria            WE GO-6  0.85\n5  0:00.00  3:07.94  1004                 WE GO-6  0.85\ntimings: fetch 2.39s, download 13.97s, analyze 0.0s, catalog 19.08s, recognize 0.0s, total 36.03s\n",
       "step": "plan",
-      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/plan.json\n"
+      "stdout_tail": ".work/eval/hints/wego6-sixhearts/plan.json\n"
     },
     {
       "cmd": [
@@ -63,11 +63,11 @@
   ],
   "source_prep": null,
   "part_offsets": {
-    "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part001.m4a": 0.0,
-    "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part002.m4a": 191.658,
-    "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part003.m4a": 317.51,
-    "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part004.m4a": 488.874,
-    "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part005.m4a": 681.53
+    ".work/eval/hints/wego6-sixhearts/part001.m4a": 0.0,
+    ".work/eval/hints/wego6-sixhearts/part002.m4a": 191.658,
+    ".work/eval/hints/wego6-sixhearts/part003.m4a": 317.51,
+    ".work/eval/hints/wego6-sixhearts/part004.m4a": 488.874,
+    ".work/eval/hints/wego6-sixhearts/part005.m4a": 681.53
   },
   "source_probe": {
     "codec": "aac",

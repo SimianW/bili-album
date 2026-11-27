@@ -25,7 +25,7 @@
       "wall_seconds": 88.84,
       "stderr_tail": "kind: compilation (Bilibili chapters lists 10 timestamped tracks)\nalbum: KEY.L刘聪 - 回到2000 [2023-08-13] netease\n#   start     end       title         artist                                     conf\n--  --------  --------  ------------  -----------------------------------------  ----\n1   0:00.00   3:17.90   未来等你      KEY.L刘聪 & c0de731                        0.9\n2   3:17.90   9:05.10   夜雨          KEY.L刘聪                                  0.9\n3   9:05.10   12:34.90  随身听2000    KEY.L刘聪 & c0de731                        0.9\n4   12:34.90  15:50.70  黑本子        KEY.L刘聪 & c0de731                        0.9\n5   15:50.70  19:26.90  走出核工厂    KEY.L刘聪                                  0.9\n6   19:26.90  22:37.20  苦海          KEY.L刘聪 & 梁笑生AIRBUS130 & c0de731      0.9\n7   22:37.20  26:11.10  Homiez Only   KEY.L刘聪 & c0de731                        0.9\n8   26:11.10  30:38.60  午夜心碎台北  KEY.L刘聪 & 功夫胖KUNGFU-PEN & MC HotDog…  0.9\n9   30:38.60  33:46.20  一个人待会儿  KEY.L刘聪 & c0de731                        0.9\n10  33:46.20  38:22.70  千禧年代      KEY.L刘聪 & Bramble & c0de731              0.9\ntimings: fetch 3.45s, download 39.44s, analyze 7.56s, catalog 37.9s, recognize 0.0s, total 88.56s\n",
       "step": "plan",
-      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/hints/keyl-back-to-2000/plan.json\n"
+      "stdout_tail": ".work/eval/hints/keyl-back-to-2000/plan.json\n"
     },
     {
       "cmd": [

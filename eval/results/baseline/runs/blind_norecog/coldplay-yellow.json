@@ -27,7 +27,7 @@
       "wall_seconds": 12.75,
       "stderr_tail": "kind: single (duration 4:29.95 <= 9:00.00 and no tracklist hints)\nalbum: Coldplay - Yellow [2000-06-26] netease\n#  start    end      title   artist    conf\n-  -------  -------  ------  --------  ----\n1  0:00.00  4:29.95  Yellow  Coldplay  0.5\nneeds_review:\n  - track 1: matched Coldplay - Yellow on title and length only; the video title names no artist and recognition found nothing, so this may be a different version (cover, fan edit, AI remake)\n  - track 1 'Yellow': low confidence 0.50\ntimings: fetch 2.63s, download 3.58s, analyze 0.0s, catalog 6.25s, recognize 0.0s, total 12.49s\n",
       "step": "plan",
-      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/coldplay-yellow/plan.json\n"
+      "stdout_tail": ".work/eval/blind_norecog/coldplay-yellow/plan.json\n"
     }
   ],
   "source_prep": null,
