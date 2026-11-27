@@ -186,7 +186,25 @@ NOISE_WORDS = [
     "4k", "8k", "1080p", "60帧", "母带", "车载", "必听", "神专", "神级", "巅峰", "封神", "宝藏", "全网",
     "音乐", "单曲", "原声", "ost", "lyrics", "lyric", "audio", "official", "full album", "album",
     "华语乐坛", "华语", "欧美", "日语", "韩语", "粤语", "另类", "之作", "节日快乐", "祝大家",
+    # Credits and release chatter that are never part of a name ("黄霄雲 原创专辑《…》").
+    "原创", "个人原创", "首张", "第一张", "新歌", "新曲", "试听", "黑胶", "纯享版",
 ]
+# Descriptive phrases that uploaders put before the artist ("在专业录音棚听 周杰伦《搁浅》",
+# "百万级装备听《Yellow》"): listening set-ups and verbs, not names.
+_DESCRIPTIVE = re.compile(
+    r"听|聆听|欣赏|感受|体验|沉浸|带你|录音棚|装备|耳机|音响|设备|百万|千万|万元|顶级|发烧|"
+    r"\blisten|\bheadphones?\b|\bstudio\b")
+
+# Cues that the upload is a derivative of a song (cover, fan edit, AI remake, band or
+# instrument rendition, remix). "X版" counts unless X is a release word (完整版, 无损版 ...).
+_DERIVATIVE_WORDS = re.compile(
+    r"翻唱|翻弹|翻奏|翻跳|cover|改编|改編|remix|混音版|dj\s*(?:版|remix|mix)|"
+    r"(?<![a-z])ai(?![a-z])|演奏|弹奏|弹唱|指弹|八音盒|music\s*box|戏腔|"
+    r"piano\s*(?:ver|version|cover)|guitar\s*(?:ver|version|cover)", re.I)
+_X_VERSION = re.compile(r"([^\s《》「」『』【】\[\]（）()|｜,，!！?？。~～⚡]{1,8})版")
+_NOT_DERIVATIVE_VERSION = re.compile(
+    r"^(?:.*(?:完整|高清|无损|官方|正式|录音室|原|原唱|专辑|单曲|标准|豪华|加长|抢先|歌词|字幕|"
+    r"音质|纯享|4k|8k|hi-?res|mv|原声|电影|剧场|伴奏|新|现场|live|收藏|典藏|纪念|初回|通常|限定))$", re.I)
 _NOISE_RE = re.compile("|".join(sorted((re.escape(w) for w in NOISE_WORDS), key=len, reverse=True)), re.I)
 _YEAR = re.compile(r"(?<!\d)(19[5-9]\d|20[0-4]\d)(?!\d)")
 _WORK_BRACKETS = re.compile(r"[《「『〈]([^》」』〉]{1,80})[》」』〉]")
@@ -243,6 +261,44 @@ def _meaningful(s: str) -> bool:
     return any(ch.isalpha() for ch in n)
 
 
+def clean_artist(frag: str) -> str:
+    """Drop descriptive words around a name: "在专业录音棚听 周杰伦" -> "周杰伦".
+
+    Space-separated tokens that read as a listening set-up or verb phrase are removed;
+    a single token that is itself descriptive ("百万级装备听") leaves nothing."""
+    toks = [x for x in re.split(r"\s+", frag.strip()) if x]
+    keep = [x for x in toks if not _DESCRIPTIVE.search(x.casefold())]
+    return " ".join(keep).strip(_EDGE_PUNCT)
+
+
+def name_like(s: str) -> bool:
+    """Could ``s`` be an artist name rather than a sentence fragment from a title?"""
+    s = (s or "").strip()
+    if not s or len(s) > 40 or _DESCRIPTIVE.search(s.casefold()) or _NOISE_RE.search(s):
+        return False
+    if len(re.split(r"\s+", s)) > 4:
+        return False
+    return not re.search(r"[!！?？。，,~～…]", s)
+
+
+def derivative_cues(title: str) -> list[str]:
+    """Words in a video title saying it is a derivative of a song (cover, fan edit,
+    AI remake, band or instrument rendition, remix). Empty when none."""
+    t = fold(title or "")
+    out: list[str] = []
+    for m in _DERIVATIVE_WORDS.finditer(t):
+        w = m.group(0).strip()
+        if w and w.casefold() not in {x.casefold() for x in out}:
+            out.append(w)
+    for m in _X_VERSION.finditer(t):
+        x = m.group(1)
+        if not _NOT_DERIVATIVE_VERSION.match(x) and not _NOISE_RE.fullmatch(x):
+            w = x + "版"
+            if w not in out:
+                out.append(w)
+    return out
+
+
 def guess_from_title(title: str) -> TitleGuess:
     t = fold(title)
     g = TitleGuess()
@@ -259,10 +315,18 @@ def guess_from_title(title: str) -> TitleGuess:
         before = _META_BRACKETS.sub(" ", t[: first.start()])
         before = _NOISE_RE.sub(" | ", before)
         for frag in reversed(_SEP.split(before)):
-            frag = _denoise(_YEAR.sub(" ", frag))
+            frag = clean_artist(_denoise(_YEAR.sub(" ", frag)))
             if _meaningful(frag):
                 g.artists.append(frag)
                 break
+        if not g.artists:
+            # "《Title》- Artist" / "《Title》 by Artist": the name follows the bracket.
+            after = _META_BRACKETS.sub(" | ", t[first.end():])
+            m = re.match(r"^\s*(?:[-–—]|by\s)\s*([^|｜【\[《]+)", after, re.I)
+            if m:
+                frag = clean_artist(_denoise(_SEP.split(m.group(1).strip())[0]))
+                if _meaningful(frag) and name_like(frag):
+                    g.artists.append(frag)
     rest = _WORK_BRACKETS.sub(" | ", t)
     meta = [_denoise(m.group(1)) for m in _META_BRACKETS.finditer(rest)]
     rest = _META_BRACKETS.sub(" | ", rest)
@@ -273,7 +337,7 @@ def guess_from_title(title: str) -> TitleGuess:
         # "2020 - 冀西南林路行" => drop the year and the dash.
         seg = _YEAR.sub(" ", seg)
         seg = re.sub(r"^\s*[-–—]\s*|\s*[-–—]\s*$", "", seg)
-        d = _denoise(seg)
+        d = clean_artist(_denoise(seg))
         if _meaningful(d) and norm(d) not in {norm(x) for x in g.works + g.artists}:
             frags.append(d)
     explicit = bool(re.search(r"[|｜]|\s[-–—]\s", _META_BRACKETS.sub(" ", t)))
