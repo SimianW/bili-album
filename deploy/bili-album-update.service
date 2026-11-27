@@ -17,6 +17,6 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/python3 %h/.local/bin/bili-album-update --live-dir %h/Dev/bili-album-live --data-dir %h/Dev/bili-album/.work/web --service bili-album-web.service
+ExecStart=/usr/bin/python3 %h/.local/bin/bili-album-update --live-dir %h/Dev/bili-album-live --data-dir %h/Dev/bili-album/.work/web --service bili-album-web.service --health-url http://127.0.0.1:5191/
 Environment=PYTHONUNBUFFERED=1
 NoNewPrivileges=yes

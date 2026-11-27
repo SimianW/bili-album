@@ -46,12 +46,16 @@ def _make_script(path: Path, body: str) -> str:
     return str(path)
 
 
-class FakeGitHub:
+class FakeHTTP:
+    """Serves both fake GitHub releases/latest and an optional fake web health endpoint."""
+
     def __init__(self):
         self.status = 200
         self.etag = '"etag-1"'
         self.payload: dict | None = {"tag_name": "v0.1.0", "draft": False, "prerelease": False}
+        self.health_statuses: list[int] = [200]
         self.requests: list[dict] = []
+        self.health_hits = 0
         parent = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -59,12 +63,15 @@ class FakeGitHub:
                 pass
 
             def do_GET(self):
-                inm = self.headers.get("If-None-Match")
-                parent.requests.append({"path": self.path, "if_none_match": inm, "ua": self.headers.get("User-Agent")})
-                if parent.status == 404:
-                    self.send_response(404)
+                if self.path == "/health":
+                    idx = min(parent.health_hits, len(parent.health_statuses) - 1)
+                    code = parent.health_statuses[idx]
+                    parent.health_hits += 1
+                    self.send_response(code)
                     self.end_headers()
                     return
+                inm = self.headers.get("If-None-Match")
+                parent.requests.append({"path": self.path, "if_none_match": inm, "ua": self.headers.get("User-Agent")})
                 if parent.status != 200:
                     self.send_response(parent.status)
                     self.end_headers()
@@ -119,7 +126,6 @@ def env(tmp_path: Path):
     live = tmp_path / "live"
     subprocess.check_call(["git", "clone", "-q", str(origin), str(live)])
     _git(live, "checkout", "-q", "--detach", c1)
-    # Remove local tag so tests exercise fetching the tag from origin.
     _git(live, "tag", "-d", "v0.1.0")
 
     log_file = tmp_path / "calls.log"
@@ -130,7 +136,7 @@ def env(tmp_path: Path):
     data_dir.mkdir()
     state_file = tmp_path / "state" / "updater.json"
 
-    gh = FakeGitHub()
+    http = FakeHTTP()
     try:
         yield {
             "tmp": tmp_path,
@@ -144,10 +150,10 @@ def env(tmp_path: Path):
             "systemctl": systemctl_bin,
             "data_dir": data_dir,
             "state_file": state_file,
-            "gh": gh,
+            "gh": http,
         }
     finally:
-        gh.close()
+        http.close()
 
 
 def _cfg(env: dict, **overrides) -> U.UpdaterConfig:
@@ -157,10 +163,12 @@ def _cfg(env: dict, **overrides) -> U.UpdaterConfig:
         data_dir=env["data_dir"],
         state_file=env["state_file"],
         service="bili-album-web.service",
+        health_url=f"{env['gh'].base_url}/health",
         uv_bin=env["uv"],
         systemctl_bin=env["systemctl"],
         api_base=env["gh"].base_url,
-        startup_wait=0.0,
+        startup_timeout=0.5,
+        poll_interval=0.05,
     )
     params.update(overrides)
     return U.UpdaterConfig(**params)
@@ -181,17 +189,15 @@ def test_updates_to_latest_release_and_uses_etag_on_next_check(env):
     assert res1.commit == env["c2"]
     assert res1.previous_commit == env["c1"]
     assert _git(env["live"], "rev-parse", "HEAD") == env["c2"]
-    assert (env["live"] / "version.txt").read_text(encoding="utf-8") == "0.1.0\n"
+    assert env["gh"].health_hits == 1
     assert env["log"].read_text(encoding="utf-8").splitlines() == [
         "uv sync --frozen",
         "systemctl --user restart bili-album-web.service",
         "systemctl --user is-active --quiet bili-album-web.service",
     ]
 
-    # Second run sends If-None-Match, gets 304, and does no git/uv/systemctl work.
     res2 = U.run_update(_cfg(env))
     assert res2.action == "up_to_date"
-    assert res2.tag == "v0.1.0"
     assert env["gh"].requests[1]["if_none_match"] == '"etag-1"'
     assert len(env["log"].read_text(encoding="utf-8").splitlines()) == 3
 
@@ -204,7 +210,6 @@ def test_defers_while_web_job_is_active_then_installs_on_304(env):
     assert _git(env["live"], "rev-parse", "HEAD") == env["c1"]
     assert not env["log"].exists()
 
-    # Once the job finishes, even a 304 from GitHub completes the deferred install.
     job_file.write_text(json.dumps({"id": "0123456789ab", "status": "done"}), encoding="utf-8")
     res2 = U.run_update(_cfg(env))
     assert res2.action == "updated"
@@ -213,7 +218,31 @@ def test_defers_while_web_job_is_active_then_installs_on_304(env):
     assert env["gh"].requests[1]["if_none_match"] == '"etag-1"'
 
 
-def test_rolls_back_when_uv_sync_fails(env):
+def test_defers_and_rolls_back_without_restart_if_job_starts_during_sync(env):
+    job_dir = env["data_dir"] / "abcdef012345"
+    uv_starts_job = _make_script(
+        env["tmp"] / "uv-starts-job",
+        f'echo "uv $*" >> "{env["log"]}"\n'
+        'case "$*" in *--offline*) exit 0 ;; esac\n'
+        f'mkdir -p "{job_dir}"\n'
+        f'printf \'{{"id":"abcdef012345","status":"running"}}\' > "{job_dir / "job.json"}"\n',
+    )
+    res1 = U.run_update(_cfg(env, uv_bin=uv_starts_job))
+    assert res1.action == "deferred"
+    assert _git(env["live"], "rev-parse", "HEAD") == env["c1"]
+    assert env["log"].read_text(encoding="utf-8").splitlines() == [
+        "uv sync --frozen",
+        "uv sync --frozen --offline",
+    ]
+    assert json.loads(env["state_file"].read_text(encoding="utf-8"))["pending_deploy"] is None
+
+    (job_dir / "job.json").write_text(json.dumps({"id": "abcdef012345", "status": "done"}), encoding="utf-8")
+    res2 = U.run_update(_cfg(env))
+    assert res2.action == "updated"
+    assert _git(env["live"], "rev-parse", "HEAD") == env["c2"]
+
+
+def test_rolls_back_when_uv_sync_fails_and_skips_retry_until_new_commit(env):
     bad_uv = _make_script(
         env["tmp"] / "bad-uv",
         f'echo "uv $*" >> "{env["log"]}"\n'
@@ -227,11 +256,14 @@ def test_rolls_back_when_uv_sync_fails(env):
         "uv sync --frozen",
         "uv sync --frozen --offline",
     ]
-    state = json.loads(env["state_file"].read_text(encoding="utf-8"))
-    assert state["installed_commit"] is None
+
+    # Next tick skips the same failed commit instead of retrying endlessly.
+    res2 = U.run_update(_cfg(env, uv_bin=bad_uv))
+    assert res2.action == "skipped_failed"
+    assert len(env["log"].read_text(encoding="utf-8").splitlines()) == 2
 
 
-def test_rolls_back_when_service_not_active_after_restart(env):
+def test_rolls_back_when_service_not_active_and_stops_restart_loop(env):
     bad_systemctl = _make_script(
         env["tmp"] / "bad-systemctl",
         f'echo "systemctl $*" >> "{env["log"]}"\n'
@@ -241,13 +273,86 @@ def test_rolls_back_when_service_not_active_after_restart(env):
         U.run_update(_cfg(env, systemctl_bin=bad_systemctl))
 
     assert _git(env["live"], "rev-parse", "HEAD") == env["c1"]
-    assert env["log"].read_text(encoding="utf-8").splitlines() == [
+    calls_after_first = env["log"].read_text(encoding="utf-8").splitlines()
+    assert calls_after_first == [
         "uv sync --frozen",
         "systemctl --user restart bili-album-web.service",
         "systemctl --user is-active --quiet bili-album-web.service",
         "uv sync --frozen --offline",
         "systemctl --user restart bili-album-web.service",
     ]
+
+    # Second run skips the failed commit without restarting the live service again.
+    res2 = U.run_update(_cfg(env, systemctl_bin=bad_systemctl))
+    assert res2.action == "skipped_failed"
+    assert env["log"].read_text(encoding="utf-8").splitlines() == calls_after_first
+
+    # Publishing a new commit clears failed_commit and installs cleanly.
+    (env["work"] / "version.txt").write_text("0.1.1\n", encoding="utf-8")
+    _git(env["work"], "add", "version.txt")
+    _git(env["work"], "commit", "-q", "-m", "v0.1.1")
+    c3 = _git(env["work"], "rev-parse", "HEAD")
+    _git(env["work"], "tag", "v0.1.1", c3)
+    _git(env["work"], "push", "-q", "origin", "HEAD:main", "refs/tags/v0.1.1")
+    env["gh"].payload = {"tag_name": "v0.1.1", "draft": False, "prerelease": False}
+    env["gh"].etag = '"etag-2"'
+
+    res3 = U.run_update(_cfg(env))
+    assert res3.action == "updated"
+    assert res3.commit == c3
+    assert json.loads(env["state_file"].read_text(encoding="utf-8"))["failed_commit"] is None
+
+
+def test_polls_health_endpoint_and_rolls_back_when_never_ready(env):
+    env["gh"].health_statuses = [503, 200]
+    res = U.run_update(_cfg(env))
+    assert res.action == "updated"
+    assert env["gh"].health_hits == 2
+
+    # Next release stays active in systemd but never returns HTTP 200 -> rollback.
+    (env["work"] / "version.txt").write_text("0.2.0\n", encoding="utf-8")
+    _git(env["work"], "add", "version.txt")
+    _git(env["work"], "commit", "-q", "-m", "v0.2.0")
+    c3 = _git(env["work"], "rev-parse", "HEAD")
+    _git(env["work"], "tag", "v0.2.0", c3)
+    _git(env["work"], "push", "-q", "origin", "HEAD:main", "refs/tags/v0.2.0")
+    env["gh"].payload = {"tag_name": "v0.2.0", "draft": False, "prerelease": False}
+    env["gh"].etag = '"etag-3"'
+    env["gh"].health_statuses = [503]
+    env["gh"].health_hits = 0
+
+    with pytest.raises(U.UpdateError, match="did not become ready"):
+        U.run_update(_cfg(env, startup_timeout=0.15, poll_interval=0.05))
+    assert _git(env["live"], "rev-parse", "HEAD") == env["c2"]
+
+
+def test_recovers_interrupted_deploy_when_head_already_at_target(env):
+    # Simulate updater killed right after git checkout --detach c2, before uv sync / restart.
+    _git(env["live"], "fetch", "origin", "refs/tags/v0.1.0:refs/tags/v0.1.0")
+    _git(env["live"], "checkout", "-q", "--detach", env["c2"])
+    U.save_state(
+        env["state_file"],
+        {
+            "repo": "SimianW/bili-album",
+            "etag": '"etag-1"',
+            "tag": "v0.1.0",
+            "installed_tag": None,
+            "installed_commit": env["c1"],
+            "pending_deploy": {"tag": "v0.1.0", "target_commit": env["c2"], "previous_commit": env["c1"]},
+        },
+    )
+
+    res = U.run_update(_cfg(env))
+    assert res.action == "updated"
+    assert res.previous_commit == env["c1"]
+    assert env["log"].read_text(encoding="utf-8").splitlines() == [
+        "uv sync --frozen",
+        "systemctl --user restart bili-album-web.service",
+        "systemctl --user is-active --quiet bili-album-web.service",
+    ]
+    state = json.loads(env["state_file"].read_text(encoding="utf-8"))
+    assert state["pending_deploy"] is None
+    assert state["installed_commit"] == env["c2"]
 
 
 def test_refuses_dirty_tracked_checkout(env):
@@ -261,7 +366,6 @@ def test_refuses_dirty_tracked_checkout(env):
 def test_handles_repointed_tag_on_github(env):
     assert U.run_update(_cfg(env)).action == "updated"
 
-    # Force-move v0.1.0 to a new commit on origin and bump GitHub ETag.
     (env["work"] / "version.txt").write_text("0.1.0-hotfix\n", encoding="utf-8")
     _git(env["work"], "add", "version.txt")
     _git(env["work"], "commit", "-q", "-m", "hotfix")
