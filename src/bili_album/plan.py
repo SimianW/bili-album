@@ -7,6 +7,7 @@ download   audio stream(s) and the Bilibili cover
 analyze    boundary candidates from the audio (silence / dip / novelty)
 catalog    album / track lookup (NetEase, iTunes) and lyrics
 recognize  Shazam clips: verify titles, pin track starts, or scan unknown mixes
+refine     millisecond refinement of the boundaries between tracks (:mod:`refine`)
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ import json
 import logging
 import math
 import re
+import subprocess
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -32,6 +34,7 @@ from .hints import (HintEntry, HintList, TitleGuess, derivative_cues, fmt_ts, gu
 from .media import audio_info, image_kind, prepare_offline_audio, square_cover
 from .net import Http
 from .recognize import NullRecognizer, Recognition, Recognizer, ShazamRecognizer
+from .refine import refine_starts
 from .textnorm import has_han, has_kana, norm, similarity, strip_decorations, strip_translation, to_simplified
 
 log = logging.getLogger(__name__)
@@ -230,6 +233,8 @@ class PlanOptions:
     title: str | None = None
     description: str = ""
     recognize: bool = True
+    refine: bool = True
+    refine_options: dict = field(default_factory=dict)   # keyword arguments for refine.refine_starts
     repo_root: Path = field(default_factory=lambda: Path.cwd())
 
 
@@ -300,6 +305,7 @@ class Planner:
         self.review: list[str] = []
         self.kind_reason = ""
         self.recog_info: dict = {"policy": "none", "tracks_checked": 0, "requests": 0, "reason": ""}
+        self.refine_info: dict = {"boundaries": 0, "moved": 0, "methods": {}, "reason": "not run"}
         self.derivative: dict | None = None
         self.reordered = False
         self.feats = None
@@ -739,7 +745,56 @@ class Planner:
         if primary and primary.has_times:
             self._check_durations(segs)
         self._fill_from_recognition(segs)
+        self._refine_cuts(audio, segs)
         return segs, album
+
+    def _refine_cuts(self, audio: Path, segs: list[Seg]) -> None:
+        """Refine every start that is also the previous track's end (see :mod:`refine`).
+
+        Track 1 and starts after unexported material keep their place. A start pinned by
+        recognition may still move earlier, but never later than the recognised start minus
+        ``CUT_MARGIN`` (or its current place, if that is already later: digital silence)."""
+        info = self.refine_info
+        if not self.o.refine:
+            info.update(reason="refinement off")
+            return
+        idx = [i for i in range(1, len(segs)) if abs(segs[i - 1].end - segs[i].start) < 1e-6]
+        if not idx:
+            info.update(reason="no boundary between adjacent tracks")
+            return
+        bounds = []
+        for i in idx:
+            s, hi = segs[i], None
+            imp = s.recog.implied_start if getattr(s, "pinned", False) and s.recog is not None else None
+            if imp is not None:
+                hi = max(s.start, imp - CUT_MARGIN)
+            bounds.append((segs[i - 1].start + 1.0, hi))
+        try:
+            res = self.timer.run("refine", refine_starts, audio, [segs[i].start for i in idx],
+                                 channels=audio_info(audio)["channels"] or 2, bounds=bounds,
+                                 **self.o.refine_options)
+        except (OSError, ValueError, subprocess.SubprocessError) as e:
+            log.warning("refinement skipped: %s", e)
+            info.update(reason=f"refinement failed: {e}")
+            return
+        methods: dict[str, int] = {}
+        moved = 0
+        for i, (new, method) in zip(idx, res):
+            s, prev = segs[i], segs[i - 1]
+            methods[method] = methods.get(method, 0) + 1
+            delta = new - s.start
+            if method == "fallback":
+                s.evidence.append(ev("refine", f"start {s.start:.3f}s kept: no clear edge within the search window"))
+                continue
+            if abs(delta) < 0.0005:
+                s.evidence.append(ev("refine", f"start {s.start:.3f}s confirmed ({method})"))
+                continue
+            s.evidence.append(ev("refine", f"start {s.start:.3f}s -> {new:.3f}s ({method}, {delta * 1000:+.0f} ms)"))
+            prev.end = new
+            s.start = new
+            moved += 1
+        info.update(boundaries=len(idx), moved=moved, methods=methods,
+                    reason=f"{moved} of {len(idx)} boundaries moved")
 
     def _match_titles(self, titles: list[str], album: CatAlbum | None) -> list[CatTrack | None]:
         if not album:
@@ -1473,6 +1528,7 @@ class Planner:
             "review_reasons": _dedupe(self.review),
             "timings": self.timer.as_dict(),
             "recognition": self.recog_info,
+            "refine": self.refine_info,
         }
         if self.derivative:
             plan["source"]["derivative_cues"] = self.derivative.get("cues", [])
