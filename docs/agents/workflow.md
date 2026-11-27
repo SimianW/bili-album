@@ -47,9 +47,9 @@ Role models, `target` values, brief rules, and the `Verify` checklist live in `~
 
 ## Without the owner's skills or T3 Code
 
-This file, `AGENTS.md`, and `docs/` name skills (`review-loop`, `pr`, `code-review`, `tdd`, `diagnosing-bugs`, `mockup-first`, `to-spec`, `to-tickets`, `implement`, `implement-spec`, `domain-modeling`, `wayfinder`, `triage`, `simian-mode`, `simianize`) and `delegation.md` that live in the public repo [SimianW/agents](https://github.com/SimianW/agents) rather than in this repo.
+This file, `AGENTS.md`, and `docs/` name skills (such as `review-loop`, `pr`, `code-review`, `tdd`, `diagnosing-bugs`, `mockup-first`, `to-spec`, `to-tickets`, `implement`, `implement-spec`, `domain-modeling`, `wayfinder`, `triage`, `simian-mode`, `simianize`) and `delegation.md` that live in the public repo [SimianW/agents](https://github.com/SimianW/agents) rather than in this repo.
 
-When your agent does not have a required skill installed locally, read `skills/<name>/SKILL.md` (and `delegation.md` when needed) from [SimianW/agents](https://github.com/SimianW/agents), or clone/install from that repo. If you cannot fetch from GitHub, or if you do not have T3 Code (which `review-loop` uses for its two-model panel), do its job by hand as below. CI checks the PR body, tests, size and file length the same way either way; it cannot tell whether a review happened.
+When your agent does not have a required skill installed locally, read `skills/<name>/SKILL.md` (and `delegation.md` when needed) from [SimianW/agents](https://github.com/SimianW/agents), or clone/install from that repo. If you cannot fetch a skill from GitHub, do its job by hand as below; if you fetched `review-loop` but do not have T3 Code (which `review-loop` uses for its two-model panel), use **Review (in place of `review-loop`)** below. CI checks the PR body, tests, size and file length the same way either way; it cannot tell whether a review happened.
 
 ### Review (in place of `review-loop`)
 

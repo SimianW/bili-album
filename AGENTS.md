@@ -38,7 +38,7 @@ Run everything with `uv run` from the repo root. Never commit downloaded audio, 
 
 ## Agent skills
 
-If a skill named here or in `docs/` is not installed locally, read `skills/<name>/SKILL.md` (and `delegation.md` when needed) from the public repo [SimianW/agents](https://github.com/SimianW/agents). If you cannot fetch it or do not have T3 Code, follow "Without the owner's skills or T3 Code" in [docs/agents/workflow.md](docs/agents/workflow.md).
+If a skill named here or in `docs/` is not installed locally, read `skills/<name>/SKILL.md` (and `delegation.md` when needed) from the public repo [SimianW/agents](https://github.com/SimianW/agents). If you cannot fetch a skill, or if you need to run `review-loop` without T3 Code, follow "Without the owner's skills or T3 Code" in [docs/agents/workflow.md](docs/agents/workflow.md).
 
 ### Issue tracker
 
