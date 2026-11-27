@@ -1,0 +1,30 @@
+# systemd user unit for the bili-album web page (not installed by the repo).
+#
+# Install by hand when the owner asks:
+#   mkdir -p ~/.config/systemd/user
+#   cp deploy/bili-album-web.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now bili-album-web
+#   loginctl enable-linger "$USER"     # keep it running without a login session
+#
+# It listens on the Tailscale address only. Configuration (model proxy, Jellyfin,
+# library folder) is read by the program itself from ~/.config/bili-album/env;
+# no secret is passed through the unit or its environment.
+
+[Unit]
+Description=bili-album web page (paste a Bilibili link, import into Jellyfin)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Dev/bili-album
+ExecStart=%h/.local/bin/uv run --frozen bili-album serve --host 100.87.146.105 --port 5191
+# The Tailscale address may not exist yet right after boot: keep retrying.
+Restart=on-failure
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=default.target

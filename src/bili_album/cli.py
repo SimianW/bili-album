@@ -118,6 +118,16 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("target", type=Path)
     p.add_argument("--json", action="store_true")
 
+    p = sub.add_parser("serve", help="web page: paste a link, the album lands in Jellyfin")
+    p.add_argument("--host", default="127.0.0.1", help="address to listen on (default 127.0.0.1; never 0.0.0.0)")
+    p.add_argument("--port", type=int, default=5191, help="port (default 5191)")
+    p.add_argument("--data-dir", type=Path, help="job folders (default: .work/web/ in the repo)")
+    p.add_argument("--fake", action="store_true",
+                   help="replay scripted jobs instead of running the pipeline (no network, no import)")
+    p.add_argument("--fake-speed", type=float, default=1.0, help="--fake: delay divisor (2 = twice as fast)")
+    p.add_argument("--fake-hold", action="append", default=[], metavar="STAGE=SECONDS",
+                   help="--fake: stay SECONDS longer in STAGE (plan, review, cut, import); repeatable")
+
     a = ap.parse_args(argv)
     logging.basicConfig(level=logging.DEBUG if a.verbose else logging.WARNING,
                         format="%(levelname)s %(name)s: %(message)s")
@@ -157,7 +167,27 @@ def main(argv: list[str] | None = None) -> int:
             total = sum(r["duration"] for r in rows)
             print(f"{len(rows)} file(s), total {total:.2f}s")
         return 0
+    if a.cmd == "serve":
+        return _cmd_serve(a, ap)
     return 1
+
+
+def _cmd_serve(a, ap) -> int:
+    from .web.server import serve
+
+    hold = {}
+    for item in a.fake_hold:
+        stage, _, secs = item.partition("=")
+        try:
+            hold[stage] = float(secs)
+        except ValueError:
+            ap.error(f"--fake-hold expects STAGE=SECONDS, got {item!r}")
+    if a.host in ("0.0.0.0", "::", ""):
+        ap.error("--host must be a specific address (127.0.0.1 or the Tailscale address), not every interface")
+    if not 0 < a.port < 65536:
+        ap.error("--port must be between 1 and 65535")
+    data_dir = a.data_dir or REPO_ROOT / ".work" / "web"
+    return serve(a.host, a.port, data_dir, fake=a.fake, fake_speed=a.fake_speed, fake_hold=hold)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>bili-album</title>
+<style>
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --ink: #16181d; --ink2: #5f6672; --line: #e1e4ea;
+  --accent: #5b4bdb; --accent-ink: #ffffff; --accent-soft: #eceafb;
+  --seg-a: #5b4bdb; --seg-b: #a79df0; --idle-a: #d5d8df; --idle-b: #e6e8ed;
+  --warn: #9a6200; --warn-soft: #fff3d1; --warn-line: #f0d38a; --warn-seg: #e0a11b;
+  --bad: #b93227; --bad-soft: #fdecea; --good: #1c8748;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171c; --surface: #1d2027; --ink: #eceef2; --ink2: #9aa1ad; --line: #2e323c;
+    --accent: #8f83f5; --accent-ink: #14121f; --accent-soft: #2a2750;
+    --seg-a: #8f83f5; --seg-b: #5a50ad; --idle-a: #3a3f4a; --idle-b: #2c3039;
+    --warn: #f0c060; --warn-soft: #3a3016; --warn-line: #6b5520; --warn-seg: #e0a11b;
+    --bad: #f08a80; --bad-soft: #3a1d1a; --good: #5fce8c;
+  }
+}
+html, body { margin: 0; background: var(--bg); }
+.bp {
+  background: var(--bg); color: var(--ink); padding: 24px 20px 28px; min-height: 100vh; box-sizing: border-box;
+  font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 14px; line-height: 1.55; font-variant-numeric: tabular-nums;
+}
+.bp * { box-sizing: border-box; }
+.bp .col { max-width: 640px; margin: 0 auto; }
+.bp .top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+.bp .brand { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.bp .top a { color: var(--ink2); font-size: 13px; text-decoration: none; border-bottom: 1px solid var(--line); }
+
+.bp .paste { display: flex; gap: 8px; }
+.bp .paste input {
+  flex: 1; min-width: 0; height: 52px; padding: 0 16px; font: inherit; font-size: 16px; color: var(--ink);
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; outline: none;
+}
+.bp .paste input::placeholder { color: var(--ink2); }
+.bp .paste input:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.bp .btn {
+  height: 52px; padding: 0 20px; border: 0; border-radius: 12px; font: inherit; font-size: 15px; font-weight: 600;
+  background: var(--accent); color: var(--accent-ink); cursor: pointer; white-space: nowrap;
+}
+.bp .btn.sm { height: 36px; padding: 0 14px; font-size: 13.5px; border-radius: 9px; }
+.bp .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+.bp .btn:disabled { opacity: .6; cursor: default; }
+.bp .btn:focus-visible, .bp a:focus-visible, .bp .open:focus-visible, .bp summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bp .hint { color: var(--ink2); font-size: 12.5px; margin: 8px 2px 0; }
+.bp .err { color: var(--bad); font-size: 12.5px; margin: 8px 2px 0; }
+.bp .empty { color: var(--ink2); font-size: 13px; margin: 26px 2px 0; }
+
+.bp h2 { font-size: 13px; font-weight: 600; color: var(--ink2); margin: 26px 2px 8px; }
+.bp .job { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 10px; transition: border-color .15s; }
+.bp .job.flash { border-color: var(--accent); }
+.bp .job.list { padding: 6px 14px; }
+.bp .head { display: flex; gap: 12px; align-items: center; }
+.bp .cover { width: 56px; height: 56px; border-radius: 6px; flex: none; display: grid; place-items: center;
+  font-weight: 700; font-size: 20px; color: #fff; overflow: hidden; }
+.bp .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bp .cover.c1 { background: #2f3b52; } .bp .cover.c2 { background: #7a1f2b; } .bp .cover.c3 { background: #3d4a3a; }
+.bp .cover.c4 { background: #8a8f9a; } .bp .cover.sm { width: 40px; height: 40px; font-size: 15px; border-radius: 5px; }
+.bp .ttl { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; line-height: 1.3; overflow-wrap: anywhere; }
+.bp .ttl.url { font-size: 15px; }
+.bp .sub { color: var(--ink2); font-size: 13px; }
+.bp .grow { flex: 1; min-width: 0; }
+.bp .tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.bp .tag.run { background: var(--accent-soft); color: var(--accent); }
+.bp .tag.warn { background: var(--warn-soft); color: var(--warn); }
+.bp .tag.bad { background: var(--bad-soft); color: var(--bad); }
+.bp .tag.good { color: var(--good); padding: 0; }
+.bp .tag.long { white-space: normal; }
+.bp svg { width: 14px; height: 14px; flex: none; }
+.bp .open { all: unset; display: block; flex: 1; min-width: 0; cursor: pointer; border-radius: 4px; }
+
+.bp .stages { list-style: none; display: flex; margin: 16px 0 0; padding: 0; }
+.bp .stages li { flex: 1; position: relative; padding-top: 16px; font-size: 12.5px; color: var(--ink2); }
+.bp .stages li::before { content: ""; position: absolute; top: 4px; left: 0; right: 4px; height: 4px; border-radius: 2px; background: var(--idle-b); }
+.bp .stages li.done::before { background: var(--accent); }
+.bp .stages li.now::before { background: linear-gradient(90deg, var(--accent) 45%, var(--idle-b) 45%); }
+.bp .stages li.now, .bp .stages li.done { color: var(--ink); }
+.bp .stages li.now { font-weight: 600; }
+.bp .stages li.stop::before { background: var(--warn-seg); }
+.bp .stages li.fail::before { background: var(--bad); }
+.bp .stages li.now::after { content: ""; position: absolute; top: 4px; left: 0; width: 45%; height: 4px; border-radius: 2px;
+  background: var(--accent); animation: sweep 1.2s linear infinite; }
+.bp .stages li.now::before { background: var(--idle-b); }
+@keyframes sweep { from { left: 0; } to { left: calc(100% - 4px - 45%); } }
+@media (prefers-reduced-motion: reduce) {
+  .bp .stages li.now::after { display: none; }
+  .bp .stages li.now::before { background: linear-gradient(90deg, var(--accent) 45%, var(--idle-b) 45%); }
+}
+.bp .live { margin: 10px 0 0; font-size: 13px; color: var(--ink2); }
+
+.bp .strip { display: flex; gap: 2px; height: 14px; margin: 14px 0 4px; }
+.bp .strip i { display: block; border-radius: 2px; background: var(--seg-a); }
+.bp .strip i:nth-child(even) { background: var(--seg-b); }
+.bp .strip i.flag { background: var(--warn-seg); }
+.bp .cap { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink2); }
+
+.bp .box { border-radius: 10px; padding: 12px 14px; margin-top: 14px; font-size: 13.5px; }
+.bp .box.warn { background: var(--warn-soft); border: 1px solid var(--warn-line); }
+.bp .box.bad { background: var(--bad-soft); }
+.bp .box.plain { background: var(--bg); }
+.bp .box b { font-weight: 650; }
+.bp .box ul { margin: 6px 0 0; padding-left: 18px; }
+.bp .box li { margin: 2px 0; }
+.bp .box p { margin: 0; }
+.bp .box p + p { margin-top: 6px; }
+
+.bp .rows { margin-top: 12px; border-top: 1px solid var(--line); }
+.bp details .rows { margin-top: 8px; }
+.bp .row { display: grid; grid-template-columns: 28px 1fr 1fr 52px; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.bp .row .n, .bp .row .d { color: var(--ink2); font-size: 12.5px; }
+.bp .row .d { text-align: right; }
+.bp .row input { width: 100%; height: 34px; padding: 0 9px; font: inherit; font-size: 13.5px; color: var(--ink); background: var(--surface); border: 1.5px solid var(--line); border-radius: 8px; }
+.bp .row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+.bp .row.flag input { border-color: var(--warn-seg); background: var(--warn-soft); }
+.bp .row .ro { min-width: 0; overflow-wrap: anywhere; }
+.bp .acts { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+.bp .acts .sp { flex: 1; }
+.bp .acts .q { font-size: 13.5px; font-weight: 600; }
+.bp .lnk { color: var(--accent); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; font-size: 13.5px; }
+.bp details { margin-top: 12px; font-size: 13px; }
+.bp summary { cursor: pointer; color: var(--ink2); }
+.bp .rvline { margin: 12px 0 0; font-size: 13px; color: var(--ink2); }
+.bp .past { display: flex; gap: 12px; align-items: center; padding: 10px 2px; border-bottom: 1px solid var(--line); }
+.bp .past:last-child { border-bottom: 0; }
+.bp .past .t { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+.bp .past .tag { margin-left: auto; }
+
+@media (max-width: 519.98px) {
+  .bp { padding: 18px 14px 22px; }
+  .bp .paste { flex-direction: column; } .bp .paste input { flex: none; width: 100%; } .bp .btn:not(.sm) { width: 100%; }
+  .bp .row { grid-template-columns: 22px 1fr 44px; } .bp .row .ar { grid-column: 2 / 3; }
+  .bp .row .d { grid-row: 1; grid-column: 3; }
+  .bp .hint { display: none; }
+  .bp .job.held .head .tag, .bp .job.held .stages, .bp .job.held .src { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="bp"><div class="col">
+  <div class="top"><span class="brand">bili-album</span><a id="lib" href="#" target="_blank" rel="noopener noreferrer" hidden>打开音乐库</a></div>
+  <form class="paste" id="form" novalidate>
+    <input id="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="粘贴 B 站视频链接" aria-label="B 站视频链接" aria-describedby="urlerr">
+    <button class="btn" type="submit">导入到 Jellyfin</button>
+  </form>
+  <p class="err" id="urlerr" role="alert" hidden></p>
+  <p class="hint">单曲、整张专辑合在一个视频里、分 P 专辑都可以。</p>
+  <p class="empty" id="empty" hidden>还没有导入过。粘贴一个链接开始。</p>
+  <section id="g-owner" hidden><h2>等你确认</h2><div class="cards"></div></section>
+  <section id="g-active" hidden><h2>正在处理</h2><div class="cards"></div></section>
+  <section id="g-done" hidden><h2>最近导入</h2><div class="cards"></div></section>
+</div></div>
+<script>
+"use strict";
+(function () {
+  const STAGES = ["plan", "review", "cut", "import"];
+  const STAGE_NAMES = { plan: "生成方案", review: "Sol 复核", cut: "切分写标签", import: "导入 Jellyfin" };
+  const BAD_URL = "这不像 B 站视频链接。";
+  const SVG_NS = "http://www.w3.org/2000/svg";
+
+  let jobs = [];
+  let clockOffset = 0;          // server time minus browser time, in seconds
+  const expanded = new Set();   // done jobs shown as full cards
+  const seenActive = new Set(); // jobs this page saw queued or running (auto-expand when they finish)
+  const cardCache = new Map();  // id -> {sig, el}
+  const ui = new Map();         // per-job UI state that survives re-render: {askDiscard, openRest, openTracks, openEdits, busy}
+  let pollTimer = null;
+
+  // ------------------------------------------------------------ small helpers
+  function h(tag, attrs, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v === null || v === undefined || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k === "text") el.textContent = v;
+      else if (k === "style") el.setAttribute("style", v);
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : String(v));
+    }
+    for (const kid of kids.flat()) {
+      if (kid === null || kid === undefined || kid === false) continue;
+      el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+    }
+    return el;
+  }
+  function icon(d, width) {
+    const svg = document.createElementNS(SVG_NS, "svg");
+    svg.setAttribute("viewBox", "0 0 16 16"); svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor"); svg.setAttribute("stroke-width", width || "1.8");
+    svg.setAttribute("aria-hidden", "true");
+    const p = document.createElementNS(SVG_NS, "path"); p.setAttribute("d", d); svg.append(p);
+    return svg;
+  }
+  const ICON_OUT = "M6 3h7v7M13 3 4 12", ICON_WARN = "M8 2 1.5 13.5h13L8 2ZM8 6.5v3.5M8 12v.5", ICON_OK = "m3 8.5 3.2 3.2L13 5";
+  function mmss(sec) {
+    sec = Math.max(0, Math.round(sec || 0));
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return m + ":" + String(s).padStart(2, "0");
+  }
+  function now() { return Date.now() / 1000 + clockOffset; }
+  function totalLen(job) { return (job.tracks || []).reduce((a, t) => a + (t.duration || 0), 0); }
+  function safeHttp(u) {
+    try { const x = new URL(u); return (x.protocol === "https:" || x.protocol === "http:") ? x.href : null; } catch (e) { return null; }
+  }
+  function tileClass(title) {
+    let hsh = 590;
+    for (const ch of title) hsh = (hsh * 31 + ch.codePointAt(0)) % 1000003;
+    return "c" + (1 + hsh % 3);
+  }
+  function hasAlbum(job) { return !!(job.album && job.album.title && job.stages && job.stages.plan === "done"); }
+  function when(ts) {
+    const d = new Date(ts * 1000), today = new Date();
+    const hm = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    const day = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const that = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const diff = Math.round((day - that) / 86400000);
+    if (diff === 0) return "今天 " + hm;
+    if (diff === 1) return "昨天 " + hm;
+    if (d.getFullYear() === today.getFullYear()) return (d.getMonth() + 1) + "月" + d.getDate() + "日 " + hm;
+    return d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日";
+  }
+  function uiOf(id) { if (!ui.has(id)) ui.set(id, {}); return ui.get(id); }
+
+  // ------------------------------------------------------------ URL check (same rules as the server)
+  function normalizeUrl(raw) {
+    let s = (raw || "").trim();
+    if (!s || s.length > 2000) return null;
+    if (/^BV[0-9A-Za-z]{10}$/.test(s)) return "https://www.bilibili.com/video/" + s;
+    if (/\s/.test(s)) {
+      const m = s.match(/(?:https?:\/\/)?(?:www\.|m\.)?(?:bilibili\.com\/video\/BV[0-9A-Za-z]{10}\S*|b23\.tv\/[0-9A-Za-z]+)/);
+      if (!m) return null;
+      s = m[0];
+    }
+    if (!s.includes("://")) s = "https://" + s;
+    let u;
+    try { u = new URL(s); } catch (e) { return null; }
+    if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+    if (u.username || u.password || (u.port && u.port !== "80" && u.port !== "443")) return null;
+    const host = u.hostname.toLowerCase();
+    if (host === "b23.tv") {
+      const m = u.pathname.match(/^\/([0-9A-Za-z]{4,16})\/?$/);
+      return m ? "https://b23.tv/" + m[1] : null;
+    }
+    if (!["www.bilibili.com", "bilibili.com", "m.bilibili.com"].includes(host)) return null;
+    const m = u.pathname.match(/^\/video\/(BV[0-9A-Za-z]{10})\/?$/);
+    return m ? "https://www.bilibili.com/video/" + m[1] : null;
+  }
+
+  // ------------------------------------------------------------ API
+  async function api(method, path, body) {
+    const opt = { method, headers: {} };
+    if (method !== "GET") { opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body || {}); }
+    const r = await fetch(path, opt);
+    let data = {};
+    try { data = await r.json(); } catch (e) { /* empty body */ }
+    return { ok: r.ok, status: r.status, data };
+  }
+
+  async function refresh() {
+    clearTimeout(pollTimer);
+    try {
+      const t0 = Date.now() / 1000;
+      const r = await api("GET", "/api/jobs");
+      if (r.ok) {
+        clockOffset = r.data.now - (t0 + Date.now() / 1000) / 2;
+        jobs = r.data.jobs || [];
+        render();
+      }
+    } catch (e) { /* server away: keep the last view and try again */ }
+    const busy = jobs.some(j => j.status === "queued" || j.status === "running");
+    pollTimer = setTimeout(refresh, busy ? 1000 : 10000);
+  }
+
+  async function act(job, action, body) {
+    const u = uiOf(job.id);
+    u.busy = true; u.error = "";
+    rerender(job.id);
+    const r = action === "delete"
+      ? await api("DELETE", "/api/jobs/" + job.id)
+      : await api("POST", "/api/jobs/" + job.id + "/" + action, body);
+    u.busy = false;
+    if (!r.ok) u.error = (r.data && r.data.error) || "操作没有成功，请再试一次。";
+    else if (action === "keep") expanded.delete(job.id);
+    else if (action === "discard" || action === "delete") ui.delete(job.id);
+    if (r.ok && (action === "confirm" || action === "replace" || action === "retry")) seenActive.add(job.id);
+    if (r.ok && action === "confirm") delete u.drafts;
+    await refresh();
+    if (!r.ok) rerender(job.id);
+  }
+  function rerender(id) { const c = cardCache.get(id); if (c) c.sig = null; render(); }
+
+  // ------------------------------------------------------------ cards
+  function coverEl(job, small) {
+    const cls = "cover" + (small ? " sm" : "");
+    if (!hasAlbum(job)) return h("div", { class: cls + " c4", "aria-hidden": "true" }, "?");
+    const title = job.album.title;
+    if (job.has_cover) {
+      const img = h("img", { alt: "", src: "/api/jobs/" + job.id + "/cover" });
+      return h("div", { class: cls }, img);
+    }
+    return h("div", { class: cls + " " + tileClass(title), "aria-hidden": "true" }, Array.from(title)[0] || "?");
+  }
+  function titleEl(job) {
+    if (hasAlbum(job)) return h("div", { class: "ttl" }, job.album.title);
+    return h("div", { class: "ttl url" }, job.url);
+  }
+  function albumLine(job, extra) {
+    if (!hasAlbum(job)) return "";
+    const a = job.album, n = (job.tracks || []).length, len = mmss(totalLen(job));
+    let parts;
+    if (a.kind === "single") {
+      parts = ["单曲", len];
+      if (a.uploader) parts.push("来自「" + a.uploader + "」的视频");
+    } else {
+      parts = [a.artist, a.year, n ? n + " 首" : "", n ? len : ""];
+    }
+    if (extra) parts = parts.concat(extra);
+    return parts.filter(Boolean).join("，");
+  }
+  function subEl(text) { return text ? h("div", { class: "sub" }, text) : null; }
+  function stagesEl(job) {
+    const ol = h("ol", { class: "stages" });
+    for (const s of STAGES) {
+      const st = job.stages[s];
+      const cls = st === "done" ? "done" : st === "running" ? "now" : st === "held" ? "stop" : st === "failed" ? "fail" : null;
+      ol.append(h("li", { class: cls, "aria-current": st === "running" ? "step" : null }, STAGE_NAMES[s]));
+    }
+    return ol;
+  }
+  function stripEl(job) {
+    const tracks = job.tracks || [];
+    if (!tracks.length || (job.album && job.album.kind === "single")) return [];
+    const strip = h("div", { class: "strip", role: "img", "aria-label": tracks.length + " 首，" + mmss(totalLen(job)) });
+    for (const t of tracks) {
+      strip.append(h("i", { class: t.flagged ? "flag" : null, style: "flex:" + Math.max(1, Math.round(t.duration || 1)),
+                            title: t.index + ". " + t.title + "  " + mmss(t.duration) }));
+    }
+    return [strip, h("div", { class: "cap" }, h("span", {}, "0:00"), h("span", {}, mmss(totalLen(job))))];
+  }
+  function lnk(href, text, ic, cls) {
+    return h("a", { class: "lnk" + (cls ? " " + cls : ""), href, target: "_blank", rel: "noopener noreferrer" }, text, ic ? icon(ICON_OUT) : null);
+  }
+  function errLine(job) {
+    const u = uiOf(job.id);
+    return u.error ? h("p", { class: "err", role: "alert" }, u.error) : null;
+  }
+
+  function queuedCard(job) {
+    const ahead = job.ahead || 0;
+    const sub = ahead > 0 ? "排队中，前面还有 " + ahead + " 个" : "排队中，马上开始";
+    return h("div", { class: "job" },
+      h("div", { class: "head" }, coverEl(job), h("div", { class: "grow" }, titleEl(job), subEl(sub)),
+        h("button", { class: "btn sm ghost", type: "button", disabled: uiOf(job.id).busy, onclick: () => act(job, "delete") }, "取消")),
+      errLine(job));
+  }
+
+  function runningCard(job) {
+    const tag = h("span", { class: "tag run", "data-since": job.started || job.created }, "处理中 " + mmss(now() - (job.started || job.created)));
+    return h("div", { class: "job" },
+      h("div", { class: "head" }, coverEl(job), h("div", { class: "grow" }, titleEl(job), subEl(albumLine(job))), tag),
+      stagesEl(job), stripEl(job),
+      job.message ? h("p", { class: "live", "aria-live": "polite" }, job.message) : null);
+  }
+
+  function editRow(job, t, flagged) {
+    // Typed values live in a draft so that a rebuilt card keeps them.
+    const drafts = uiOf(job.id).drafts || (uiOf(job.id).drafts = {});
+    const d = drafts[t.index] || {};
+    const save = e => { (drafts[t.index] = drafts[t.index] || {})[e.target.dataset.f] = e.target.value; };
+    return h("div", { class: "row" + (flagged ? " flag" : ""), "data-index": t.index },
+      h("span", { class: "n" }, String(t.index)),
+      h("input", { value: d.title !== undefined ? d.title : t.title, "aria-label": "第 " + t.index + " 首歌名", "data-f": "title", maxlength: 300, oninput: save }),
+      h("input", { class: "ar", value: d.artist !== undefined ? d.artist : t.artist, "aria-label": "第 " + t.index + " 首歌手", "data-f": "artist", maxlength: 300, oninput: save }),
+      h("span", { class: "d" }, mmss(t.duration)));
+  }
+
+  function confirmCard(job) {
+    const u = uiOf(job.id);
+    const rv = job.review || {};
+    const reasons = [].concat(rv.reasons || [], rv.remaining_concerns || []);
+    const tracks = job.tracks || [];
+    let flagged = tracks.filter(t => t.flagged);
+    if (!flagged.length) flagged = tracks;
+    const rest = tracks.filter(t => !flagged.includes(t));
+    const card = h("div", { class: "job held" });
+    card.append(h("div", { class: "head" }, coverEl(job), h("div", { class: "grow" }, titleEl(job), subEl(albumLine(job))),
+      h("span", { class: "tag warn" }, icon(ICON_WARN), "等你确认")));
+    card.append(stagesEl(job));
+    card.append(...stripEl(job));
+    if (reasons.length) card.append(h("div", { class: "box warn" }, h("b", {}, "Sol 的说明"), h("ul", {}, reasons.map(r => h("li", {}, r)))));
+    card.append(h("div", { class: "rows" }, flagged.map(t => editRow(job, t, true))));
+    if (rest.length) {
+      const d = h("details", { open: !!u.openRest, ontoggle: e => { u.openRest = e.target.open; } },
+        h("summary", {}, "其余 " + rest.length + " 首没有疑问"),
+        h("div", { class: "rows" }, rest.map(t => editRow(job, t, false))));
+      card.append(d);
+    }
+    const src = safeHttp(job.url);
+    if (u.askDiscard) {
+      card.append(h("div", { class: "acts" },
+        h("span", { class: "q" }, "放弃这次导入？"),
+        h("button", { class: "btn sm", type: "button", disabled: u.busy, onclick: () => act(job, "discard") }, "放弃"),
+        h("button", { class: "btn sm ghost", type: "button", onclick: () => { u.askDiscard = false; rerender(job.id); } }, "继续编辑")));
+    } else {
+      card.append(h("div", { class: "acts" },
+        h("button", { class: "btn sm", type: "button", disabled: u.busy, onclick: () => {
+          const edits = Array.from(card.querySelectorAll(".row[data-index]")).map(r => ({
+            index: Number(r.dataset.index),
+            title: r.querySelector('[data-f="title"]').value.trim(),
+            artist: r.querySelector('[data-f="artist"]').value.trim() }));
+          const blank = edits.find(e => !e.title || !e.artist);
+          if (blank) { u.error = "第 " + blank.index + " 首的歌名和歌手不能为空。"; rerender(job.id); return; }
+          act(job, "confirm", { tracks: edits });
+        } }, "确认并导入"),
+        h("button", { class: "btn sm ghost", type: "button", onclick: () => { u.askDiscard = true; rerender(job.id); } }, "放弃"),
+        h("span", { class: "sp" }),
+        src ? lnk(src, "看原视频", false, "src") : null));
+    }
+    card.append(errLine(job) || "");
+    return card;
+  }
+
+  function failedCard(job) {
+    const err = job.error || {};
+    const stage = STAGE_NAMES[err.stage] || STAGE_NAMES.plan;
+    const u = uiOf(job.id);
+    return h("div", { class: "job" },
+      h("div", { class: "head" }, coverEl(job), h("div", { class: "grow" }, titleEl(job), subEl("在「" + stage + "」这一步停下")),
+        h("span", { class: "tag bad" }, "没有成功")),
+      h("div", { class: "box bad" }, err.message || job.message || "处理时出错了，可以再试一次。"),
+      h("div", { class: "acts" },
+        h("button", { class: "btn sm ghost", type: "button", disabled: u.busy, onclick: () => act(job, "retry") }, "再试一次"),
+        h("button", { class: "btn sm ghost", type: "button", disabled: u.busy, onclick: () => act(job, "delete") }, "移除")),
+      errLine(job));
+  }
+
+  function folderName(res) {
+    const f = (res && res.folder) || "";
+    const parts = f.split(/\s*\/\s*/).filter(Boolean);
+    return parts.slice(-2).join(" / ");
+  }
+
+  function duplicateCard(job) {
+    const res = job.result || {};
+    const u = uiOf(job.id);
+    const n = res.existing_files || 0;
+    const folder = folderName(res) || (job.album ? job.album.artist + " / " + job.album.title : "");
+    const text = "音乐库的「" + folder + "」文件夹里已经有" + (n ? " " + n + " 个文件" : "文件") + "。可以用这次的结果替换，或者保留原来的。";
+    return h("div", { class: "job" },
+      h("div", { class: "head" }, coverEl(job), h("div", { class: "grow" }, titleEl(job),
+        subEl([job.album && job.album.kind !== "single" ? job.album.artist : "", (job.tracks || []).length + " 首", "已切分完成"].filter(Boolean).join("，"))),
+        h("span", { class: "tag warn" }, "音乐库里已有")),
+      h("div", { class: "box warn" }, text),
+      h("div", { class: "acts" },
+        h("button", { class: "btn sm", type: "button", disabled: u.busy, onclick: () => act(job, "replace") }, "替换原有专辑"),
+        h("button", { class: "btn sm ghost", type: "button", disabled: u.busy, onclick: () => act(job, "keep") }, "保留原来的")),
+      errLine(job));
+  }
+
+  function doneTag(job) {
+    const res = job.result || {};
+    if (job.kept) return h("span", { class: "tag warn" }, "未导入，音乐库里已有");
+    if (!res.confirmed) return h("span", { class: "tag warn long" }, "已放入音乐库，Jellyfin 还没显示");
+    return h("span", { class: "tag good" }, icon(ICON_OK, "2"), "已导入");
+  }
+  function jellyfinLink(job) {
+    const res = job.result || {};
+    if (job.kept || !res.confirmed) return null;
+    const href = safeHttp(res.album_url);
+    return href ? lnk(href, "在 Jellyfin 打开", true) : null;
+  }
+
+  function doneCard(job) {
+    const u = uiOf(job.id);
+    const rv = job.review || {};
+    const edits = rv.edits || [];
+    const card = h("div", { class: "job" });
+    card.append(h("div", { class: "head" }, coverEl(job),
+      h("button", { class: "open", type: "button", "aria-expanded": "true", onclick: () => { expanded.delete(job.id); rerender(job.id); } },
+        titleEl(job), subEl(albumLine(job))),
+      doneTag(job)));
+    card.append(...stripEl(job));
+    card.append(h("div", { class: "acts" }, jellyfinLink(job), h("span", { class: "sp" }),
+      h("span", { class: "sub" }, "用时 " + mmss(job.run_seconds))));
+    if (job.review && !job.kept) {
+      if (!edits.length) card.append(h("p", { class: "rvline" }, "Sol 复核通过"));
+      else card.append(h("details", { open: !!u.openEdits, ontoggle: e => { u.openEdits = e.target.open; } },
+        h("summary", {}, "Sol 复核改了 " + edits.length + " 处"),
+        h("div", { class: "box plain", style: "margin-top:8px" },
+          // Sol's own explanation (Chinese) when it gave one; otherwise each edit's note.
+          (rv.reasons && rv.reasons.length ? rv.reasons : edits.map(e => e.reason || ("第 " + e.index + " 首已修改。")))
+            .map(t => h("p", {}, t)))));
+    }
+    const tracks = job.tracks || [];
+    if (tracks.length) {
+      card.append(h("details", { open: !!u.openTracks, ontoggle: e => { u.openTracks = e.target.open; } },
+        h("summary", {}, "查看 " + tracks.length + " 首曲目"),
+        h("div", { class: "rows" }, tracks.map(t => h("div", { class: "row" },
+          h("span", { class: "n" }, String(t.index)), h("span", { class: "ro" }, t.title),
+          h("span", { class: "ro ar" }, t.artist), h("span", { class: "d" }, mmss(t.duration)))))));
+    }
+    return card;
+  }
+
+  function pastRow(job) {
+    const res = job.result || {};
+    const single = hasAlbum(job) && job.album.kind === "single";
+    const sub = [hasAlbum(job) ? job.album.artist : "",
+                 hasAlbum(job) ? (single ? "单曲" : (job.tracks || []).length + " 首") : "",
+                 job.finished ? when(job.finished) : ""].filter(Boolean).join("，");
+    let right = jellyfinLink(job);
+    if (!right) right = doneTag(job);
+    return h("div", { class: "past" }, coverEl(job, true),
+      h("button", { class: "open", type: "button", "aria-expanded": "false", onclick: () => { expanded.add(job.id); render(); } },
+        h("div", { class: "t" }, hasAlbum(job) ? job.album.title : job.url), subEl(sub)),
+      right);
+  }
+
+  function cardFor(job) {
+    switch (job.status) {
+      case "queued": return queuedCard(job);
+      case "running": return runningCard(job);
+      case "needs_confirmation": return confirmCard(job);
+      case "failed": return failedCard(job);
+      case "duplicate": return duplicateCard(job);
+      default: return doneCard(job);
+    }
+  }
+
+  // ------------------------------------------------------------ render
+  function sig(job) {
+    const u = ui.get(job.id) || {};
+    return JSON.stringify([job.version, job.status, job.ahead, expanded.has(job.id), u.askDiscard, u.busy, u.error]);
+  }
+  function keyedCard(job, build) {
+    const s = sig(job) + (build === pastRow ? "p" : "c");
+    const c = cardCache.get(job.id + (build === pastRow ? ":p" : ""));
+    if (c && c.sig === s) return c.el;
+    // Do not rebuild a confirmation card while the owner is typing in it.
+    if (c && job.status === "needs_confirmation" && c.el.contains(document.activeElement) &&
+        document.activeElement.tagName === "INPUT" && c.status === job.status) return c.el;
+    const el = build(job);
+    el.dataset.id = job.id;
+    cardCache.set(job.id + (build === pastRow ? ":p" : ""), { sig: s, el, status: job.status });
+    return el;
+  }
+  function place(container, nodes) {
+    let i = 0;
+    for (const n of nodes) {
+      if (container.children[i] !== n) container.insertBefore(n, container.children[i] || null);
+      i++;
+    }
+    while (container.children.length > nodes.length) container.lastElementChild.remove();
+  }
+
+  function render() {
+    for (const j of jobs) {
+      if (j.status === "queued" || j.status === "running") seenActive.add(j.id);
+      else if (j.status === "done" && seenActive.has(j.id)) { seenActive.delete(j.id); expanded.add(j.id); }
+    }
+    const owner = jobs.filter(j => ["needs_confirmation", "duplicate", "failed"].includes(j.status));
+    const running = jobs.filter(j => j.status === "running");
+    const queued = jobs.filter(j => j.status === "queued").sort((a, b) => (a.ahead || 0) - (b.ahead || 0));
+    const done = jobs.filter(j => j.status === "done").sort((a, b) => (b.finished || 0) - (a.finished || 0)).slice(0, 20);
+
+    fill("g-owner", owner.map(j => keyedCard(j, cardFor)));
+    fill("g-active", running.concat(queued).map(j => keyedCard(j, cardFor)));
+    // Finished jobs: runs of compact rows share one list card; an expanded job is its own card.
+    const doneNodes = [];
+    let list = null;
+    const listCards = [];
+    for (const j of done) {
+      if (expanded.has(j.id)) { list = null; doneNodes.push(keyedCard(j, cardFor)); continue; }
+      if (!list) {
+        list = { rows: [] };
+        listCards.push(list);
+        doneNodes.push(list);
+      }
+      list.rows.push(keyedCard(j, pastRow));
+    }
+    const container = document.querySelector("#g-done .cards");
+    const reuse = Array.from(container.querySelectorAll(":scope > .job.list"));
+    const finalNodes = doneNodes.map(n => {
+      if (!(n instanceof Node)) {
+        const el = reuse.shift() || h("div", { class: "job list" });
+        place(el, n.rows);
+        return el;
+      }
+      return n;
+    });
+    place(container, finalNodes);
+    document.getElementById("g-done").hidden = done.length === 0;
+
+    document.getElementById("empty").hidden = jobs.length > 0;
+    const live = new Set(jobs.map(j => j.id));
+    for (const k of Array.from(cardCache.keys())) if (!live.has(k.split(":")[0])) cardCache.delete(k);
+    // Library link: the server of the latest confirmed album link.
+    const lib = document.getElementById("lib");
+    const withLink = done.find(j => j.result && j.result.confirmed && safeHttp(j.result.album_url));
+    if (withLink) {
+      const u = new URL(withLink.result.album_url);
+      lib.href = u.origin + u.pathname.replace(/[^/]*$/, "");
+      lib.hidden = false;
+    } else lib.hidden = true;
+    tick();
+  }
+  function fill(id, nodes) {
+    const sec = document.getElementById(id);
+    place(sec.querySelector(".cards"), nodes);
+    sec.hidden = nodes.length === 0;
+  }
+
+  function tick() {
+    for (const el of document.querySelectorAll(".tag.run[data-since]")) {
+      el.textContent = "处理中 " + mmss(now() - Number(el.dataset.since));
+    }
+  }
+  setInterval(tick, 1000);
+
+  function flash(id) {
+    const el = document.querySelector('#g-active .job[data-id="' + CSS.escape(id) + '"]');
+    if (!el) return;
+    el.classList.add("flash");
+    setTimeout(() => el.classList.remove("flash"), 600);
+  }
+
+  // ------------------------------------------------------------ submit
+  const form = document.getElementById("form"), input = document.getElementById("url"), urlErr = document.getElementById("urlerr");
+  function showErr(msg) { urlErr.textContent = msg || ""; urlErr.hidden = !msg; input.setAttribute("aria-invalid", msg ? "true" : "false"); }
+  input.addEventListener("input", () => { if (!urlErr.hidden) showErr(""); });
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const url = normalizeUrl(input.value);
+    if (!url) { showErr(BAD_URL); return; }
+    showErr("");
+    const key = (url.match(/BV[0-9A-Za-z]{10}/) || [url])[0];
+    const dup = jobs.find(j => (j.status === "queued" || j.status === "running") && ((j.url.match(/BV[0-9A-Za-z]{10}/) || [j.url])[0] === key));
+    if (dup) { input.value = ""; flash(dup.id); return; }
+    let r;
+    try { r = await api("POST", "/api/jobs", { url }); } catch (err) { showErr("连不上服务，请稍后再试。"); return; }
+    if (r.ok) { input.value = ""; seenActive.add(r.data.job.id); await refresh(); }
+    else if (r.status === 409 && r.data.existing_id) { input.value = ""; await refresh(); flash(r.data.existing_id); }
+    else showErr((r.data && r.data.error) || BAD_URL);
+  });
+
+  if (window.matchMedia("(min-width: 520px)").matches) input.focus();
+  refresh();
+})();
+</script>
+</body>
+</html>
