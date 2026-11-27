@@ -1,0 +1,14 @@
+# systemd user timer for bili-album-update.service.
+# Uses conditional HTTP requests (If-None-Match / ETag), so idle checks consume no GitHub API quota.
+
+[Unit]
+Description=Check for new bili-album GitHub releases every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+AccuracySec=15s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

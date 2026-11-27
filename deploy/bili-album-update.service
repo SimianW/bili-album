@@ -1,0 +1,22 @@
+# systemd user service that updates the live bili-album checkout to the latest GitHub release.
+#
+# Install by hand when the owner asks:
+#   mkdir -p ~/.local/bin ~/.config/systemd/user
+#   cp deploy/bili-album-update.py ~/.local/bin/bili-album-update
+#   chmod +x ~/.local/bin/bili-album-update
+#   cp deploy/bili-album-update.service deploy/bili-album-update.timer ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now bili-album-update.timer
+#
+# Adjust --live-dir and --data-dir if bili-album-web.service uses different paths.
+
+[Unit]
+Description=Update bili-album live checkout to the latest GitHub release
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 %h/.local/bin/bili-album-update --live-dir %h/Dev/bili-album-live --data-dir %h/Dev/bili-album/.work/web --service bili-album-web.service
+Environment=PYTHONUNBUFFERED=1
+NoNewPrivileges=yes
