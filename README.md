@@ -52,18 +52,30 @@ answers nonsense, the plan stays as it was with `review.error` set. Derivative v
 through a hidden temporary folder renamed into place, never overwrites without `--replace`, then asks Jellyfin to
 scan and waits until the album is listed with all tracks; it prints the Jellyfin item id and the album's web link.
 
-**The tool writes Jellyfin metadata, for its own imports only.** Chinese is always Simplified. Jellyfin's
-MusicBrainz fetcher can add a Traditional-script duplicate during the scan (周杰倫 next to 周杰伦). After an import
-the tool compares Jellyfin's album name, album artists, track names and track artists with the tags it wrote; where
-Jellyfin shows the same text in Traditional script (OpenCC `t2s` of Jellyfin's value equals the tag) or adds a
-Traditional duplicate of a tagged artist, it updates that item through the API (`POST /Items/{id}`) to the tagged
-value and sets `LockData` on it (Jellyfin passes the lock on to the album's tracks). Other scripts and other names
-are never touched. Jellyfin 12.2 has no lockable artist field, and without the lock a metadata refresh with "replace
-all" brought the Traditional artist back. The correction is checked again after a full library scan; the scan also
-drops the Traditional artist entry once nothing points at it. Results are in the import result (`normalized`,
-`normalize_locked`, `normalize_verified`, `leftover_artists`, `warnings`); a failed correction is a warning, the import
-still counts. Because of the lock, Jellyfin no longer refreshes those items from the internet; to change one later,
-untick "Lock this item" in Jellyfin's metadata editor.
+**The tool writes Jellyfin metadata, for its own albums only.** Chinese is always Simplified. Jellyfin's
+MusicBrainz fetcher adds a Traditional-script duplicate about 10 s after a new album is listed (周杰倫 next to
+周杰伦). For an album whose tags contain Chinese (Han characters, no kana) the import therefore locks the album item
+(`LockData` through `POST /Items/{id}`; Jellyfin passes the lock on to the tracks) as soon as Jellyfin lists it, keeps
+comparing for 45 s, then runs a full library scan and compares once more. Wherever Jellyfin shows a tagged value in
+Traditional script (OpenCC `t2s` of Jellyfin's value equals the tag), or adds a Traditional duplicate of a tagged
+artist, the item is set back to the tagged value. Other scripts and other names are never touched; albums without
+Chinese tags are left alone. Jellyfin 12.2 has no lockable artist field, and without the lock a "replace all
+metadata" refresh brought the Traditional artist back. The scan drops the Traditional artist entry once nothing
+points at it. Results are in the import result (`normalized`, `normalize_locked`, `normalize_verified`,
+`leftover_artists`, `warnings`); a failed correction is a warning, the import still counts.
+
+What the lock costs: Jellyfin skips its internet metadata providers for the locked album and its tracks, so they get
+no MusicBrainz ids or links and no online album overview, genres or ratings; online artwork is probably not
+fetched either (not verified; the tool's `cover.jpg` and embedded cover still show). The artist pages (biography, photo) are separate items and are not
+locked. To let Jellyfin enrich an album again, untick "Lock this item" in its metadata editor (the Traditional name
+may then come back).
+
+`bili-album fix-library [ALBUM_DIR ...] [--all] [--dry-run]` repairs albums already in the library: the folders given
+(relative to the library or absolute), or with `--all` every album whose files carry the tool's Bilibili source
+comment (albums added by hand are never selected). It moves a folder whose tags no longer match it to
+`<Album Artist>/<Album>/` (never onto a non-empty folder; an emptied artist folder is removed; the old Jellyfin record
+is deleted once its path is gone, so no orphan stays), then locks and corrects as above. `--dry-run` lists the moves
+and corrections.
 
 Deleting an album folder by hand leaves its record behind in Jellyfin 12.2 (an orphan album that also keeps its
 artist entry alive; seen with and without the lock). Delete albums from Jellyfin's own UI, or with
@@ -115,14 +127,19 @@ Scoring (`eval/scoring.py`, tested in `tests/test_eval_scoring.py`) compares kin
 `uv run bili-album serve` serves a one-page front end on `http://127.0.0.1:5191/`: paste a Bilibili link (`bilibili.com/video/BV…`, `b23.tv/…` or a bare `BV…` id) and the job is planned, reviewed by the model, cut and imported into Jellyfin. It stops for the owner only when the review is still unsure (edit titles / artists, then 确认并导入 or 放弃) or when the library already has the album (替换原有专辑 / 保留原来的). One job runs at a time; the rest queue.
 
 ```sh
-uv run bili-album serve [--host 127.0.0.1] [--port 5191] [--data-dir DIR]   # real pipeline
-uv run bili-album serve --fake                                                # scripted jobs, no network, no import
+uv run bili-album serve [--host ADDR ...] [--port 5191] [--data-dir DIR] [--auth jellyfin|none]   # real pipeline
+uv run bili-album serve --fake                    # scripted jobs, no network, no import; sign in with any name + "demo"
 ```
+
+- **Sign-in:** with a Jellyfin URL configured, the page asks for a Jellyfin user name and password (`--auth none` turns this off; without a Jellyfin URL the server refuses to start unless `--auth none` is given). The password is checked once against Jellyfin (`/Users/AuthenticateByName`; the Jellyfin session this creates is ended at once) and never stored. The page's own session is a random cookie (`HttpOnly`, `SameSite=Lax`, `Secure` behind HTTPS), kept on the server only as a SHA-256 hash in `<data-dir>/sessions.json`; it lasts 30 days from last use, and the account is re-checked against Jellyfin at most hourly (deleted or disabled: signed out). Everyone who can sign in has the same rights. Five failed sign-ins in five minutes for one user name or one client address block it for five minutes. Every job records who submitted it and who confirmed, replaced, kept or retried it; deleted jobs leave a line in `<data-dir>/audit.log`. At most 20 jobs wait in the queue.
+- **Clean-up:** when a job is imported (or ended with 「保留原来的」) its big files are deleted (`work/source.m4a`, `work/part*.m4a`, `work/features.npz`, `work/out/`, `work/cache/`); the record, plans and cover stay. Finished jobs already on disk are cleaned on start. Failed and held jobs keep their files for 「再试一次」 / 「确认并导入」 / 「替换原有专辑」.
+- **Listening:** `--host` may be repeated; every address gets a socket on the same port, served by one process. `0.0.0.0` and `::` are refused; an address that cannot be bound fails the start. The unit in `deploy/` listens on `127.0.0.1`, `::1` and the Tailscale address.
+- **Behind a reverse proxy:** point it at `http://localhost:5191` (or `127.0.0.1` / `[::1]`) and pass `Host` unchanged, `X-Forwarded-For` (the client) and `X-Forwarded-Proto` (`https`). Requests from loopback, from the server's own addresses and from `BILI_ALBUM_TRUSTED_PROXIES` (optional, addresses or networks, in the env file) are trusted: the attempt limiter then uses the right-most untrusted `X-Forwarded-For` entry and the cookie gets `Secure` on `https`. Other peers' forwarding headers are ignored.
 
 - Jobs live in `.work/web/<job-id>/` (`job.json` plus the pipeline's `work/` directory). Finished and held jobs survive a restart; a job that was running becomes failed and can be retried with the same work directory.
 - Standard library only (`http.server`); the page is `src/bili_album/web/static/index.html` (inline CSS and JS, no external requests).
-- `--host` must be a specific address; `0.0.0.0` is refused. `deploy/bili-album-web.service` is a systemd user unit that binds to the Tailscale address (install steps in the file).
+- `deploy/bili-album-web.service` is a systemd user unit (install steps in the file).
 - `--fake` runs the real pipeline (`bili_album.pipeline`) with scripted stages: the plan, review, cut files and import result are made up in the shapes the real stages write, chosen by BV id: `BV14PVVzNE2R` clean album, `BV1sT421k7Ps` album with one Sol edit, `BV1Hx4y1z7Qm` derivative single held for confirmation, `BV1Wb411m7Eq` album with one flagged track, `BV1Kq4y1M7Vd` held album whose confirm is refused (hard problem in the plan), `BV1GJ411x7h7` failure in the plan stage, `BV1zt411p7Cn` already in the library, `BV1Ns411D7pE` import Jellyfin did not confirm (any other id behaves like the first). Nothing is downloaded, cut or imported. `--fake-speed N` runs N times faster; `--fake-hold review=600` parks a job in that stage for screenshots.
 - The 「打开音乐库」 link is `BILI_ALBUM_JELLYFIN_PUBLIC_URL`, sent to the page as `library_url`; it is the only configuration value the browser receives. Every other configured value (keys, model address and name, internal Jellyfin address, library paths) is scrubbed from everything the page is sent.
 
-API (JSON; mutating requests need `Content-Type: application/json` and a same-origin or absent `Origin`): `GET /api/jobs` (`{now, jobs, library_url?}`), `POST /api/jobs {url}`, `POST /api/jobs/<id>/confirm {tracks:[{index,title,artist}]}`, `POST /api/jobs/<id>/{discard,retry,replace,keep}`, `DELETE /api/jobs/<id>` (queued or failed), `GET /api/jobs/<id>/cover`.
+API (JSON; mutating requests need `Content-Type: application/json` and a same-origin or absent `Origin`; with sign-in on, every `/api/*` route except `POST /api/login` answers 401 without a session): `POST /api/login {username, password}`, `POST /api/logout`, `GET /api/jobs` (`{now, jobs, me, auth, library_url?}`), `POST /api/jobs {url}`, `POST /api/jobs/<id>/confirm {tracks:[{index,title,artist}]}`, `POST /api/jobs/<id>/{discard,retry,replace,keep}`, `DELETE /api/jobs/<id>` (queued or failed), `GET /api/jobs/<id>/cover`.

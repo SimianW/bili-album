@@ -80,8 +80,11 @@ After edits run `apply` on the edited plan. `apply` validates first (increasing 
 - `review.py`: the model only proposes; every edit must be confirmed by data (`Editor.op_*`). Keep it that way when
   adding edit kinds. Offline tests use a local fake endpoint (`tests/test_review.py`); never record real replies.
 - `library.py` writes into the live Jellyfin library and, after an import, writes item metadata with the API key
-  (Traditional -> Simplified corrections plus `LockData`, for the album just imported and its tracks only; see
-  README). Never extend that to other items. Test with a temporary `library_dir` and a fake Jellyfin.
+  (`LockData` first for albums with Chinese tags, then Traditional -> Simplified corrections, for the album just
+  imported and its tracks only; see README). `fix-library` does the same, and moves folders to match their tags, for
+  the tool's own albums (Bilibili source comment) or folders the owner names. Never extend that to other items.
+  Test with a temporary `library_dir` and a fake Jellyfin; live experiments go under `zz-bili-album-test/` with
+  `import_album(..., dest_dir=...)` and are removed with `remove_album(..., jellyfin=, config=)`.
 - Never call `GET /Artists/{name}` to check for an artist: Jellyfin creates the artist when it does not exist. Look
   items up by id (`GET /Items/{id}?userId=<admin>`).
 - To remove an imported album use `remove_album(..., jellyfin=, config=)` (deletes the Jellyfin record too); a bare
@@ -92,7 +95,9 @@ After edits run `apply` on the edited plan. `apply` validates first (increasing 
 ## Web page (`src/bili_album/web/`)
 
 - `uv run bili-album serve --fake --port <free port>` for any UI work: scripted jobs, no network, nothing imported. The real mode (no `--fake`) imports into the owner's Jellyfin library; do not start it for testing.
-- Bind to `127.0.0.1` in development; never `0.0.0.0` (the CLI refuses it). Stop the server when done.
+- Bind to `127.0.0.1` in development; never `0.0.0.0` (the CLI refuses it). Stop the server when done. Never point a test server at the live data directory `.work/web/`: on start it cleans finished jobs there and recovers interrupted ones.
+- Sign-in: `--fake` accepts any user name with the password `demo`. Real sign-in (`auth.py`) talks to Jellyfin's `/Users/AuthenticateByName` and `/Sessions/Logout`; tests use the fake Jellyfin in `tests/test_web_auth.py`. Never log or store a password, a Jellyfin token or a session token (sessions keep only a SHA-256).
+- The web package does not import `library.py`; `serve`'s arguments live in `web/cli.py`.
 - `runner.py` is the only code that knows `bili_album.pipeline`'s names (`PipelineRunner`, `map_event`, `map_result`, `read_plan`); change the mapping there when the pipeline API changes. `fake.py` runs the real pipeline with scripted `Steps`; `tests/test_web_fixtures.py` checks its plans against real reviewed plans in `tests/fixtures/web/` (refresh those from a live run when the plan or review format changes; strip config values and home paths first).
 - Every string sent to the browser is scrubbed of config values (only the public Jellyfin address goes out, as `library_url`) and inserted with `textContent`, never as HTML. No CDN, fonts or other external requests in `static/index.html`.
-- Tests: `uv run pytest -q tests/test_web_*.py`. The approved design is `mockups/web-import.html`.
+- Tests: `uv run pytest -q tests/test_web_*.py`. The approved designs are `mockups/web-import.html` and `mockups/web-login.html`.
