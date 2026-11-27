@@ -66,6 +66,7 @@ uv run bili-album serve                # http://127.0.0.1:5191/
 uv run bili-album serve --fake         # demo mode, no network/import (login: any username + "demo")
 ```
 
+- **Boundary refinement:** The 切点精修 panel under the link box turns millisecond refinement off or sets its search window, the two silence thresholds and the pre-roll for the links submitted next (sent as `options` with `POST /api/jobs`, checked against `web/runner.REFINE_LIMITS`).
 - **Auth:** Uses Jellyfin accounts by default when `BILI_ALBUM_JELLYFIN_URL` is configured (`--auth none` to disable). Passwords are verified once against Jellyfin and never stored.
 - **Networking:** Pass `--host` multiple times to bind specific addresses (`0.0.0.0` and `::` are refused). Behind a reverse proxy, forward `Host`, `X-Forwarded-For`, and `X-Forwarded-Proto` (configure `BILI_ALBUM_TRUSTED_PROXIES` if the proxy is not on loopback).
 - **Deployment:** See [`deploy/bili-album-web.service`](deploy/bili-album-web.service) for a systemd user unit.

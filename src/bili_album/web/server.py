@@ -9,8 +9,9 @@ Routes (everything else is 404):
 - ``POST /api/logout`` ``{}`` -> ends the session;
 - ``GET /api/jobs`` -> ``{"now", "jobs": [...], "me", "auth", "library_url"}`` (``library_url`` only when
   the public Jellyfin address is configured);
-- ``POST /api/jobs`` ``{"url"}`` -> 201 ``{"job"}`` (409 + ``existing_id`` if the video is already queued,
-  429 when 20 jobs are queued);
+- ``POST /api/jobs`` ``{"url", "options"?}`` -> 201 ``{"job"}`` (409 + ``existing_id`` if the video is already
+  queued, 429 when 20 jobs are queued, 400 for options outside ``runner.REFINE_LIMITS``); ``options`` may hold
+  ``refine`` (bool) and ``search_ms``, ``silence_db``, ``deep_silence_db``, ``pre_roll_ms``;
 - ``GET /api/jobs/<id>``, ``GET /api/jobs/<id>/cover``;
 - ``POST /api/jobs/<id>/confirm`` ``{"tracks": [{"index", "title", "artist"}]}``;
 - ``POST /api/jobs/<id>/{discard,retry,replace,keep}`` ``{}``;
@@ -313,7 +314,7 @@ class Handler(BaseHTTPRequestHandler):
                 except UrlError as e:
                     self._error(400, str(e))
                     return
-                self._json(201, {"job": self.manager.submit(url, by=by)})
+                self._json(201, {"job": self.manager.submit(url, by=by, options=body.get("options"))})
                 return
             m = JOB_PATH.match(path)
             jid, action = m.group(1), m.group(2)

@@ -144,6 +144,15 @@ html, body { margin: 0; background: var(--bg); }
 .bp details { margin-top: 12px; font-size: 13px; }
 .bp summary { cursor: pointer; color: var(--ink2); }
 .bp .rvline { margin: 12px 0 0; font-size: 13px; color: var(--ink2); }
+.bp .opts { margin: 10px 2px 0; }
+.bp .opts .grid { display: grid; grid-template-columns: 1fr 110px; gap: 8px 12px; align-items: center; margin-top: 10px; max-width: 360px; }
+.bp .opts .grid label { color: var(--ink); }
+.bp .opts .grid .chk { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; }
+.bp .opts input[type=number] { width: 100%; height: 34px; padding: 0 9px; font: inherit; font-size: 13.5px; color: var(--ink); background: var(--surface); border: 1.5px solid var(--line); border-radius: 8px; }
+.bp .opts input[type=number]:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+.bp .opts input:disabled { opacity: .5; }
+.bp .opts .fine { margin: 8px 0 0; color: var(--ink2); font-size: 12.5px; }
+.bp .opts button { background: none; border: 0; padding: 0; font: inherit; font-size: 12.5px; color: var(--ink2); border-bottom: 1px solid var(--line); cursor: pointer; }
 .bp .past { display: flex; gap: 12px; align-items: center; padding: 10px 2px; border-bottom: 1px solid var(--line); }
 .bp .past:last-child { border-bottom: 0; }
 .bp .past .t { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
@@ -178,6 +187,17 @@ html, body { margin: 0; background: var(--bg); }
   </form>
   <p class="err" id="urlerr" role="alert" hidden></p>
   <p class="hint">单曲、整张专辑合在一个视频里、分 P 专辑都可以。</p>
+  <details class="opts" id="opts">
+    <summary>切点精修</summary>
+    <div class="grid">
+      <label class="chk"><input type="checkbox" id="o-refine" checked> 按毫秒精修歌曲之间的切点</label>
+      <label for="o-search">搜索范围（± 毫秒）</label><input id="o-search" type="number" min="200" max="5000" step="100" value="1500">
+      <label for="o-sil">第一轮静音阈值（dB）</label><input id="o-sil" type="number" min="-80" max="0" step="1" value="-42">
+      <label for="o-deep">第二轮静音阈值（dB）</label><input id="o-deep" type="number" min="-90" max="0" step="1" value="-65">
+      <label for="o-pre">切点前留白（毫秒）</label><input id="o-pre" type="number" min="0" max="500" step="10" value="50">
+    </div>
+    <p class="fine">对之后提交的链接生效。默认值适合大多数专辑。 <button type="button" id="o-reset">恢复默认</button></p>
+  </details>
   <p class="empty" id="empty" hidden>还没有导入过。粘贴一个链接开始。</p>
   <section id="g-owner" hidden><h2>等你确认</h2><div class="cards"></div></section>
   <section id="g-active" hidden><h2>正在处理</h2><div class="cards"></div></section>
@@ -738,6 +758,37 @@ html, body { margin: 0; background: var(--bg); }
     setTimeout(() => el.classList.remove("flash"), 600);
   }
 
+  // ------------------------------------------------------------ refinement options
+  // Sent with a new link only when they differ from the defaults (refine.refine_starts).
+  const OPT_FIELDS = [
+    ["o-search", "search_ms", 1500, 200, 5000, "搜索范围"],
+    ["o-sil", "silence_db", -42, -80, 0, "第一轮静音阈值"],
+    ["o-deep", "deep_silence_db", -65, -90, 0, "第二轮静音阈值"],
+    ["o-pre", "pre_roll_ms", 50, 0, 500, "切点前留白"],
+  ];
+  const optRefine = document.getElementById("o-refine");
+  function syncOpts() { for (const f of OPT_FIELDS) document.getElementById(f[0]).disabled = !optRefine.checked; }
+  optRefine.addEventListener("change", syncOpts);
+  document.getElementById("o-reset").addEventListener("click", () => {
+    optRefine.checked = true;
+    for (const f of OPT_FIELDS) document.getElementById(f[0]).value = f[2];
+    syncOpts();
+  });
+  // -> null (all defaults), an options object, or a message saying which value is wrong.
+  function refineOptions() {
+    if (!optRefine.checked) return { refine: false };
+    const out = {};
+    for (const [id, name, def, lo, hi, zh] of OPT_FIELDS) {
+      const raw = document.getElementById(id).value.trim();
+      const v = Number(raw);
+      if (raw === "" || !Number.isFinite(v) || !Number.isInteger(v)) return "「" + zh + "」要填整数。";
+      if (v < lo || v > hi) return "「" + zh + "」要在 " + lo + " 到 " + hi + " 之间。";
+      if (v !== def) out[name] = v;
+    }
+    if ((out.deep_silence_db ?? -65) > (out.silence_db ?? -42)) return "第二轮静音阈值不能高于第一轮。";
+    return Object.keys(out).length ? out : null;
+  }
+
   // ------------------------------------------------------------ submit
   const form = document.getElementById("form"), input = document.getElementById("url"), urlErr = document.getElementById("urlerr");
   function showErr(msg) { urlErr.textContent = msg || ""; urlErr.hidden = !msg; input.setAttribute("aria-invalid", msg ? "true" : "false"); }
@@ -750,8 +801,10 @@ html, body { margin: 0; background: var(--bg); }
     const key = (url.match(/BV[0-9A-Za-z]{10}/) || [url])[0];
     const dup = jobs.find(j => (j.status === "queued" || j.status === "running") && ((j.url.match(/BV[0-9A-Za-z]{10}/) || [j.url])[0] === key));
     if (dup) { input.value = ""; flash(dup.id); return; }
+    const options = refineOptions();
+    if (typeof options === "string") { showErr(options); return; }
     let r;
-    try { r = await api("POST", "/api/jobs", { url }); } catch (err) { showErr("连不上服务，请稍后再试。"); return; }
+    try { r = await api("POST", "/api/jobs", options ? { url, options } : { url }); } catch (err) { showErr("连不上服务，请稍后再试。"); return; }
     if (r.ok) { input.value = ""; seenActive.add(r.data.job.id); await refresh(); }
     else if (r.status === 409 && r.data.existing_id) { input.value = ""; await refresh(); flash(r.data.existing_id); }
     else if (r.status === 401) showLogin();
