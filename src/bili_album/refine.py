@@ -74,6 +74,7 @@ class Window:
     upper_ms: int
     clip_start_ms: int
     clip_end_ms: int
+    cap_ms: int | None = None   # the caller's upper bound: the cut, not the edge it is found from, stays at or before it
     pcm: bytearray = field(default_factory=bytearray)
 
 
@@ -97,9 +98,10 @@ def refine_starts(audio: Path | str, guesses: list[float], *, channels: int = 2,
     """Refine increasing start guesses (seconds) on ``audio``; return ``[(start_s, method)]``.
 
     Each window is ``guess ± search_ms``, kept between the midpoints to the neighbouring guesses
-    and inside the caller's ``bounds[i] = (lo_s, hi_s)`` (either may be None). ``channels`` is the
-    channel count of the first audio stream (the decoder keeps it). A guess whose window is empty
-    comes back unchanged as ``fallback``."""
+    and above the caller's ``bounds[i] = (lo_s, hi_s)`` lower bound; ``hi_s`` caps the returned
+    cut (a quiet run whose onset lies past it still counts when its backtracked cut does not).
+    Either may be None. ``channels`` is the channel count of the first audio stream (the decoder
+    keeps it). A guess whose window is empty comes back unchanged as ``fallback``."""
     p = RefineParams(search_ms, silence_db, deep_silence_db, min_silence_ms, recovery_ms, tie_ms,
                      floor_percentile, floor_margin_db, pre_roll_ms, spectral_context_ms, spectral_min_score,
                      spectral_min_margin, spectral_rival_ms, spectral_tie_score, hop_ms, frame_ms)
@@ -119,10 +121,9 @@ def refine_starts(audio: Path | str, guesses: list[float], *, channels: int = 2,
             hi = min(hi, (g + ms[i + 1]) // 2)
         if bounds and bounds[i][0] is not None:
             lo = max(lo, math.ceil(bounds[i][0] * 1000))
-        if bounds and bounds[i][1] is not None:
-            hi = min(hi, math.floor(bounds[i][1] * 1000))
+        cap = math.floor(bounds[i][1] * 1000) if bounds and bounds[i][1] is not None else None
         lo = max(lo, 0)
-        windows.append(Window(i, g, lo, hi, max(0, lo - context), hi + context))
+        windows.append(Window(i, g, lo, hi, max(0, lo - context), hi + context, cap))
     out: list[tuple[float, str] | None] = [None] * len(ms)
     for w, start, method in _decode_and_refine(Path(audio), windows, channels, p):
         out[w.index] = (start / 1000.0, method)
@@ -146,7 +147,7 @@ def _decode_and_refine(audio: Path, windows: list[Window], channels: int, p: Ref
         return w
 
     def finish(w: Window):
-        if w.lower_ms > w.upper_ms:
+        if w.lower_ms > (w.upper_ms if w.cap_ms is None else min(w.upper_ms, w.cap_ms)):
             return w, w.guess_ms, "fallback"
         start, method = refine_start(take(w), channels, p)
         w.pcm = bytearray()
@@ -174,16 +175,18 @@ def _decode_and_refine(audio: Path, windows: list[Window], channels: int, p: Ref
         yield finish(w)
 
 
-def silence_gap(db, times, eligible, threshold: float, p: RefineParams, guess: int) -> Gap | None:
-    """The unambiguous quiet run whose onset (end) lies in the window, nearest to the guess."""
+def silence_gap(db, times, eligible, threshold: float, p: RefineParams, guess: int, allowed=None) -> Gap | None:
+    """The unambiguous quiet run whose onset (end) lies in the window, nearest to the guess, among
+    the runs ``allowed(gap)`` accepts (all when None)."""
     changes = np.flatnonzero(np.diff(db < threshold, prepend=False, append=False))
     found = []
     recovery = p.hops(p.recovery_ms)
     for first, end in zip(changes[::2], changes[1::2]):
         if (end - first) * p.hop_ms < p.min_silence_ms or end + recovery > len(db):
             continue
-        if eligible[end] and np.all(db[end:end + recovery] >= threshold):
-            found.append(Gap(int(first), int(end)))
+        gap = Gap(int(first), int(end))
+        if eligible[end] and np.all(db[end:end + recovery] >= threshold) and (allowed is None or allowed(gap)):
+            found.append(gap)
     found.sort(key=lambda gap: abs(times[gap.end] - guess))
     if len(found) > 1:
         nearest, runner_up = (abs(times[gap.end] - guess) for gap in found[:2])
@@ -258,13 +261,17 @@ def refine_start(w: Window, channels: int, p: RefineParams) -> tuple[int, str]:
     frames = np.lib.stride_tricks.sliding_window_view(samples, frame_length, axis=0)[::p.hop_ms * SAMPLES_PER_MS]
     times = w.clip_start_ms + p.frame_ms // 2 + p.hop_ms * np.arange(len(frames))
     eligible = (times >= w.lower_ms) & (times <= w.upper_ms)
+    # The caller's cap limits the cut: a quiet run counts when its backtracked cut is at or before it,
+    # even if its onset is later; a spectral cut is the point itself, so it must lie at or before it.
+    cap = w.upper_ms if w.cap_ms is None else min(w.upper_ms, w.cap_ms)
     rms_power = np.einsum("ijk,ijk->i", frames, frames) / (frame_length * channels)
     db = 10 * np.log10(np.maximum(rms_power, np.finfo(np.float32).tiny))
     for threshold in dict.fromkeys((p.silence_db, p.deep_silence_db)):
-        gap = silence_gap(db, times, eligible, threshold, p, w.guess_ms)
+        gap = silence_gap(db, times, eligible, threshold, p, w.guess_ms,
+                          lambda g: backtrack(g, db, times, w.lower_ms, p) <= cap)
         if gap is not None:
             return backtrack(gap, db, times, w.lower_ms, p), "silence"
-    boundary = spectral_boundary(frames, db, times, eligible, w.guess_ms, p)
+    boundary = spectral_boundary(frames, db, times, eligible & (times <= cap), w.guess_ms, p)
     if boundary is not None:
         return boundary, "spectral"
     return w.guess_ms, "fallback"

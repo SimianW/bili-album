@@ -2,12 +2,14 @@
 and how the planner applies it."""
 
 import shutil
+import wave
 import subprocess
 from pathlib import Path
 
+import numpy as np
 import pytest
 
-from bili_album import plan as plan_mod
+from bili_album import cuts as cuts_mod
 from bili_album.plan import Planner, PlanOptions, Seg
 from bili_album.recognize import Recognition
 from bili_album.refine import RefineParams, refine_starts
@@ -119,15 +121,15 @@ def fake_refine(results, calls):
 
 def test_planner_refines_only_shared_boundaries(tmp_path, monkeypatch):
     calls = []
-    monkeypatch.setattr(plan_mod, "refine_starts", fake_refine([(99.95, "silence"), (300.0, "fallback")], calls))
-    monkeypatch.setattr(plan_mod, "audio_info", lambda a: {"channels": 2})
+    monkeypatch.setattr(cuts_mod, "refine_starts", fake_refine([(99.95, "silence"), (300.0, "fallback")], calls))
+    monkeypatch.setattr(cuts_mod, "audio_info", lambda a: {"channels": 2})
     p = planner(tmp_path, refine_options={"search_ms": 800})
     s = segs4()
     p._refine_cuts(Path("x.m4a"), s)
     guesses, kw = calls[0]
     assert guesses == [100.0, 300.0]               # track 1 and the start after a gap (205 s) are left alone
     assert kw["search_ms"] == 800 and kw["channels"] == 2
-    assert kw["bounds"] == [(1.0, None), (206.0, None)]
+    assert kw["bounds"] == [(1.0, 199.0), (206.0, 399.0)]     # 1 s kept on both sides of each cut
     assert s[1].start == 99.95 and s[0].end == 99.95
     assert s[3].start == 300.0 and s[2].end == 300.0
     assert any(e["kind"] == "refine" and "-50 ms" in e["detail"] for e in s[1].evidence)
@@ -137,8 +139,8 @@ def test_planner_refines_only_shared_boundaries(tmp_path, monkeypatch):
 
 def test_recognised_start_caps_the_window(tmp_path, monkeypatch):
     calls = []
-    monkeypatch.setattr(plan_mod, "refine_starts", fake_refine([(99.0, "silence")], calls))
-    monkeypatch.setattr(plan_mod, "audio_info", lambda a: {"channels": 2})
+    monkeypatch.setattr(cuts_mod, "refine_starts", fake_refine([(99.0, "silence")], calls))
+    monkeypatch.setattr(cuts_mod, "audio_info", lambda a: {"channels": 2})
     s = [Seg(0.0, 100.0, "a"), Seg(100.0, 200.0, "b")]
     s[1].pinned = True
     s[1].recog = Recognition(clip_start=110.0, clip_len=12.0, title="b", artist="x", offset=9.8)  # starts at 100.2
@@ -148,7 +150,7 @@ def test_recognised_start_caps_the_window(tmp_path, monkeypatch):
 
 
 def test_refinement_off_or_failing_changes_nothing(tmp_path, monkeypatch):
-    monkeypatch.setattr(plan_mod, "audio_info", lambda a: {"channels": 2})
+    monkeypatch.setattr(cuts_mod, "audio_info", lambda a: {"channels": 2})
     s = segs4()
     p = planner(tmp_path, refine=False)
     p._refine_cuts(Path("x.m4a"), s)
@@ -156,7 +158,99 @@ def test_refinement_off_or_failing_changes_nothing(tmp_path, monkeypatch):
 
     def boom(*a, **k):
         raise ValueError("ffmpeg: broken")
-    monkeypatch.setattr(plan_mod, "refine_starts", boom)
+    monkeypatch.setattr(cuts_mod, "refine_starts", boom)
     p = planner(tmp_path)
     p._refine_cuts(Path("x.m4a"), s)
     assert [x.start for x in s] == [0.0, 100.0, 205.0, 300.0] and "failed" in p.refine_info["reason"]
+
+
+def test_unknown_refine_option_keeps_the_boundaries(tmp_path, monkeypatch):
+    monkeypatch.setattr(cuts_mod, "audio_info", lambda a: {"channels": 2})
+    s = segs4()
+    p = planner(tmp_path, refine_options={"no_such_option": 1})
+    p._refine_cuts(Path("x.m4a"), s)
+    assert [x.start for x in s] == [0.0, 100.0, 205.0, 300.0] and "failed" in p.refine_info["reason"]
+
+
+@needs_ffmpeg
+def test_a_short_track_keeps_its_start_before_its_end(tmp_path):
+    # Review finding: B (10-11 s) is followed by unexported material, so its end is not a refined
+    # boundary; the tone change at 11.3 s used to pull B's start past its end.
+    audio = make_audio(tmp_path / "change.m4a",
+                       "sine=f=440:d=11.3[a];sine=f=520:d=20[b];[a][b]concat=n=2:v=0:a=1", 31.3)
+    s = [Seg(0.0, 10.0, "a"), Seg(10.0, 11.0, "b"), Seg(20.0, 30.0, "c")]
+    cuts_mod.refine_cuts(audio, s)
+    assert s[1].start <= s[1].end - 1.0 and s[0].end == s[1].start
+
+
+def write_wav(path: Path, samples) -> Path:
+    with wave.open(str(path), "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(16000)
+        w.writeframes((np.clip(samples, -1, 1) * 32767).astype("<i2").tobytes())
+    return path
+
+
+@needs_ffmpeg
+def test_cap_limits_the_cut_not_the_edge_it_comes_from(tmp_path):
+    # Review finding: a 2 s fade-in from 14.000 s over a -60 dB floor; recognition caps the cut at 14.04 s.
+    # The quiet run's onset (the fade crosses -42 dB at about 14.075 s) lies past the cap, but its backtracked cut
+    # does not, so the cut must still go before the intro instead of to a later spectral point.
+    rng = np.random.default_rng(1)
+    t = np.arange(18 * 16000) / 16000
+    x = rng.normal(0, 0.001, t.size)
+    x[t < 10] += 0.3 * np.sin(2 * np.pi * 440 * t[t < 10])
+    fade = t >= 14
+    x[fade] += np.minimum(1.0, (t[fade] - 14) / 2) * 0.3 * np.sin(2 * np.pi * 660 * t[fade])
+    audio = write_wav(tmp_path / "fade.wav", x)
+    [(start, method)] = refine_starts(audio, [14.04], channels=1, bounds=[(None, 14.04)])
+    assert method == "silence" and start <= 14.0
+
+
+def test_moved_cuts_redo_the_catalog_length_check(tmp_path, monkeypatch):
+    # Review finding: a length checked before refinement kept its old verdict and confidence.
+    from bili_album.catalog import CatTrack
+    monkeypatch.setattr(cuts_mod, "refine_starts", fake_refine([(101.5, "silence")], []))
+    monkeypatch.setattr(cuts_mod, "audio_info", lambda a: {"channels": 2})
+    p = planner(tmp_path)
+    s = [Seg(0.0, 100.0, "a"), Seg(100.0, 200.0, "b")]
+    s[0].cat = CatTrack(title="a", artist="x", duration=107.0, number=1)
+    s[1].cat = CatTrack(title="b", artist="x", duration=100.0, number=2)
+    p._check_durations(s)
+    assert "disagrees" in next(e["detail"] for e in s[0].evidence if e["kind"] == "catalog_duration")
+    p._refine_cuts(Path("x.m4a"), s)
+    lens = [next(e["detail"] for e in x.evidence if e["kind"] == "catalog_duration") for x in s]
+    assert lens[0].startswith("length 101.5s vs catalog 107.0s") and lens[1].startswith("length 98.5s vs")
+
+
+@needs_ffmpeg
+def test_a_run_whose_cut_is_past_the_cap_does_not_make_a_tie(tmp_path):
+    # Review finding: quiet runs end at 19.5 s and 20.5 s, equally far from the guess (20.0 s, also the
+    # recognition cap). The second run's cut lies past the cap, so it must not count as a rival.
+    rng = np.random.default_rng(2)
+    t = np.arange(24 * 16000) / 16000
+    x = 0.3 * np.sin(2 * np.pi * 440 * t)
+    x[((t >= 18.88) & (t < 19.5)) | ((t >= 19.9) & (t < 20.5))] = 0
+    x += rng.normal(0, 0.001, t.size)
+    audio = write_wav(tmp_path / "two-gaps.wav", x)
+    [(start, method)] = refine_starts(audio, [20.0], channels=1, bounds=[(None, 20.0)])
+    assert method == "silence" and 19.3 <= start <= 19.5
+
+
+def test_moved_cuts_rescore_catalog_aligned_lengths(tmp_path, monkeypatch):
+    # Review finding: a catalog-aligned track (no timestamps) kept its pre-refinement length verdict.
+    from bili_album.catalog import CatTrack
+    monkeypatch.setattr(cuts_mod, "refine_starts", fake_refine([(51.117, "spectral")], []))
+    monkeypatch.setattr(cuts_mod, "audio_info", lambda a: {"channels": 2})
+    p = planner(tmp_path)
+    s = [Seg(0.0, 51.7, "a", confidence=0.55), Seg(51.7, 102.0, "b", confidence=0.55)]
+    s[0].cat = CatTrack(title="a", artist="x", duration=51.0, number=1)
+    s[1].cat = CatTrack(title="b", artist="x", duration=56.5, number=2)
+    for x in s:
+        p._score_aligned_length(x)
+    assert s[1].confidence == pytest.approx(0.40) and s[1].length_mismatch is not None
+    p._refine_cuts(Path("x.m4a"), s)
+    assert s[1].confidence == pytest.approx(0.70) and s[1].length_mismatch is None
+    assert [e["detail"] for e in s[1].evidence if e["kind"] == "catalog_duration"] == [
+        "aligned catalog length 56.5s to 50.9s (-5.6s)"]
