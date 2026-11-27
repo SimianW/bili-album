@@ -14,7 +14,9 @@ import logging
 import re
 import shutil
 import subprocess
+import time
 from dataclasses import dataclass, field
+from urllib.parse import urlsplit, urlunsplit
 from http.cookiejar import MozillaCookieJar
 from pathlib import Path
 
@@ -26,6 +28,11 @@ log = logging.getLogger(__name__)
 BV_RE = re.compile(r"(BV[0-9A-Za-z]{10})")
 AV_RE = re.compile(r"(?:^|/|\b)av(\d+)", re.IGNORECASE)
 AUDIO_FORMATS = "30280/30232/30216/bestaudio[acodec^=mp4a]"
+CHUNK = 10 * 1024 * 1024
+# Bilibili's object-storage mirrors serve the same signed /upgcxcode/ path; used as extra
+# hosts when the playurl answer offers no backup URL or every listed host is slow.
+UPOS_MIRRORS = ("upos-sz-mirrorcos.bilivideo.com", "upos-sz-mirrorali.bilivideo.com",
+                "upos-sz-mirrorhw.bilivideo.com")
 
 
 @dataclass
@@ -67,6 +74,119 @@ class BilibiliError(RuntimeError):
     pass
 
 
+class RangedDownloader:
+    """Download one file in ranged chunks (Bilibili's CDN answers HTTP 567 to un-ranged GETs),
+    watching throughput. A host far below normal speed (``min_rate`` bytes/s, judged after
+    ``probe_seconds`` of a chunk) is abandoned for the next untried URL, continuing at the same
+    byte offset. When every URL has been tried, the fastest one finishes the file."""
+
+    def __init__(self, session, headers: dict, *, chunk: int = CHUNK, min_rate: float = 1_000_000,
+                 probe_seconds: float = 3.0, timeout: float = 30.0, clock=time.monotonic, read_size: int = 1 << 16):
+        self.session, self.headers = session, headers
+        self.chunk, self.min_rate, self.probe = chunk, min_rate, probe_seconds
+        self.timeout, self.clock, self.read_size = timeout, clock, read_size
+        self.log: list[str] = []
+        self.rates: dict[str, float] = {}
+
+    def download(self, urls: list[str], dest: Path) -> Path:
+        urls = list(dict.fromkeys(u for u in urls if u))
+        if not urls:
+            raise BilibiliError("no audio URL")
+        tried: set[int] = set()
+        failed: set[int] = set()
+        cur = 0
+        offset, total = 0, None
+        settled = False   # every URL tried: stop switching
+        with open(dest, "wb") as f:
+            while total is None or offset < total:
+                tried.add(cur)
+                host = urlsplit(urls[cur]).hostname or "?"
+                end = offset + self.chunk - 1
+                if total is not None:
+                    end = min(end, total - 1)
+                try:
+                    r = self.session.get(urls[cur], headers={**self.headers, "Range": f"bytes={offset}-{end}"},
+                                         stream=True, timeout=self.timeout)
+                except Exception as e:
+                    r, err = None, str(e)[:120]
+                if r is None or r.status_code not in (200, 206):
+                    failed.add(cur)
+                    self.log.append(f"{host}: failed ({r.status_code if r is not None else err})")
+                    nxt = self._next(urls, tried | failed, failed)
+                    if nxt is None:
+                        raise BilibiliError("every audio URL failed: " + "; ".join(self.log[-4:]))
+                    cur = nxt
+                    continue
+                if total is None:
+                    total = _total_size(r)
+                    if r.status_code == 200:
+                        offset = 0          # the server ignored the range: it sends everything
+                        f.seek(0)
+                        f.truncate()
+                t0, got, switched = self.clock(), 0, False
+                try:
+                    for buf in r.iter_content(self.read_size):
+                        if not buf:
+                            continue
+                        f.write(buf)
+                        offset += len(buf)
+                        got += len(buf)
+                        el = self.clock() - t0
+                        if el >= self.probe:
+                            rate = got / el
+                            self.rates[urls[cur]] = rate
+                            if not settled and rate < self.min_rate and (total is None or total - offset > got):
+                                nxt = self._next(urls, tried, failed)
+                                if nxt is None:
+                                    settled = True
+                                    best = max(self.rates, key=self.rates.get)
+                                    if best != urls[cur]:
+                                        self.log.append(f"{host}: {rate / 1e3:.0f} kB/s; every host tried, "
+                                                        f"back to the fastest")
+                                        cur, switched = urls.index(best), True
+                                        break
+                                else:
+                                    self.log.append(f"{host}: {rate / 1e3:.0f} kB/s, far below normal; "
+                                                    f"switching to {urlsplit(urls[nxt]).hostname}")
+                                    cur, switched = nxt, True
+                                    break
+                finally:
+                    r.close()
+                if not switched and got == 0:
+                    failed.add(cur)
+                    nxt = self._next(urls, tried | failed, failed)
+                    if nxt is None:
+                        raise BilibiliError("audio download stalled on every URL")
+                    cur = nxt
+                if total is None and not switched:
+                    break           # no size known and the body ended: done
+        return dest
+
+    @staticmethod
+    def _next(urls: list[str], tried: set[int], failed: set[int]) -> int | None:
+        for i in range(len(urls)):
+            if i not in tried and i not in failed:
+                return i
+        return None
+
+
+def _total_size(r) -> int | None:
+    cr = r.headers.get("Content-Range", "") if hasattr(r, "headers") else ""
+    m = re.search(r"/(\d+)\s*$", cr)
+    if m:
+        return int(m.group(1))
+    cl = r.headers.get("Content-Length") if hasattr(r, "headers") else None
+    return int(cl) if cl and r.status_code == 200 else None
+
+
+def mirror_urls(url: str) -> list[str]:
+    """The same signed object path on Bilibili's other storage mirrors."""
+    parts = urlsplit(url)
+    if not parts.path.startswith("/upgcxcode/"):
+        return []
+    return [urlunsplit(parts._replace(netloc=h)) for h in UPOS_MIRRORS if h != parts.hostname]
+
+
 def extract_bvid(url: str, http: Http | None = None) -> str:
     m = BV_RE.search(url)
     if m:
@@ -89,6 +209,7 @@ class Bilibili:
         self.http = http
         self.cookies = cookies
         self._warmed = False
+        self.download_log: list[dict] = []
         if cookies:
             jar = MozillaCookieJar(str(cookies))
             jar.load(ignore_discard=True, ignore_expires=True)
@@ -224,6 +345,15 @@ class Bilibili:
             opts["cookiefile"] = str(self.cookies)
         raw: Path | None = None
         try:
+            raw = self._download_ranged(url, opts, vi, page or 1, workdir / f"{stem}.raw.m4a")
+        except Exception as e:
+            log.warning("ranged download failed (%s); letting yt-dlp download", str(e)[:200])
+            raw = None
+        if raw is not None and raw.exists() and raw.stat().st_size > 0:
+            remux_audio(raw, final)
+            raw.unlink(missing_ok=True)
+            return final
+        try:
             with yt_dlp.YoutubeDL(opts) as y:
                 info = y.extract_info(url, download=True)
                 if info.get("entries"):
@@ -239,6 +369,45 @@ class Bilibili:
         remux_audio(raw, final)
         raw.unlink(missing_ok=True)
         return final
+
+    def _download_ranged(self, url: str, opts: dict, vi: VideoInfo, page: int, dest: Path) -> Path:
+        """yt-dlp picks the stream (it handles signing); we fetch it ourselves in ranged chunks so
+        a slow CDN node can be swapped for a backup URL or another mirror mid-download."""
+        import yt_dlp
+
+        with yt_dlp.YoutubeDL({**opts, "skip_download": True}) as y:
+            info = y.extract_info(url, download=False)
+        if info.get("entries"):
+            info = info["entries"][0]
+        fmt = (info.get("requested_formats") or [info])[0]
+        main = fmt.get("url")
+        if not main:
+            raise BilibiliError("yt-dlp gave no stream URL")
+        urls = [main] + self._backup_urls(vi, page, str(fmt.get("format_id") or "")) + mirror_urls(main)
+        dl = RangedDownloader(self.http.session, {"User-Agent": USER_AGENT, "Referer": "https://www.bilibili.com/"})
+        t0 = time.monotonic()
+        dl.download(urls, dest)
+        size = dest.stat().st_size
+        self.download_log.append({"page": page, "bytes": size, "seconds": round(time.monotonic() - t0, 2),
+                                  "events": dl.log})
+        return dest
+
+    def _backup_urls(self, vi: VideoInfo, page: int, format_id: str) -> list[str]:
+        """Backup URLs that playurl lists for the same audio stream (best effort)."""
+        try:
+            part = next((p for p in vi.parts if p.page == page), vi.parts[0])
+            d = self._api("https://api.bilibili.com/x/player/playurl",
+                          {"bvid": vi.bvid, "cid": part.cid, "fnval": 4048, "fourk": 1})
+        except Exception as e:
+            log.info("no backup URLs: %s", e)
+            return []
+        out: list[str] = []
+        for a in (d.get("dash") or {}).get("audio") or []:
+            if format_id and str(a.get("id")) != format_id:
+                continue
+            out += [a.get("baseUrl") or a.get("base_url") or ""]
+            out += list(a.get("backupUrl") or a.get("backup_url") or [])
+        return [u for u in out if u]
 
     def _download_playurl(self, vi: VideoInfo, page: int, dest: Path) -> Path:
         """Fallback: ask playurl for DASH audio and try the base URL and every backup URL."""
