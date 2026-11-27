@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 from dataclasses import dataclass
 from typing import Callable
 
@@ -73,7 +74,8 @@ def collect_comments(api: Callable[[str, dict], dict], aid: int, uploader_mid: i
         text = (r.get("content") or {}).get("message", "")
         if reply:
             text = _REPLY_PREFIX.sub("", text, count=1)
-        if only_mine and len(_STAMP.findall(text)) < MIN_STAMPS:
+        # Counted like hints.py parses: NFKC folds the full-width colon in "00：00".
+        if only_mine and len(_STAMP.findall(unicodedata.normalize("NFKC", text))) < MIN_STAMPS:
             return
         seen.add(r.get("rpid"))
         c = Comment(text=text,

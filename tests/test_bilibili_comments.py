@@ -127,6 +127,12 @@ def test_uploader_chatter_beyond_the_first_page_is_left_out():
     assert texts(f._comments(vi())) == ["full " + TL, "viewer list " + TL]
 
 
+def test_full_width_colons_count_as_times():
+    fw = "00：01爱在西元前\n03：59爸，我回来了\n07：45简单爱"
+    page = {"replies": [r(2, 7, previews=[r(21, UP, fw)])]}
+    assert texts(Fake({1: page})._comments(vi()))[0] == fw
+
+
 def test_reply_address_prefix_is_removed():
     page = {"replies": [r(2, 7, previews=[r(21, UP, "回复 @某人 :" + TL), r(22, UP, "回复 @x：" + TL + " again")])]}
     cs = Fake({1: page})._comments(vi())
