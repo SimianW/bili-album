@@ -26,6 +26,7 @@ same class over the real pipeline with scripted stages.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Protocol
@@ -44,8 +45,9 @@ class Outcome:
 
 
 class Runner(Protocol):
-    def start(self, url: str, workdir: Path, emit: Emit) -> Outcome:
-        """Plan, review, cut and import (or resume after a failure: the work directory is reused)."""
+    def start(self, url: str, workdir: Path, emit: Emit, options: dict | None = None) -> Outcome:
+        """Plan, review, cut and import (or resume after a failure: the work directory is reused).
+        ``options`` is what :func:`clean_options` returned for the submitted job."""
 
     def confirm(self, workdir: Path, edits: list[dict], emit: Emit) -> Outcome:
         """Continue a held job from the cut stage; ``edits`` is ``[{"index", "title", "artist"}]``."""
@@ -61,6 +63,72 @@ class Runner(Protocol):
 
     def secrets(self) -> list[str]:
         """Strings that must never reach the browser (scrubbed from every job field)."""
+
+
+# ----------------------------------------------------------------------------- job options
+
+# Boundary refinement settings the page may send: name -> (type, lowest, highest, label, unit). The
+# names are keyword arguments of bili_album.refine.refine_starts (defaults come from there); anything
+# not listed here is refused. The page's menu is built from refine_fields().
+REFINE_LIMITS: dict[str, tuple[type, float, float, str, str]] = {
+    "search_ms": (int, 200, 5000, "搜索范围", "± 毫秒"),
+    "silence_db": (float, -80.0, 0.0, "第一轮静音阈值", "dB"),
+    "deep_silence_db": (float, -90.0, 0.0, "第二轮静音阈值", "dB"),
+    "pre_roll_ms": (int, 0, 500, "切点前留白", "毫秒"),
+}
+
+
+def refine_defaults() -> dict:
+    from ..refine import RefineParams  # imported late (numpy), like the pipeline
+    d = RefineParams()
+    return {name: getattr(d, name) for name in REFINE_LIMITS}
+
+
+def refine_fields() -> list[dict]:
+    """The settings the page's menu offers: ``[{name, label, unit, int, default, min, max}]``."""
+    defaults = refine_defaults()
+    return [{"name": n, "label": label, "unit": unit, "int": kind is int, "default": defaults[n], "min": lo, "max": hi}
+            for n, (kind, lo, hi, label, unit) in REFINE_LIMITS.items()]
+
+
+def clean_options(raw: Any) -> dict:
+    """Check the options sent with a new job: ``{"refine": bool, "search_ms": int, ...}``.
+
+    Returns ``{"refine": bool, "refine_options": {...}}`` with only what was sent, or ``{}`` for
+    nothing. Raises ``ValueError`` with a plain Chinese message for the page."""
+    if raw is None or raw == {}:
+        return {}
+    if not isinstance(raw, dict):
+        raise ValueError("选项格式不对。")
+    unknown = set(raw) - {"refine"} - set(REFINE_LIMITS)
+    if unknown:
+        raise ValueError("不认识的选项：" + "、".join(sorted(map(str, unknown))) + "。")
+    out: dict = {}
+    if "refine" in raw:
+        if not isinstance(raw["refine"], bool):
+            raise ValueError("「精修切点」只能是开或关。")
+        out["refine"] = raw["refine"]
+    ro: dict = {}
+    for name, (kind, lo, hi, label, _unit) in REFINE_LIMITS.items():
+        if name not in raw:
+            continue
+        v = raw[name]
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or (isinstance(v, float) and not math.isfinite(v)) or (kind is int and v != int(v)):
+            raise ValueError(f"「{label}」要填数字。")
+        if not lo <= v <= hi:
+            raise ValueError(f"「{label}」要在 {lo:g} 到 {hi:g} 之间。")
+        ro[name] = kind(v)
+    defaults = refine_defaults()
+    if ro.get("deep_silence_db", defaults["deep_silence_db"]) > ro.get("silence_db", defaults["silence_db"]):
+        raise ValueError("第二轮静音阈值不能高于第一轮。")
+    if ro:
+        out["refine_options"] = ro
+    return out
+
+
+def plan_options(options: dict) -> dict:
+    """The pipeline's ``plan_options`` for a job's cleaned options."""
+    return {k: v for k, v in options.items() if k in ("refine", "refine_options")}
 
 
 # ----------------------------------------------------------------------------- pipeline runner
@@ -96,8 +164,10 @@ class PipelineRunner:
         from .. import pipeline  # imported late
         return pipeline
 
-    def start(self, url: str, workdir: Path, emit: Emit) -> Outcome:
-        res = self._api().ingest(url, workdir, self._events(workdir, emit), on_unsure="hold", config=self.config)
+    def start(self, url: str, workdir: Path, emit: Emit, options: dict | None = None) -> Outcome:
+        kw = {"plan_options": plan_options(options)} if options else {}
+        res = self._api().ingest(url, workdir, self._events(workdir, emit), on_unsure="hold", config=self.config,
+                                 **kw)
         return self._finish(workdir, res, emit)
 
     def confirm(self, workdir: Path, edits: list[dict], emit: Emit) -> Outcome:

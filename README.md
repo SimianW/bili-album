@@ -38,7 +38,7 @@ uv run bili-album ingest https://www.bilibili.com/video/BV14PVVzNE2R
 
 ## How It Works
 
-1. **Plan** — Fetches metadata from Bilibili and audio via `yt-dlp`, reads uploader hints (chapters, description, pinned comment, the uploader's own comments and replies, part names), matches NetEase Cloud Music / iTunes catalogs, aligns track boundaries using audio analysis (silence, level dips, timbral novelty), and verifies with Shazam. Writes `plan.json` and sets `needs_review` if anything is uncertain.
+1. **Plan** — Fetches metadata from Bilibili and audio via `yt-dlp`, reads uploader hints (chapters, description, pinned comment, the uploader's own comments and replies, part names), matches NetEase Cloud Music / iTunes catalogs, aligns track boundaries using audio analysis (silence, level dips, timbral novelty), verifies with Shazam, and refines each boundary to the millisecond. Writes `plan.json` and sets `needs_review` if anything is uncertain.
 2. **Review** *(optional)* — Sends a compact brief to an OpenAI-compatible LLM to validate or fix uncertain plans. Every proposed edit is verified against catalog, recognition, or uploader data before being applied.
 3. **Apply** — Losslessly cuts `.m4a` files and writes tags + cover art (`OUTDIR/<Album>/NN-<Title>.m4a` + `cover.jpg`, or `OUTDIR/<Artist> - <Title>.m4a` for singles).
 4. **Import** — Copies files into `LIBRARY_DIR/<Album Artist>/<Album>/`, triggers a Jellyfin scan, and keeps Simplified Chinese metadata consistent on imported albums.
@@ -47,7 +47,7 @@ uv run bili-album ingest https://www.bilibili.com/video/BV14PVVzNE2R
 
 | Command | Description |
 | --- | --- |
-| `bili-album plan <url>` | Analyze a Bilibili URL (or `--audio FILE --title TEXT`) and write `plan.json`. Useful flags: `--album-hint "ARTIST - ALBUM"`, `--tracklist FILE`, `--cookies FILE`, `--no-text-hints`, `--no-recognize`. |
+| `bili-album plan <url>` | Analyze a Bilibili URL (or `--audio FILE --title TEXT`) and write `plan.json`. Useful flags: `--album-hint "ARTIST - ALBUM"`, `--tracklist FILE`, `--cookies FILE`, `--no-text-hints`, `--no-recognize`, `--no-refine`. |
 | `bili-album apply <plan.json> -o DIR` | Cut and tag `.m4a` files from a plan (`--force`, `--zip`). |
 | `bili-album run <url> -o DIR` | Run `plan` + `apply` in one step. |
 | `bili-album inspect <path>` | Show tags and durations of `.m4a` files (`--json`). |
@@ -66,6 +66,7 @@ uv run bili-album serve                # http://127.0.0.1:5191/
 uv run bili-album serve --fake         # demo mode, no network/import (login: any username + "demo")
 ```
 
+- **Boundary refinement:** The 切点精修 menu at the top right turns millisecond refinement off or sets its search window, the two silence thresholds and the pre-roll for the links submitted next (sent as `options` with `POST /api/jobs`, checked against `web/runner.REFINE_LIMITS`; the menu lives in `static/refine-menu.html`, which `server.load_index()` inserts into the page). Each browser remembers its own settings.
 - **Auth:** Uses Jellyfin accounts by default when `BILI_ALBUM_JELLYFIN_URL` is configured (`--auth none` to disable). Passwords are verified once against Jellyfin and never stored.
 - **Networking:** Pass `--host` multiple times to bind specific addresses (`0.0.0.0` and `::` are refused). Behind a reverse proxy, forward `Host`, `X-Forwarded-For`, and `X-Forwarded-Proto` (configure `BILI_ALBUM_TRUSTED_PROXIES` if the proxy is not on loopback).
 - **Deployment:** See [`deploy/bili-album-web.service`](deploy/bili-album-web.service) for a systemd user unit.

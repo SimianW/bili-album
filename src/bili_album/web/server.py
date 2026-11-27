@@ -9,8 +9,9 @@ Routes (everything else is 404):
 - ``POST /api/logout`` ``{}`` -> ends the session;
 - ``GET /api/jobs`` -> ``{"now", "jobs": [...], "me", "auth", "library_url"}`` (``library_url`` only when
   the public Jellyfin address is configured);
-- ``POST /api/jobs`` ``{"url"}`` -> 201 ``{"job"}`` (409 + ``existing_id`` if the video is already queued,
-  429 when 20 jobs are queued);
+- ``POST /api/jobs`` ``{"url", "options"?}`` -> 201 ``{"job"}`` (409 + ``existing_id`` if the video is already
+  queued, 429 when 20 jobs are queued, 400 for options outside ``runner.REFINE_LIMITS``); ``options`` may hold
+  ``refine`` (bool) and ``search_ms``, ``silence_db``, ``deep_silence_db``, ``pre_roll_ms``;
 - ``GET /api/jobs/<id>``, ``GET /api/jobs/<id>/cover``;
 - ``POST /api/jobs/<id>/confirm`` ``{"tracks": [{"index", "title", "artist"}]}``;
 - ``POST /api/jobs/<id>/{discard,retry,replace,keep}`` ``{}``;
@@ -38,6 +39,7 @@ from urllib.parse import urlsplit
 
 from . import auth as A
 from .jobs import JobError, JobManager
+from .runner import refine_fields
 from .urls import UrlError, normalize_url
 
 log = logging.getLogger(__name__)
@@ -52,7 +54,11 @@ EVERY_INTERFACE = ("0.0.0.0", "::", "")
 
 
 def load_index() -> bytes:
-    return resources.files("bili_album.web").joinpath("static/index.html").read_bytes()
+    """index.html with the refinement menu (static/refine-menu.html) and its fields filled in."""
+    static = resources.files("bili_album.web").joinpath("static")
+    fields = json.dumps(refine_fields(), ensure_ascii=False).replace("</", "<\\/")
+    menu = static.joinpath("refine-menu.html").read_text(encoding="utf-8").replace("__REFINE_FIELDS__", fields)
+    return static.joinpath("index.html").read_text(encoding="utf-8").replace("<!--refine-menu-->", menu, 1).encode()
 
 
 @dataclass
@@ -313,7 +319,7 @@ class Handler(BaseHTTPRequestHandler):
                 except UrlError as e:
                     self._error(400, str(e))
                     return
-                self._json(201, {"job": self.manager.submit(url, by=by)})
+                self._json(201, {"job": self.manager.submit(url, by=by, options=body.get("options"))})
                 return
             m = JOB_PATH.match(path)
             jid, action = m.group(1), m.group(2)

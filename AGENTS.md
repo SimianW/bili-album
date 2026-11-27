@@ -34,9 +34,11 @@ Run everything with `uv run` from the repo root. Never commit downloaded audio, 
 - The web package does not import `library.py`; `serve`'s arguments live in `web/cli.py`.
 - `runner.py` is the only code that knows `bili_album.pipeline`'s names (`PipelineRunner`, `map_event`, `map_result`, `read_plan`); change the mapping there when the pipeline API changes. `fake.py` runs the real pipeline with scripted `Steps`; `tests/test_web_fixtures.py` checks its plans against real reviewed plans in `tests/fixtures/web/` (refresh those from a live run when the plan or review format changes; strip config values and home paths first).
 - Every string sent to the browser is scrubbed of config values (only the public Jellyfin address goes out, as `library_url`) and inserted with `textContent`, never as HTML. No CDN, fonts or other external requests in `static/index.html`.
-- The approved designs are `mockups/web-import.html` and `mockups/web-login.html`.
+- The approved designs are `mockups/web-import.html`, `mockups/web-login.html` and `mockups/web-refine-switch.html` (the 切点精修 menu, `static/refine-menu.html`).
 
 ## Agent skills
+
+If a skill named here or in `docs/` is not installed locally, read `skills/<name>/SKILL.md` (and `delegation.md` when needed) from the public repo [SimianW/agents](https://github.com/SimianW/agents). If you cannot fetch a skill, or if you need to run `review-loop` without T3 Code, follow "Without the owner's skills or T3 Code" in [docs/agents/workflow.md](docs/agents/workflow.md).
 
 ### Issue tracker
 
@@ -54,7 +56,7 @@ Single-context (`GLOSSARY.md` + `docs/adr/` at repo root). See `docs/agents/doma
 
 - PRs & size: every change reaches `main` through a PR. Before opening, updating, or merging a PR, read [docs/agents/workflow.md](docs/agents/workflow.md).
 - File length: keep code files at or under 500 lines (split along a seam before raising a cap); see [docs/agents/workflow.md](docs/agents/workflow.md) for cap-ratchet rules and `python3 scripts/file-length.py`.
-- Reviews: every gate review before merge (and any branch/PR review request) runs `review-loop` using `python3 scripts/check-pr-body.py tier`; only `implement` / `implement-spec` runs `code-review` before it.
+- Reviews: every gate review before merge (and any branch/PR review request) runs `review-loop` using `python3 scripts/check-pr-body.py tier`; only `implement` / `implement-spec` runs `code-review` before it. Without that skill or T3 Code, follow "Without the owner's skills or T3 Code" in [docs/agents/workflow.md](docs/agents/workflow.md).
 - Naming: use [GLOSSARY.md](GLOSSARY.md) terms in modules, tests, and docs; add new terms there.
 - Testing & bugs: test at the seams in [docs/agents/seams.md](docs/agents/seams.md); fix bugs via [docs/bugfix.md](docs/bugfix.md).
 - Dev docs: put each module/test role in its header comment; keep setup, commands, and gotchas in [README.md](README.md).

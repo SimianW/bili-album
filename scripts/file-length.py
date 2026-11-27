@@ -59,7 +59,7 @@ CAPS = {
     "report/template.html": 1943,
     "src/bili_album/catalog.py": 629,
     "src/bili_album/library.py": 819,
-    "src/bili_album/plan.py": 1503,
+    "src/bili_album/plan.py": 1498,
     "src/bili_album/review.py": 1482,
     "src/bili_album/web/static/index.html": 817,
     "tests/test_review.py": 541,

@@ -43,4 +43,98 @@ Every code file stays at or under `500` lines.
 
 ## Delegation
 
-Role models, `target` values, brief rules, and the `Verify` checklist live in `~/.agents/delegation.md` (and are activated for full sessions via `/simian-mode`). Any brief for delegated `implement` work must name the `tdd` skill and `docs/agents/seams.md`.
+Role models, `target` values, brief rules, and the `Verify` checklist live in `~/.agents/delegation.md` ([public copy](https://github.com/SimianW/agents/blob/main/delegation.md)) and are activated for full sessions via `/simian-mode`. Any brief for delegated `implement` work must name the `tdd` skill and `docs/agents/seams.md`.
+
+## Without the owner's skills or T3 Code
+
+This file, `AGENTS.md`, and `docs/` name skills (such as `review-loop`, `pr`, `code-review`, `tdd`, `diagnosing-bugs`, `mockup-first`, `to-spec`, `to-tickets`, `implement`, `implement-spec`, `domain-modeling`, `wayfinder`, `triage`, `simian-mode`, `simianize`) and `delegation.md` that live in the public repo [SimianW/agents](https://github.com/SimianW/agents) rather than in this repo.
+
+When your agent does not have a required skill installed locally, read `skills/<name>/SKILL.md` (and `delegation.md` when needed) from [SimianW/agents](https://github.com/SimianW/agents), or clone/install from that repo. If you cannot fetch a skill from GitHub, do its job by hand as below; if you fetched `review-loop` but do not have T3 Code (which `review-loop` uses for its two-model panel), use **Review (in place of `review-loop`)** below. CI checks the PR body, tests, size and file length the same way either way; it cannot tell whether a review happened.
+
+### Review (in place of `review-loop`)
+
+Run `git fetch origin`, then `python3 scripts/check-pr-body.py tier <base>` (`origin/main`, or `origin/<parent PR's branch>` for a stacked PR). Tier 0 needs no review; agent steering files (`AGENTS.md`, `CLAUDE.md`, `CODING_STANDARDS.md`, `docs/bugfix.md`, `docs/agents/*`) are at least tier 1. For tiers 1 and 2, two reviewers from two model families read the committed diff without seeing each other's findings. With the `claude` and `codex` CLIs installed and signed in, run both in the background from the repo root:
+
+```bash
+BASE_REF=origin/main                    # a stacked PR: origin/<parent PR's branch>
+git fetch origin
+BASE=$(git merge-base HEAD "$BASE_REF")
+HEAD_SHA=$(git rev-parse HEAD)          # commit first: only committed work is reviewed
+OUT=$(mktemp -d)
+# The quoted 'BRIEF' keeps the shell from expanding backticks and $ in what you type here.
+cat > "$OUT/brief.md" <<'BRIEF'
+Review only. Do not edit, commit, push, or comment on the PR.
+Intent: <one or two sentences: what the change is for, and what is out of scope>
+Test changes: <the PR body's "Existing tests modified/removed" entry, or None>
+Apply every rule in CODING_STANDARDS.md. Read the surrounding code. Find bugs, broken
+callers and mismatch with the intent; skip formatting.
+blocker = the intended case is wrong. should = a real bug on a path the repo's own code or
+a user reaches. nit = the rest. A blocker or should needs evidence: a file:line trace, a
+repro, or a failing test.
+Start your reply with: ## Verdict: APPROVE | CHANGES (diff <the 12-char hash>)
+Then list findings, one per line: severity, file:line, claim, evidence, fix.
+BRIEF
+printf 'See: git diff %s %s\nFor the hash, run: python3 scripts/check-pr-body.py diff-hash %s %s\n' \
+  "$BASE" "$HEAD_SHA" "$BASE" "$HEAD_SHA" >> "$OUT/brief.md"
+
+claude -p "$(cat "$OUT/brief.md")" \
+  --allowedTools "Read,Grep,Glob,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(python3 scripts/check-pr-body.py:*)" \
+  > "$OUT/claude.md" 2> "$OUT/claude.err" &
+codex exec --sandbox read-only -o "$OUT/codex.md" "$(cat "$OUT/brief.md")" \
+  > "$OUT/codex.log" 2>&1 < /dev/null &
+wait
+head -n 1 "$OUT/claude.md" "$OUT/codex.md"
+python3 scripts/check-pr-body.py diff-hash "$BASE_REF" "$HEAD_SHA"
+```
+
+Then:
+
+1. Check that both Verdict headers carry the hash the last line printed. A reviewer with another hash read other content: run it again.
+2. A finding both reviewers raise is confirmed. For a blocker or should only one raised, read the code yourself, or ask the other reviewer to confirm or refute it with evidence.
+3. Fix every confirmed blocker and should in one commit, with a test where `CODING_STANDARDS.md` asks for one. If that commit changes anything above tier 0, run both reviewers again on the new head: up to 2 rounds at tier 1, 3 at tier 2.
+4. The review is approved only when both reviewers have read the head you will record, and no blocker or should is left open. Then write the two items under `## Review` in the PR body, naming the reviewers that ran. `<short sha>` is the last `$HEAD_SHA` both reviewers read and `<12-hex>` is its hash from step 1; a tier 0 commit after it keeps them unchanged.
+
+   ```markdown
+   - **Verdict:** approved at `<short sha>` (diff `<12-hex>`)
+   - **Reviewers:** <model> ×<calls>, <model> ×<calls>
+   ```
+
+If the rounds run out with a blocker or should open, or with a fix above tier 0 that no reviewer has read, stop: a person chooses another round, or ships anyway and writes ``- **Verdict:** overridden by <login> at `<short sha>` (diff `<12-hex>`)``, where an override records the current head and the hash `python3 scripts/check-pr-body.py diff-hash "$BASE_REF" HEAD` prints. Never write `approved at` for a commit the reviewers did not read. With only one CLI, a person is the second reviewer and is named in `Reviewers`.
+
+After approval, update the branch only by merging the base branch in: a rebase, amend or force-push drops the approved commit and fails the `pr-body` check. Leave the Verdict as it is and run the local body check (step 3 of "Pull requests and review gate", with `$BASE_REF` as its argument). If every change it flags comes from resolving a merge conflict, both reviewers read only the resolution (name the merge commit and `git show --remerge-diff <merge>` in the brief's Intent), and on approval the Verdict moves to the merge commit and its hash. If it flags anything else, run a full review round on the new head. An overridden PR that fails this way goes back to the person who overrode it.
+
+### PR body (in place of `pr`)
+
+```markdown
+## Summary
+
+<a short tree, diff sketch or call tree of what changes>
+
+## Evidence
+
+- **Before:** <output, failing test or screenshot>
+- **After:** <output, passing test or screenshot>
+- **Existing tests modified/removed:** None (or each changed assertion and why)
+- **Not verified here:** <what your checks did not exercise>
+
+## Merge Danger
+
+| Door | Blast radius |
+|---|---|
+| <one-way or two-way> | <one word> |
+
+## Review
+
+- **Tier:** <N>
+- **Cap raised:** `<path>` <old cap, or new> → <cap>: <why the file cannot be split now>
+```
+
+CI reads only the `Tier`, `Verdict` and `Cap raised` items, so keep those in exactly this shape. Drop the `Cap raised` item when the PR adds or raises no cap. A PR that changes visible UI embeds a screenshot under Evidence.
+
+### The other skills
+
+- `code-review`: compare the diff with the spec issue and with `CODING_STANDARDS.md`, and report the two lists separately.
+- `tdd`: write one failing test at a seam from `docs/agents/seams.md`, make it pass with the smallest change, then tidy.
+- `diagnosing-bugs`: get one command that fails on the bug before changing code ([docs/bugfix.md](../bugfix.md) steps 1 and 2).
+- `mockup-first`: show the owner a self-contained HTML mockup and wait for approval before changing visible UI.
+- `to-spec`, `to-tickets`, `implement`, `implement-spec`: write the spec as a GitHub issue labelled `ready-for-agent`, split it into sub-issues when it is large, and build each one test-first.

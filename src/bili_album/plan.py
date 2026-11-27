@@ -7,6 +7,7 @@ download   audio stream(s) and the Bilibili cover
 analyze    boundary candidates from the audio (silence / dip / novelty)
 catalog    album / track lookup (NetEase, iTunes) and lyrics
 recognize  Shazam clips: verify titles, pin track starts, or scan unknown mixes
+cuts       where a cut goes near a recognised start, and its millisecond refinement (:mod:`cuts`)
 """
 
 from __future__ import annotations
@@ -22,10 +23,11 @@ from pathlib import Path
 
 from . import analyze as an
 from .align import align, snap
-from .analyze import DIGITAL_DB, Candidate, level_between
+from .analyze import Candidate
 from .bilibili import Bilibili, Part, VideoInfo, extract_bvid
 from .catalog import (DERIVED_TRACK, AlbumMatch, CatAlbum, Catalog, CatTrack, latin_only, rank_releases,
                       release_kind)
+from .cuts import CUT_MARGIN, place_cut, refine_cuts  # noqa: F401  (CUT_MARGIN: re-exported for callers)
 from .hints import (HintEntry, HintList, TitleGuess, derivative_cues, fmt_ts, guess_from_hint,
                     guess_from_title, name_like, names_in_prose, parse_timestamps, parse_tracklist_file,
                     part_title, plausible_list)
@@ -39,7 +41,6 @@ log = logging.getLogger(__name__)
 SINGLE_MAX = 540.0          # "short" video: about 9 minutes
 REVIEW_TRIM = 5.0           # seconds of trimmed head/tail worth a review line
 LOW_CONF = 0.6
-CUT_MARGIN = 0.3            # a cut stays this far before a recognised recording start
 SAMPLE_REQUESTS = 5         # Shazam requests a sampled check of a clean alignment may use
 WEAK_STRENGTH = 0.4         # a dip / novelty start weaker than this is a weak signal
 
@@ -189,36 +190,6 @@ def sample_indices(n: int, k: int = 3) -> list[int]:
     return sorted({min(n - 1, int((2 * j + 1) * n / (2 * k))) for j in range(k)})
 
 
-def place_cut(imp: float, cands: list[Candidate], feats, lo: float = 0.0) -> tuple[float, str]:
-    """Where to cut before a recording that recognition says starts at ``imp``.
-
-    Rule: a cut may not land after ``imp - CUT_MARGIN``, unless everything between that point
-    and the cut is digital silence (then nothing audible is lost and the gap stays with the
-    previous track). If ``imp`` falls in a low-level run, the run's own cut (the end of its
-    deepest block, see :mod:`analyze`) is proposed first; otherwise ``imp - CUT_MARGIN``.
-    Returns (time, explanation for the evidence)."""
-    gap = next((c for c in cands if c.kind == "silence" and c.gap_start - 0.3 <= imp <= c.gap_end + 0.3), None)
-    limit = imp - CUT_MARGIN
-    if gap:
-        new = gap.time
-        what = ("digital silence" if gap.digital else f"quiet gap (floor {gap.floor_db:.0f} dB, not silence)")
-        note = f"recording starts at {imp:.2f}s inside a {what} {gap.gap_start:.2f}-{gap.gap_end:.2f}s"
-    else:
-        new = limit
-        note = f"recording starts at {imp:.2f}s, no silence there"
-    if new > limit:
-        lvl = level_between(feats, limit, new) if feats is not None else 0.0
-        if lvl <= DIGITAL_DB:
-            note += f"; cut {new - imp:+.2f}s from it stays in digital silence"
-        else:
-            new = limit
-            note += (f"; cut held {CUT_MARGIN}s before the recognised start (sound up to {lvl:.0f} dB in between, "
-                     "so cutting later would clip the intro)")
-    else:
-        note += f"; cut {new - imp:+.2f}s from it"
-    return max(lo, new), note
-
-
 @dataclass
 class PlanOptions:
     workdir: Path | None = None
@@ -230,6 +201,8 @@ class PlanOptions:
     title: str | None = None
     description: str = ""
     recognize: bool = True
+    refine: bool = True
+    refine_options: dict = field(default_factory=dict)   # keyword arguments for refine.refine_starts
     repo_root: Path = field(default_factory=lambda: Path.cwd())
 
 
@@ -300,6 +273,7 @@ class Planner:
         self.review: list[str] = []
         self.kind_reason = ""
         self.recog_info: dict = {"policy": "none", "tracks_checked": 0, "requests": 0, "reason": ""}
+        self.refine_info: dict = {"boundaries": 0, "moved": 0, "methods": {}, "reason": "not run"}
         self.derivative: dict | None = None
         self.reordered = False
         self.feats = None
@@ -739,7 +713,20 @@ class Planner:
         if primary and primary.has_times:
             self._check_durations(segs)
         self._fill_from_recognition(segs)
+        self._refine_cuts(audio, segs)
         return segs, album
+
+    def _refine_cuts(self, audio: Path, segs: list[Seg]) -> None:
+        """Millisecond refinement of the shared boundaries (see :func:`cuts.refine_cuts`)."""
+        if not self.o.refine:
+            self.refine_info.update(reason="refinement off")
+            return
+        self.refine_info = self.timer.run("refine", refine_cuts, audio, segs, self.o.refine_options)
+        if self.refine_info["moved"]:   # lengths changed: redo the catalog length checks where they ran
+            self._check_durations([s for s in segs if hasattr(s, "len_adj")])
+            for s in segs:
+                if hasattr(s, "align_adj"):
+                    self._score_aligned_length(s)
 
     def _match_titles(self, titles: list[str], album: CatAlbum | None) -> list[CatTrack | None]:
         if not album:
@@ -826,6 +813,20 @@ class Planner:
             s.len_adj = adj  # type: ignore[attr-defined]
             s.confidence += adj
 
+    @staticmethod
+    def _score_aligned_length(s: Seg) -> None:
+        """Aligned catalog length vs the track's span (+-0.15, ``length_mismatch``). Re-running after
+        refinement moved a cut replaces the earlier verdict."""
+        s.confidence -= getattr(s, "align_adj", 0.0)
+        s.evidence = [e for e in s.evidence if not e.get("_align")]
+        dev, src = (s.end - s.start) - s.cat.duration, getattr(s, "align_source", "")
+        s.evidence.append({**ev("catalog_duration", f"aligned catalog length {s.cat.duration:.1f}s to {s.end - s.start:.1f}s "
+                                f"({dev:+.1f}s)" + (f"; titles from {src}" if src else "")), "_align": 1})
+        ok = abs(dev) <= max(6.0, 0.04 * s.cat.duration)
+        s.align_adj = 0.15 if ok else -0.15  # type: ignore[attr-defined]
+        s.length_mismatch = None if ok else dev  # type: ignore[attr-defined]
+        s.confidence += s.align_adj
+
     def _from_titles_and_album(self, hl: HintList, album: CatAlbum, duration, cands) -> list[Seg]:
         cats = self._match_titles([e.title for e in hl.entries], album)
         sub = CatAlbum(**{**album.__dict__, "tracks": [c for c in cats if c]})
@@ -851,15 +852,8 @@ class Planner:
                 ct = album.tracks[sg.expected_index]
                 s = Seg(sg.start, sg.end, title=ct.title, artist=ct.artist, cat=ct, confidence=0.55,
                         start_kind=sg.start_point.kind)
-                dev = sg.deviation or 0.0
-                tol = max(6.0, 0.04 * ct.duration)
-                s.evidence.append(ev("catalog_duration", f"aligned catalog length {ct.duration:.1f}s to "
-                                     f"{sg.end - sg.start:.1f}s ({dev:+.1f}s)" + (f"; titles from {source}" if source else "")))
-                if abs(dev) <= tol:
-                    s.confidence += 0.15
-                else:
-                    s.confidence -= 0.15
-                    s.length_mismatch = dev  # type: ignore[attr-defined]
+                s.align_source = source  # type: ignore[attr-defined]
+                self._score_aligned_length(s)
             s.start_strength = sg.start_point.strength  # type: ignore[attr-defined]
             for p, which in ((sg.start_point, "start"), (sg.end_point, "end")):
                 if p.kind in ("silence", "dip", "novelty"):
@@ -1459,7 +1453,7 @@ class Planner:
                 "parts": max(1, len(part_files)),
                 "trim_head": trim_head,
                 "trim_tail": trim_tail,
-                "text_hints": self.o.text_hints,
+                "text_hints": self.o.text_hints, "refine": self.o.refine, "refine_options": dict(self.o.refine_options),
                 "derivative": bool(self.derivative),
             },
             "kind": kind,
@@ -1473,6 +1467,7 @@ class Planner:
             "review_reasons": _dedupe(self.review),
             "timings": self.timer.as_dict(),
             "recognition": self.recog_info,
+            "refine": self.refine_info,
         }
         if self.derivative:
             plan["source"]["derivative_cues"] = self.derivative.get("cues", [])

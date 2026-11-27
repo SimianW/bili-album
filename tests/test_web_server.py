@@ -184,7 +184,7 @@ def test_no_config_value_in_any_response(tmp_path, monkeypatch):
     class LeakyPipeline(PipelineRunner):
         """A pipeline that leaks every secret config value into its messages and results."""
 
-        def start(self, url, workdir, emit):
+        def start(self, url, workdir, emit, options=None):
             leak = " ".join(values.values())
             emit(stage="plan", state="running", message=leak)
             emit(stage="plan", state="done", album={"title": leak, "artist": leak, "year": "", "kind": "album",
