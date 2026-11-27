@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+import secrets
 import shutil
 import unicodedata
 import zipfile
@@ -15,7 +16,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .hints import fmt_ts
-from .media import audio_info, cut, image_kind
+from .media import audio_info, image_kind
+from .packetcut import Cut, PacketCutError, RangeError, cut_tracks
 from .tag import OPTIONAL, REQUIRED, read_tags, write_tags
 
 DUR_TOL = 0.1
@@ -26,6 +28,10 @@ class PlanError(ValueError):
     def __init__(self, problems: list[str]):
         super().__init__("\n".join(problems))
         self.problems = problems
+
+
+class CutError(PlanError):
+    """The source or ffmpeg failed while cutting (``cut failed: …``); editing the plan does not help."""
 
 
 def sanitize(name: str, max_len: int = 120) -> str:
@@ -90,8 +96,15 @@ def validate(plan: dict) -> list[str]:
     for a, b in zip(shared, shared[1:]):
         if b["start"] <= a["start"]:
             problems.append(f"track {b['index']}: start {b['start']} does not increase after track {a['index']}")
-        if b["start"] < a["end"] - 0.001:
-            problems.append(f"tracks {a['index']} and {b['index']} overlap ({a['end']} > {b['start']})")
+    # Overlap per source file (a part's tracks share its file and are cut together, see packetcut).
+    per_source: dict[str, list[dict]] = {}
+    for t in tracks:
+        per_source.setdefault(str(track_source(plan, t)), []).append(t)
+    for group in per_source.values():
+        group = sorted(group, key=lambda t: t["start"])
+        for a, b in zip(group, group[1:]):
+            if b["start"] < a["end"] - 0.001:
+                problems.append(f"tracks {a['index']} and {b['index']} overlap ({a['end']} > {b['start']})")
     missing: dict[str, list[str]] = {}
     for t in tracks:
         for key in ("title", "artist", "album", "album_artist"):
@@ -137,11 +150,35 @@ def apply_plan(plan_path: Path, outdir: Path, *, force: bool = False, make_zip: 
     track_total = alb.get("track_total") or len(tracks)
     disc_total = alb.get("disc_total") or 1
     url = plan["source"].get("url") or ""
+    # One packet-aligned pass per source file (see packetcut); tracks keep their plan order.
+    by_source: dict[Path, list[int]] = {}
+    for i, t in enumerate(tracks):
+        by_source.setdefault(track_source(plan, t), []).append(i)
+    for idx in by_source.values():
+        idx.sort(key=lambda i: float(tracks[i]["start"]))   # a hand-edited plan may list a part out of order
+    # Every source is cut into hidden staging files first; only when all succeed do they replace
+    # the outputs, so a failure leaves no new file and (with --force) keeps the old ones.
+    # Short names, so a long title that fits the filesystem's name limit still fits while staged.
+    # A random part per run keeps two applies into the same folder (two singles in one OUTDIR) apart.
+    run = secrets.token_hex(4)
+    staged = [f.with_name(f".bili-album-cut-{run}-{i:03d}.m4a") for i, f in enumerate(files)]
+    cuts: dict[int, Cut] = {}
+    try:
+        for src, idx in by_source.items():
+            done = cut_tracks(src, [(float(tracks[i]["start"]), float(tracks[i]["end"])) for i in idx],
+                              [staged[i] for i in idx], overwrite=True)
+            cuts.update(zip(idx, done))
+    except BaseException as e:
+        for s in staged:
+            s.unlink(missing_ok=True)
+        if isinstance(e, RangeError):
+            raise PlanError([str(e)]) from e
+        if isinstance(e, PacketCutError):
+            raise CutError([f"cut failed: {e}"]) from e
+        raise
+    for s, f in zip(staged, files):
+        s.replace(f)
     for t, dst in zip(tracks, files):
-        src = track_source(plan, t)
-        if dst.exists() and force:
-            dst.unlink()
-        cut(src, dst, float(t["start"]), float(t["end"]), overwrite=force)
         span = f"{fmt_ts(t['start'])}-{fmt_ts(t['end'])}"
         comment = f"{url} {span}".strip() if url else f"{plan['source'].get('title', '')} {span}".strip()
         if t.get("audio_path") and plan["source"].get("parts", 1) > 1:
@@ -166,15 +203,19 @@ def apply_plan(plan_path: Path, outdir: Path, *, force: bool = False, make_zip: 
     produced = [f for f in files if f.exists()]
     if len(produced) != len(tracks):
         res.warnings.append(f"{len(tracks)} planned tracks but {len(produced)} files")
-    for t, f in zip(tracks, files):
+    for i, (t, f) in enumerate(zip(tracks, files)):
         tags = read_tags(f)
         info = audio_info(f)
         planned = float(t["end"]) - float(t["start"])
+        c = cuts[i]
         row = {"index": t["index"], "title": t["title"], "start": t["start"], "end": t["end"],
-               "planned": round(planned, 3), "actual": round(info["duration"], 3), "file": str(f)}
+               "planned": round(planned, 3), "actual": round(info["duration"], 3), "file": str(f),
+               "cut_start": round(c.start, 3), "cut_end": round(c.end, 3), "cut": c.mode}
         res.rows.append(row)
-        if abs(info["duration"] - planned) > DUR_TOL:
-            res.warnings.append(f"track {t['index']}: duration {info['duration']:.3f}s vs planned {planned:.3f}s")
+        # Packet cuts move each boundary by up to a packet (about 93 ms for ALAC): compare with what was cut.
+        if abs(info["duration"] - (c.end - c.start)) > DUR_TOL:
+            res.warnings.append(f"track {t['index']}: duration {info['duration']:.3f}s vs cut "
+                                f"{c.end - c.start:.3f}s (planned {planned:.3f}s)")
         if info["start_time"] < 0:
             res.warnings.append(f"track {t['index']}: negative start time {info['start_time']}")
         for key in REQUIRED:

@@ -40,6 +40,7 @@ Z = {
     "review_failed": "模型复核失败（服务不可用或回答无效），已跳过复核，方案需要人工确认后再导入。",
     "review_timeout": "模型复核超时，已跳过复核，方案需要人工确认后再导入。",
     "review_not_configured": "没有配置复核模型，已跳过复核，方案需要人工确认后再导入。",
+    "cut_failed": "无损切分时出错（源音频或 ffmpeg 的问题），已停止，没有生成文件。请稍后重试；如果反复出现，请把日志交给维护者。",
     "cut_check_failed": "切分后的检查没通过（时长或标签不对），已停止，没有导入。请重新分析或修改方案后再试。",
     "not_identified": "没能识别出专辑或歌曲。请核对曲名、艺人和专辑后再确认导入，或者放弃。",
     "needs_confirmation": "需要确认：请检查标出的曲目和问题，修改后继续，或者放弃。",
@@ -74,6 +75,8 @@ def explain(exc: BaseException | str, stage: str = "") -> Explained:
     if problems is not None:                                   # apply.PlanError
         if any("output exists" in p for p in problems):
             return out("output_exists")
+        if any(p.startswith("cut failed:") for p in problems):    # apply.CutError
+            return out("cut_failed")
         return out("plan_problems", Z["plan_problems"] + problems_zh(problems))
     if isinstance(exc, PermissionError) or "Permission denied" in text or "No space left" in text:
         return out("library_not_writable" if stage == "import" else "unexpected")
