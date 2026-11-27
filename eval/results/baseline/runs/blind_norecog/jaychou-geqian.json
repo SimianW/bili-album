@@ -1,0 +1,38 @@
+{
+  "case_id": "jaychou-geqian",
+  "mode": "blind_norecog",
+  "started_at": "2026-11-26T22:22:39-05:00",
+  "head_commit": "020392d698e3bd585cb65d402ab0778184a6bf03",
+  "cache": "cold",
+  "ok": true,
+  "error": null,
+  "exit_code": 0,
+  "wall_seconds": 8.77,
+  "plan_wall_seconds": 8.77,
+  "invocations": [
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "plan",
+        "https://www.bilibili.com/video/BV19Z3n6VEMo",
+        "--workdir",
+        ".work/eval/blind_norecog/jaychou-geqian",
+        "--no-text-hints",
+        "--no-recognize"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 8.77,
+      "stderr_tail": "WARNING bili_album.catalog: catalog: NetEase: netease /api/search/get: code 200\nkind: single (duration 4:00.35 <= 9:00.00 and no tracklist hints)\nalbum: 在专业录音棚听 周杰伦 - 搁浅 [] \n#  start    end      title  artist                 conf\n-  -------  -------  -----  ---------------------  ----\n1  0:00.00  4:00.35  搁浅   在专业录音棚听 周杰伦  0.35\nneeds_review:\n  - track 1: no confident catalog match; title '搁浅' is the guess from the video title (recognition found nothing)\n  - cover: no catalog artwork; used a centre-cropped Bilibili cover\n  - track 1 '搁浅': low confidence 0.35\n  - catalog errors: NetEase: netease /api/search/get: code 200\ntimings: fetch 2.58s, download 3.81s, analyze 0.0s, catalog 2.06s, recognize 0.0s, total 8.52s\n",
+      "step": "plan",
+      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/jaychou-geqian/plan.json\n"
+    }
+  ],
+  "source_prep": null,
+  "part_offsets": null,
+  "source_probe": null,
+  "output_files": null,
+  "finished_at": "2026-11-26T22:22:48-05:00"
+}

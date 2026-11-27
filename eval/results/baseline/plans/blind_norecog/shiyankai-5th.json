@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "source": {
+    "url": "https://www.bilibili.com/video/BV1T2Wu6KE6V",
+    "bvid": "BV1T2Wu6KE6V",
+    "title": "【𝐇𝐢-𝐑𝐞𝐬无损臻享】石衍恺《5th》|“Though it’s far , I’ll never be gone”",
+    "uploader": "狡兔音乐",
+    "duration": 205.334,
+    "audio_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/shiyankai-5th/source.m4a",
+    "audio_format": {
+      "codec": "aac",
+      "bitrate_kbps": 182,
+      "sample_rate": 44100
+    },
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/shiyankai-5th/bili_cover.jpg",
+    "parts": 1,
+    "trim_head": 0.0,
+    "trim_tail": 0.0,
+    "text_hints": false
+  },
+  "kind": "single",
+  "kind_reason": "duration 3:25.33 <= 9:00.00 and no tracklist hints",
+  "album": {
+    "title": "5th",
+    "artist": "石衍恺",
+    "year": "2023-12-18",
+    "genre": "",
+    "track_total": 1,
+    "disc_total": 1,
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/shiyankai-5th/cover.jpg",
+    "catalog": {
+      "provider": "netease",
+      "id": "181317364",
+      "url": "https://music.163.com/#/album?id=181317364"
+    },
+    "match_reason": ""
+  },
+  "tracks": [
+    {
+      "index": 1,
+      "start": 0.0,
+      "end": 205.334,
+      "title": "5th",
+      "artist": "石衍恺",
+      "album": "5th",
+      "album_artist": "石衍恺",
+      "track_number": 1,
+      "disc_number": 1,
+      "year": "2023-12-18",
+      "genre": "",
+      "composer": "石衍恺",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/shiyankai-5th/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2109684982"
+      },
+      "confidence": 0.75,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "netease: 石衍恺 - 5th (205.3s vs 205.3s) from album 5th"
+        }
+      ]
+    }
+  ],
+  "needs_review": false,
+  "review_reasons": [],
+  "timings": {
+    "fetch": 2.42,
+    "download": 4.39,
+    "analyze": 0.0,
+    "catalog": 5.29,
+    "recognize": 0.0,
+    "total": 12.14
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "case_id": "coldplay-yellow",
+  "mode": "hints",
+  "started_at": "2026-11-26T22:23:09-05:00",
+  "head_commit": "020392d698e3bd585cb65d402ab0778184a6bf03",
+  "cache": "cold",
+  "ok": true,
+  "error": null,
+  "exit_code": 0,
+  "wall_seconds": 20.32,
+  "plan_wall_seconds": 19.62,
+  "invocations": [
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "plan",
+        "https://www.bilibili.com/video/BV1VR4y1Y7QS",
+        "--workdir",
+        ".work/eval/hints/coldplay-yellow"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 19.62,
+      "stderr_tail": "kind: single (duration 4:29.95 <= 9:00.00 and no tracklist hints)\nalbum: Various Artists - Best 00s Pop Ever [2021-01-08] netease\n#  start    end      title   artist    conf\n-  -------  -------  ------  --------  ----\n1  0:00.00  4:29.95  Yellow  Coldplay  0.95\ntimings: fetch 3.52s, download 4.53s, analyze 0.0s, catalog 10.84s, recognize 0.25s, total 19.33s\n",
+      "step": "plan",
+      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/hints/coldplay-yellow/plan.json\n"
+    },
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "apply",
+        ".work/eval/hints/coldplay-yellow/plan.json",
+        "-o",
+        ".work/eval/out/coldplay-yellow"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 0.43,
+      "stderr_tail": "",
+      "step": "apply",
+      "stdout_tail": "#  title   start    end      planned  actual  file\n-  ------  -------  -------  -------  ------  ---------------------\n1  Yellow  0:00.00  4:29.95  269.95   269.95  Coldplay - Yellow.m4a\noptional tags left empty: genre (tracks 1)\n"
+    },
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "inspect",
+        ".work/eval/out/coldplay-yellow",
+        "--json"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 0.27,
+      "stderr_tail": "",
+      "step": "inspect",
+      "stdout_tail": "[\n  {\n    \"duration\": 269.952,\n    \"bitrate_kbps\": 249,\n    \"codec\": \"mp4a.40.2\",\n    \"title\": \"Yellow\",\n    \"artist\": \"Coldplay\",\n    \"album_artist\": \"Various Artists\",\n    \"album\": \"Best 00s Pop Ever\",\n    \"year\": \"2021-01-08\",\n    \"genre\": \"\",\n    \"comment\": \"https://www.bilibili.com/video/BV1VR4y1Y7QS 0:00.00-4:29.95\",\n    \"composer\": \"Chris Martin/Guy Berryman/Jonny Buckland/Will Champion\",\n    \"lyrics\": \"1294 chars\",\n    \"track\": 1,\n    \"track_total\": 22,\n    \"disc\": 1,\n    \"disc_total\": 1,\n    \"cover\": \"126390B\",\n    \"file\": \"Coldplay - Yellow.m4a\",\n    \"start_time\": 0.0\n  }\n]\n"
+    }
+  ],
+  "source_prep": null,
+  "part_offsets": null,
+  "source_probe": {
+    "codec": "aac",
+    "profile": "LC",
+    "sample_rate": 48000,
+    "channels": 2,
+    "bitrate_kbps": 249.3,
+    "duration": 269.952
+  },
+  "output_files": [
+    {
+      "duration": 269.952,
+      "bitrate_kbps": 249,
+      "codec": "mp4a.40.2",
+      "title": "Yellow",
+      "artist": "Coldplay",
+      "album_artist": "Various Artists",
+      "album": "Best 00s Pop Ever",
+      "year": "2021-01-08",
+      "genre": "",
+      "comment": "https://www.bilibili.com/video/BV1VR4y1Y7QS 0:00.00-4:29.95",
+      "composer": "Chris Martin/Guy Berryman/Jonny Buckland/Will Champion",
+      "lyrics": "1294 chars",
+      "track": 1,
+      "track_total": 22,
+      "disc": 1,
+      "disc_total": 1,
+      "cover": "126390B",
+      "file": "Coldplay - Yellow.m4a",
+      "start_time": 0.0,
+      "probe": {
+        "codec": "aac",
+        "profile": "LC",
+        "sample_rate": 48000,
+        "channels": 2,
+        "bitrate_kbps": 249.3,
+        "duration": 269.952
+      },
+      "source_probe": {
+        "codec": "aac",
+        "profile": "LC",
+        "sample_rate": 48000,
+        "channels": 2,
+        "bitrate_kbps": 249.3,
+        "duration": 269.952
+      }
+    }
+  ],
+  "finished_at": "2026-11-26T22:23:29-05:00"
+}

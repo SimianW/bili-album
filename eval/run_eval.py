@@ -4,6 +4,7 @@
     uv run python eval/run_eval.py                      # all cases, all modes, resumable
     uv run python eval/run_eval.py --case ID --mode MODE [--force]
     uv run python eval/run_eval.py --score-only         # rescore from eval/results/{runs,plans}
+    uv run python eval/run_eval.py --score-only --results-dir eval/results/baseline   # rescore the archived baseline
 
 Modes (each with its own cold work directory ``.work/eval/<mode>/<case-id>/``):
 
@@ -331,6 +332,21 @@ def git(*args: str) -> str:
     return subprocess.run(["git", "-C", str(REPO), *args], capture_output=True, text=True).stdout.strip()
 
 
+def measured_offsets(case: dict) -> list[float] | None:
+    """Measured start of each part on the concatenated time line (multipart only), from stored run records."""
+    if case["kind"] != "multipart":
+        return None
+    for mode in ("blind", "blind_norecog"):
+        rec = read_json(RESULTS / "runs" / mode / f"{case['id']}.json") or {}
+        offs = ((rec.get("source_prep") or {}).get("checks") or {}).get("part_offsets")
+        if offs:
+            return [float(o) for o in offs]
+    rec = read_json(RESULTS / "runs" / "hints" / f"{case['id']}.json") or {}
+    if rec.get("part_offsets"):
+        return sorted(float(o) for o in rec["part_offsets"].values())
+    return None
+
+
 def build_results(cases: list[dict]) -> dict:
     out_cases = []
     per_mode: dict[str, list] = {m: [] for m in MODES}
@@ -338,6 +354,7 @@ def build_results(cases: list[dict]) -> dict:
     seen: dict[str, list] = {m: [] for m in MODES}
     for c in cases:
         runs = {}
+        ce = scoring.with_measured_starts(c, measured_offsets(c))
         for mode in MODES:
             rec = read_json(RESULTS / "runs" / mode / f"{c['id']}.json")
             plan = read_json(RESULTS / "plans" / mode / f"{c['id']}.json")
@@ -345,8 +362,11 @@ def build_results(cases: list[dict]) -> dict:
                 rec = {"ok": False, "error": "not run", "exit_code": None, "wall_seconds": 0.0, "cache": None,
                        "invocations": []}
                 plan = None
-            sc = scoring.score_run(c, mode, plan, part_offsets=rec.get("part_offsets"),
-                                   output_files=rec.get("output_files"), source_probe=rec.get("source_probe"))
+            alt = [float(t["start_cases_yaml"]) for t in ce["tracks"]] \
+                if (ce is not c and scoring.scores_boundaries(c["kind"], mode)) else None
+            sc = scoring.score_run(ce, mode, plan, part_offsets=rec.get("part_offsets"),
+                                   output_files=rec.get("output_files"), source_probe=rec.get("source_probe"),
+                                   alt_starts=alt)
             run = {"ok": bool(rec.get("ok")), "error": rec.get("error"), "exit_code": rec.get("exit_code"),
                    "wall_seconds": rec.get("wall_seconds"), "cache": rec.get("cache")}
             for k in ("expected_kind", "kind_pred", "kind_ok", "kind_reason", "needs_review", "review_reasons",
@@ -354,31 +374,40 @@ def build_results(cases: list[dict]) -> dict:
                       "titles", "metrics", "output"):
                 run[k] = sc[k]
             run["problems"] = sc["problems"]
+            run["boundaries_alt_truth"] = sc["boundaries_alt_truth"]
             dur = float(c["duration"])
             run["speed"] = {"audio_seconds": dur, "plan_wall_seconds": rec.get("plan_wall_seconds"),
                             "realtime_factor": round(dur / rec["wall_seconds"], 2) if rec.get("wall_seconds") else None}
             run["source_prep"] = rec.get("source_prep")
             run["started_at"] = rec.get("started_at")
-            run["plan_file"] = f"eval/results/plans/{mode}/{c['id']}.json" if plan is not None else None
+            run["plan_file"] = f"{rel(RESULTS)}/plans/{mode}/{c['id']}.json" if plan is not None else None
             run["invocations"] = [{k: i.get(k) for k in ("step", "cmd", "exit_code", "timed_out", "wall_seconds",
                                                          "stderr_tail")} for i in rec.get("invocations", [])]
             runs[mode] = run
-            per_mode[mode].append((c, run))
-            (seen if c["id"] in SEEN_IN_DEV else held)[mode].append((c, run))
+            if run["error"] != "not run":       # never-run pairs are reported in "not_run", not as failures
+                per_mode[mode].append((c, run))
+                (seen if c["id"] in SEEN_IN_DEV else held)[mode].append((c, run))
         out_cases.append({
             "id": c["id"], "kind": c["kind"], "category": c["category"], "url": c["url"],
             "duration": float(c["duration"]), "truth_source": c["truth_source"],
             "truth_quality": c["truth_quality"], "seen_in_dev": c["id"] in SEEN_IN_DEV,
             "truth": {"album": c.get("album"), "album_artist": c.get("album_artist"), "year": c.get("year"),
                       "end": c.get("end"),
-                      "tracks": [{"n": t["n"], "start": float(t["start"]), "title": t["title"], "artist": t["artist"]}
-                                 for t in c["tracks"]]},
+                      "start_basis": ce.get("start_basis", "cases.yaml"),
+                      "tracks": [dict({"n": t["n"], "start": float(t["start"]), "title": t["title"],
+                                       "artist": t["artist"]},
+                                      **({"start_cases_yaml": float(t["start_cases_yaml"])}
+                                         if "start_cases_yaml" in t else {}))
+                                 for t in ce["tracks"]]},
             "notes": c.get("notes"),
             "runs": runs,
         })
-    src_commit = git("log", "-1", "--format=%H", "--", "src", "pyproject.toml")
+    src_commit = git("log", "-1", "--format=%H", "--", "src")
+    not_run = [f"{c['id']}/{m}" for c in out_cases for m, r in c["runs"].items() if r["error"] == "not run"]
     return {
         "generated_at": now_iso(),
+        "partial": bool(not_run),
+        "not_run": not_run,
         "tool_commit": src_commit,
         "head_commit": git("rev-parse", "HEAD"),
         "src_dirty": bool(git("status", "--porcelain", "--", "src")),
@@ -387,7 +416,10 @@ def build_results(cases: list[dict]) -> dict:
                     "f_tolerance_s": scoring.F_TOL, "problem_tolerance_s": scoring.PROBLEM_TOL,
                     "title_ratio": scoring.TITLE_RATIO,
                     "notes": "Rates are pooled over boundaries / tracks. Failed runs count fully (all boundaries "
-                             "missed, all titles wrong). Multipart cases are boundary-scored only in blind modes "
+                             "missed, all titles wrong); case+mode pairs that were never run (see not_run) are left "
+                             "out of the summaries. Multipart truth starts are the measured part offsets (see "
+                             "truth.start_basis); stream_copy_ok follows the 5 % bitrate rule, which VBR sources can "
+                             "fail on short cuts, so stream_copy_format_ok (codec, rate, channels) is given too. Multipart cases are boundary-scored only in blind modes "
                              "(synthetic concatenation). wall_seconds sums every tool invocation of a run."},
         "cases": out_cases,
         "summary": {m: scoring.summarize(per_mode[m]) for m in MODES},
@@ -403,12 +435,16 @@ def write_results(cases: list[dict]) -> Path:
 
 
 def main() -> int:
+    global RESULTS
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--case", action="append", help="case id (repeatable); default all")
     ap.add_argument("--mode", action="append", choices=MODES, help="mode (repeatable); default all")
     ap.add_argument("--force", action="store_true", help="re-run even if a result exists (wipes the work dir)")
     ap.add_argument("--score-only", action="store_true", help="only rescore stored runs and rewrite results.json")
+    ap.add_argument("--results-dir", type=Path, default=RESULTS,
+                    help="where runs/, plans/ and results.json live (default eval/results; e.g. eval/results/baseline)")
     a = ap.parse_args()
+    RESULTS = a.results_dir.resolve()
     cases = load_cases()
     if a.case:
         unknown = set(a.case) - {c["id"] for c in cases}

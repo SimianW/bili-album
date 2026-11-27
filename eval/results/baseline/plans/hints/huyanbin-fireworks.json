@@ -1,0 +1,400 @@
+{
+  "version": 1,
+  "source": {
+    "url": "https://www.bilibili.com/video/BV1i14y1i72b",
+    "bvid": "BV1i14y1i72b",
+    "title": "胡彦斌2023新专辑「是一场烟火」全专完整版无损纯享",
+    "uploader": "开酒馆的谢梦离",
+    "duration": 2378.791,
+    "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/huyanbin-fireworks/source.m4a",
+    "audio_format": {
+      "codec": "aac",
+      "bitrate_kbps": 119,
+      "sample_rate": 44100
+    },
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huyanbin-fireworks/bili_cover.jpg",
+    "parts": 1,
+    "trim_head": 0.0,
+    "trim_tail": 0.391,
+    "text_hints": true
+  },
+  "kind": "compilation",
+  "kind_reason": "Bilibili chapters lists 10 timestamped tracks",
+  "album": {
+    "title": "是一场烟火",
+    "artist": "胡彥斌",
+    "year": "2023-08-18",
+    "genre": "流行樂",
+    "track_total": 10,
+    "disc_total": 1,
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huyanbin-fireworks/cover.jpg",
+    "catalog": {
+      "provider": "itunes",
+      "id": "1702978283@TW",
+      "url": "https://music.apple.com/tw/album/%E6%98%AF%E4%B8%80%E5%9C%BA%E7%83%9F%E7%81%AB/1702978283"
+    },
+    "match_reason": "itunes:胡彥斌 - 是一场烟火 (10 tracks, 2379s vs video 2379s; name 0.65, duration 1.00, tracklist 1.00)"
+  },
+  "tracks": [
+    {
+      "index": 1,
+      "start": 0.0,
+      "end": 220.4,
+      "title": "你若是風",
+      "artist": "胡彥斌",
+      "album": "是一场烟火",
+      "album_artist": "胡彥斌",
+      "track_number": 1,
+      "disc_number": 1,
+      "year": "2023-08-18",
+      "genre": "流行樂",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huyanbin-fireworks/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1702978284"
+      },
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "kind": "chapter",
+          "detail": "Bilibili chapters: 0:00.00 你若是风"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 220.4s vs catalog 220.2s (+0.2s)"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "start": 220.4,
+      "end": 458.4,
+      "title": "不去管",
+      "artist": "胡彥斌",
+      "album": "是一场烟火",
+      "album_artist": "胡彥斌",
+      "track_number": 2,
+      "disc_number": 1,
+      "year": "2023-08-18",
+      "genre": "流行樂",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huyanbin-fireworks/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1702978285"
+      },
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "kind": "chapter",
+          "detail": "Bilibili chapters: 3:39.00 不去管"
+        },
+        {
+          "kind": "silence",
+          "detail": "start snapped 219.00s -> 220.40s (silence, strength 1.00)"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 238.0s vs catalog 237.6s (+0.4s)"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "start": 458.4,
+      "end": 712.6,
+      "title": "是一場煙火",
+      "artist": "胡彥斌",
+      "album": "是一场烟火",
+      "album_artist": "胡彥斌",
+      "track_number": 3,
+      "disc_number": 1,
+      "year": "2023-08-18",
+      "genre": "流行樂",
+      "composer": "胡彦斌",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huyanbin-fireworks/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1702978290"
+      },
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "kind": "chapter",
+          "detail": "Bilibili chapters: 7:38.00 是一场烟火"
+        },
+        {
+          "kind": "silence",
+          "detail": "start snapped 458.00s -> 458.40s (silence, strength 1.00)"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 254.2s vs catalog 255.5s (-1.3s)"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "start": 712.6,
+      "end": 922.9,
+      "title": "世界中心",
+      "artist": "胡彥斌",
+      "album": "是一场烟火",
+      "album_artist": "胡彥斌",
+      "track_number": 4,
+      "disc_number": 1,
+      "year": "2023-08-18",
+      "genre": "流行樂",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huyanbin-fireworks/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1702978673"
+      },
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "kind": "chapter",
+          "detail": "Bilibili chapters: 11:52.00 世界中心"
+        },
+        {
+          "kind": "dip",
+          "detail": "start snapped 712.00s -> 712.60s (dip, strength 0.75)"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 210.3s vs catalog 209.4s (+0.9s)"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "start": 922.9,
+      "end": 1197.8,
+      "title": "我們還會一起走到那裡去嗎",
+      "artist": "胡彥斌",
+      "album": "是一场烟火",
+      "album_artist": "胡彥斌",
+      "track_number": 5,
+      "disc_number": 1,
+      "year": "2023-08-18",
+      "genre": "流行樂",
+      "composer": "胡彦斌",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huyanbin-fireworks/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1702978674"
+      },
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "kind": "chapter",
+          "detail": "Bilibili chapters: 15:22.00 我们还会一起走到那里去吗"
+        },
+        {
+          "kind": "silence",
+          "detail": "start snapped 922.00s -> 922.90s (silence, strength 1.00)"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 274.9s vs catalog 275.1s (-0.2s)"
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "start": 1197.8,
+      "end": 1412.7,
+      "title": "擁過",
+      "artist": "胡彥斌",
+      "album": "是一场烟火",
+      "album_artist": "胡彥斌",
+      "track_number": 6,
+      "disc_number": 1,
+      "year": "2023-08-18",
+      "genre": "流行樂",
+      "composer": "胡彦斌",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huyanbin-fireworks/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1702978675"
+      },
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "kind": "chapter",
+          "detail": "Bilibili chapters: 19:57.00 拥过"
+        },
+        {
+          "kind": "silence",
+          "detail": "start snapped 1197.00s -> 1197.80s (silence, strength 1.00)"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 214.9s vs catalog 215.8s (-0.9s)"
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "start": 1412.7,
+      "end": 1646.3,
+      "title": "荒原狼",
+      "artist": "胡彥斌",
+      "album": "是一场烟火",
+      "album_artist": "胡彥斌",
+      "track_number": 7,
+      "disc_number": 1,
+      "year": "2023-08-18",
+      "genre": "流行樂",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huyanbin-fireworks/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1702978833"
+      },
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "kind": "chapter",
+          "detail": "Bilibili chapters: 23:32.00 荒原狼"
+        },
+        {
+          "kind": "silence",
+          "detail": "start snapped 1412.00s -> 1412.70s (silence, strength 1.00)"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 233.6s vs catalog 232.6s (+1.0s)"
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "start": 1646.3,
+      "end": 1884.6,
+      "title": "敬自己不為誰 (feat. GAI周延)",
+      "artist": "胡彥斌",
+      "album": "是一场烟火",
+      "album_artist": "胡彥斌",
+      "track_number": 8,
+      "disc_number": 1,
+      "year": "2023-08-18",
+      "genre": "流行樂",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huyanbin-fireworks/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1702978842"
+      },
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "kind": "chapter",
+          "detail": "Bilibili chapters: 27:25.00 敬自己不为谁"
+        },
+        {
+          "kind": "silence",
+          "detail": "start snapped 1645.00s -> 1646.30s (silence, strength 1.00)"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 238.3s vs catalog 237.4s (+0.9s)"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "title '敬自己不为谁' written as the catalog's '敬自己不為誰 (feat. GAI周延)'"
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "start": 1884.6,
+      "end": 2092.4,
+      "title": "人人",
+      "artist": "胡彥斌",
+      "album": "是一场烟火",
+      "album_artist": "胡彥斌",
+      "track_number": 9,
+      "disc_number": 1,
+      "year": "2023-08-18",
+      "genre": "流行樂",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huyanbin-fireworks/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1702978844"
+      },
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "kind": "chapter",
+          "detail": "Bilibili chapters: 31:22.00 人人"
+        },
+        {
+          "kind": "silence",
+          "detail": "start snapped 1882.00s -> 1884.60s (silence, strength 1.00)"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 207.8s vs catalog 209.2s (-1.4s)"
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "start": 2092.4,
+      "end": 2378.4,
+      "title": "開花的星星",
+      "artist": "胡彥斌",
+      "album": "是一场烟火",
+      "album_artist": "胡彥斌",
+      "track_number": 10,
+      "disc_number": 1,
+      "year": "2023-08-18",
+      "genre": "流行樂",
+      "composer": "胡彦斌",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/huyanbin-fireworks/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1702978845"
+      },
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "kind": "chapter",
+          "detail": "Bilibili chapters: 34:52.00 开花的星星"
+        },
+        {
+          "kind": "silence",
+          "detail": "start snapped 2092.00s -> 2092.40s (silence, strength 1.00)"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 286.0s vs catalog 286.2s (-0.2s)"
+        }
+      ]
+    }
+  ],
+  "needs_review": false,
+  "review_reasons": [],
+  "timings": {
+    "fetch": 3.03,
+    "download": 32.11,
+    "analyze": 7.15,
+    "catalog": 43.13,
+    "recognize": 0.0,
+    "total": 85.64
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "case_id": "zhangjie-yaode",
+  "mode": "blind",
+  "started_at": "2026-11-26T22:29:37-05:00",
+  "head_commit": "6090bd4dc463018907103a7786ceb20cb26d6375",
+  "cache": "cold",
+  "ok": true,
+  "error": null,
+  "exit_code": 0,
+  "wall_seconds": 312.15,
+  "plan_wall_seconds": 312.15,
+  "invocations": [
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "plan",
+        "--audio",
+        ".work/eval/sources/zhangjie-yaode/concat.m4a",
+        "--title",
+        "【Hi-Res无损】张杰最新专辑《要得》全专分P纯享",
+        "--workdir",
+        ".work/eval/blind/zhangjie-yaode",
+        "--no-text-hints"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 312.15,
+      "stderr_tail": "kind: compilation (long video (41:16.31) without hints; catalog album fits: netease:张杰 - 要得 (10 tracks, 2476s vs video 2476s; name 1.00, duration 1.00))\nalbum: 张杰 - 要得 [2024-04-01] netease\n#   start     end       title       artist  conf\n--  --------  --------  ----------  ------  ----\n1   0:00.00   3:54.40   回          张杰    0.9\n2   3:54.40   7:44.40   再生之地    张杰    1.0\n3   7:44.40   11:24.20  宿命之眼    张杰    1.0\n4   11:24.20  15:39.40  穿堂风      张杰    1.0\n5   15:39.40  19:43.20  老子数道三  张杰    1.0\n6   19:43.20  22:58.10  张三丰      张杰    1.0\n7   22:58.10  26:17.50  来我家      张杰    1.0\n8   26:17.50  30:33.20  月光下      张杰    1.0\n9   30:33.20  36:04.30  轻舟        张杰    1.0\n10  36:04.30  41:16.00  树呢        张杰    1.0\ntimings: fetch 0.0s, download 0.47s, analyze 7.42s, catalog 22.98s, recognize 279.88s, total 311.9s\n",
+      "step": "plan",
+      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/blind/zhangjie-yaode/plan.json\n"
+    }
+  ],
+  "source_prep": {
+    "title": "【Hi-Res无损】张杰最新专辑《要得》全专分P纯享",
+    "concat": ".work/eval/sources/zhangjie-yaode/concat.m4a",
+    "checks": {
+      "parts": 10,
+      "truth_tracks": 10,
+      "sum_part_durations": 2476.306,
+      "concat_duration": 2476.306,
+      "duration_diff": 0.0,
+      "duration_ok": true,
+      "codec_ok": true,
+      "part_offsets": [
+        0.0,
+        233.685,
+        463.423,
+        680.617,
+        937.428,
+        1183.273,
+        1378.153,
+        1577.598,
+        1833.171,
+        2160.637
+      ],
+      "truth_minus_offset": [
+        -0.0,
+        0.315,
+        0.577,
+        1.383,
+        1.572,
+        1.727,
+        1.847,
+        2.402,
+        2.829,
+        3.363
+      ],
+      "truth_alignment_max_abs": 3.363,
+      "truth_alignment_ok": false
+    },
+    "seconds": 2.9
+  },
+  "part_offsets": null,
+  "source_probe": null,
+  "output_files": null,
+  "finished_at": "2026-11-26T22:34:52-05:00"
+}

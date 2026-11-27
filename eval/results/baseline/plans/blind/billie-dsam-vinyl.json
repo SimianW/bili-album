@@ -1,0 +1,368 @@
+{
+  "version": 1,
+  "source": {
+    "url": "",
+    "bvid": "offline-6d4c1a8057",
+    "title": "【黑胶试听】Billie Eilish 《Don't Smile at Me》全专辑无损黑胶试听（分p）",
+    "uploader": "",
+    "duration": 1565.205,
+    "audio_path": "/home/simon/Dev/bili-album/.work/eval/blind/billie-dsam-vinyl/source.m4a",
+    "audio_format": {
+      "codec": "aac",
+      "bitrate_kbps": 317,
+      "sample_rate": 48000
+    },
+    "cover_path": "",
+    "parts": 1,
+    "trim_head": 3.1,
+    "trim_tail": 0.305,
+    "text_hints": false
+  },
+  "kind": "compilation",
+  "kind_reason": "long video (26:05.21) without hints; recognition found 3 different songs at 20/50/80%",
+  "album": {
+    "title": "dont smile at me",
+    "artist": "Billie Eilish",
+    "year": "2017-08-11",
+    "genre": "Alternative",
+    "track_total": 9,
+    "disc_total": 1,
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/billie-dsam-vinyl/cover.jpg",
+    "catalog": {
+      "provider": "itunes",
+      "id": "1440898929@US",
+      "url": "https://music.apple.com/us/album/dont-smile-at-me/1440898929"
+    },
+    "match_reason": "itunes:Billie Eilish - dont smile at me (9 tracks, 1738s vs video 1565s; name 1.00, duration 0.08)"
+  },
+  "tracks": [
+    {
+      "index": 1,
+      "start": 3.1,
+      "end": 194.8,
+      "title": "COPYCAT",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 1,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "FINNEAS/Billie Eilish",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899117"
+      },
+      "confidence": 1.0,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 193.4s to 191.7s (-1.7s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 3.10s (silence, strength 0.82)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 194.80s (silence, strength 1.00)"
+        },
+        {
+          "kind": "recognition",
+          "detail": "Shazam at 0:28.10: COPYCAT - Billie Eilish (recording starts at 1.43s); agrees"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "start": 194.8,
+      "end": 399.4,
+      "title": "idontwannabeyouanymore",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 2,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "Finneas O'Connell/Billie Eilish O'Connell",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899127"
+      },
+      "confidence": 1.0,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 203.6s to 204.6s (+1.0s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 194.80s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 399.40s (silence, strength 1.00)"
+        },
+        {
+          "kind": "recognition",
+          "detail": "Shazam at 3:39.80: idontwannabeyouanymore - Billie Eilish (recording starts at 194.99s); agrees"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "start": 399.4,
+      "end": 571.304,
+      "title": "my boy",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 3,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "Finneas O'Connell/Billie Eilish O'Connell",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899130"
+      },
+      "confidence": 1.0,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 170.9s to 171.0s (+0.1s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 399.40s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 570.40s (silence, strength 0.91)"
+        },
+        {
+          "kind": "recognition",
+          "detail": "Shazam at 7:04.40: my boy - Billie Eilish (recording starts at 399.62s); agrees"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "start": 571.304,
+      "end": 778.0,
+      "title": "party favor",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 5,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "Finneas O'Connell/Billie Eilish O'Connell",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899140"
+      },
+      "confidence": 1.0,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 204.8s to 207.6s (+2.8s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 570.40s (silence, strength 0.91)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 778.00s (silence, strength 1.00)"
+        },
+        {
+          "kind": "recognition",
+          "detail": "Shazam at 9:55.40: party favor - Billie Eilish (recording starts at 571.35s); agrees"
+        },
+        {
+          "kind": "recognition",
+          "detail": "start moved 570.40s -> 571.30s from the Shazam offset"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "start": 778.0,
+      "end": 954.8,
+      "title": "bellyache",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 6,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "Finneas O'Connell/Billie Eilish O'Connell",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899447"
+      },
+      "confidence": 0.5,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 179.2s to 176.8s (-2.4s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 778.00s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 954.80s (silence, strength 0.97)"
+        },
+        {
+          "kind": "recognition",
+          "detail": "Shazam at 13:23.00: watch - Billie Eilish (recording starts at 778.14s); expected 'bellyache'"
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "start": 954.8,
+      "end": 1155.0,
+      "title": "ocean eyes",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 7,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "FINNEAS",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899467"
+      },
+      "confidence": 0.5,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 200.4s to 200.2s (-0.2s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 954.80s (silence, strength 0.97)"
+        },
+        {
+          "kind": "recognition",
+          "detail": "Shazam at 16:19.80: bellyache - Billie Eilish (recording starts at 955.34s); expected 'ocean eyes'"
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "start": 1155.0,
+      "end": 1384.8,
+      "title": "hostage",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 8,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "Finneas O'Connell/Billie Eilish O'Connell",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899606"
+      },
+      "confidence": 0.3,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 229.4s to 229.8s (+0.4s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 1384.80s (silence, strength 0.80)"
+        },
+        {
+          "kind": "recognition",
+          "detail": "Shazam at 19:40.00: ocean eyes - Billie Eilish (recording starts at 1136.85s); expected 'hostage'"
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "start": 1384.8,
+      "end": 1564.9,
+      "title": "&burn",
+      "artist": "Billie Eilish & Vince Staples",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 9,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "Finneas O'Connell/Vince Staples",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899628"
+      },
+      "confidence": 0.5,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 179.0s to 180.1s (+1.1s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 1384.80s (silence, strength 0.80)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 1564.90s (silence, strength 0.89)"
+        },
+        {
+          "kind": "recognition",
+          "detail": "Shazam at 23:29.80: hostage - Billie Eilish (recording starts at 1336.46s); expected '&burn'"
+        }
+      ]
+    }
+  ],
+  "needs_review": true,
+  "review_reasons": [
+    "catalog track 4 'watch' was not found in the audio",
+    "track 5: Shazam heard 'watch' by 'Billie Eilish' at 13:23.00, plan says 'bellyache'",
+    "track 6: Shazam heard 'bellyache' by 'Billie Eilish' at 16:19.80, plan says 'ocean eyes'",
+    "track 7: Shazam heard 'ocean eyes' by 'Billie Eilish' at 19:40.00, plan says 'hostage'",
+    "track 8: Shazam heard 'hostage' by 'Billie Eilish' at 23:29.80, plan says '&burn'",
+    "track 5 'bellyache': low confidence 0.50",
+    "track 6 'ocean eyes': low confidence 0.50",
+    "track 7 'hostage': low confidence 0.30",
+    "track 8 '&burn': low confidence 0.50"
+  ],
+  "timings": {
+    "fetch": 0.0,
+    "download": 0.33,
+    "analyze": 6.71,
+    "catalog": 41.74,
+    "recognize": 197.87,
+    "total": 247.43
+  }
+}

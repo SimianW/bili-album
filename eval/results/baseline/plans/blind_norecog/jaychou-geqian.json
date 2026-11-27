@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "source": {
+    "url": "https://www.bilibili.com/video/BV19Z3n6VEMo",
+    "bvid": "BV19Z3n6VEMo",
+    "title": "在专业录音棚听 周杰伦《搁浅》｜Hi-Res 无损",
+    "uploader": "陈知许",
+    "duration": 240.35,
+    "audio_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/jaychou-geqian/source.m4a",
+    "audio_format": {
+      "codec": "aac",
+      "bitrate_kbps": 188,
+      "sample_rate": 44100
+    },
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/jaychou-geqian/bili_cover.jpg",
+    "parts": 1,
+    "trim_head": 0.0,
+    "trim_tail": -0.0,
+    "text_hints": false
+  },
+  "kind": "single",
+  "kind_reason": "duration 4:00.35 <= 9:00.00 and no tracklist hints",
+  "album": {
+    "title": "搁浅",
+    "artist": "在专业录音棚听 周杰伦",
+    "year": "",
+    "genre": "",
+    "track_total": 1,
+    "disc_total": 1,
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/jaychou-geqian/cover.jpg",
+    "catalog": {
+      "provider": "",
+      "id": "",
+      "url": ""
+    },
+    "match_reason": ""
+  },
+  "tracks": [
+    {
+      "index": 1,
+      "start": 0.0,
+      "end": 240.35,
+      "title": "搁浅",
+      "artist": "在专业录音棚听 周杰伦",
+      "album": "搁浅",
+      "album_artist": "在专业录音棚听 周杰伦",
+      "track_number": 1,
+      "disc_number": 1,
+      "year": "",
+      "genre": "",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/jaychou-geqian/cover.jpg",
+      "catalog": {
+        "provider": "",
+        "id": ""
+      },
+      "confidence": 0.35,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "best catalog candidate rejected: 楊延輝 & 張佳倫 - 誤差 (190.0s vs 240.3s)"
+        }
+      ]
+    }
+  ],
+  "needs_review": true,
+  "review_reasons": [
+    "track 1: no confident catalog match; title '搁浅' is the guess from the video title (recognition found nothing)",
+    "cover: no catalog artwork; used a centre-cropped Bilibili cover",
+    "track 1 '搁浅': low confidence 0.35",
+    "catalog errors: NetEase: netease /api/search/get: code 200"
+  ],
+  "timings": {
+    "fetch": 2.58,
+    "download": 3.81,
+    "analyze": 0.0,
+    "catalog": 2.06,
+    "recognize": 0.0,
+    "total": 8.52
+  }
+}

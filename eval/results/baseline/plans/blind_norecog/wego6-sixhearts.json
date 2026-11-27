@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "source": {
+    "url": "",
+    "bvid": "offline-4a052adbfc",
+    "title": "WE GO-6  出道专辑《SIX HEARTS》全专音源",
+    "uploader": "",
+    "duration": 869.473,
+    "audio_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/source.m4a",
+    "audio_format": {
+      "codec": "aac",
+      "bitrate_kbps": 209,
+      "sample_rate": 44100
+    },
+    "cover_path": "",
+    "parts": 1,
+    "trim_head": 0.0,
+    "trim_tail": 0.373,
+    "text_hints": false
+  },
+  "kind": "compilation",
+  "kind_reason": "long video (14:29.47) without hints; catalog album fits: netease:WE GO-6 - SIX HEARTS (5 tracks, 869s vs video 869s; name 1.00, duration 0.98)",
+  "album": {
+    "title": "SIX HEARTS",
+    "artist": "WE GO-6",
+    "year": "2026-11-17",
+    "genre": "K-Pop",
+    "track_total": 5,
+    "disc_total": 1,
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
+    "catalog": {
+      "provider": "netease",
+      "id": "409419869",
+      "url": "https://music.163.com/#/album?id=409419869"
+    },
+    "match_reason": "netease:WE GO-6 - SIX HEARTS (5 tracks, 869s vs video 869s; name 1.00, duration 0.98)"
+  },
+  "tracks": [
+    {
+      "index": 1,
+      "start": 0.0,
+      "end": 191.6,
+      "title": "괴물(Monster)",
+      "artist": "WE GO-6",
+      "album": "SIX HEARTS",
+      "album_artist": "WE GO-6",
+      "track_number": 1,
+      "disc_number": 1,
+      "year": "2026-11-17",
+      "genre": "K-Pop",
+      "composer": "네이슨 (NATHAN)/이범훈/동경(Full8loom)/Summer Soul/Paran/Roho/chAN's (TAKE A CHANCE)/Hiily (TAKE A CHANCE)/강히아(HYA)/sid/황순규/Roar/Nino/Benji Bae",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "3460495713"
+      },
+      "confidence": 0.7,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 191.4s to 191.6s (+0.2s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 191.60s (silence, strength 1.00)"
+        },
+        {
+          "kind": "recognition",
+          "detail": "recognition unavailable"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "start": 191.6,
+      "end": 317.7,
+      "title": "Lucky Charm",
+      "artist": "WE GO-6",
+      "album": "SIX HEARTS",
+      "album_artist": "WE GO-6",
+      "track_number": 2,
+      "disc_number": 1,
+      "year": "2026-11-17",
+      "genre": "K-Pop",
+      "composer": "네이슨 (NATHAN)/yuka/Myrhee (644ultramarine)/Coll’ 8va (644ultramarine)/sid",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "3460496527"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 125.8s to 126.1s (+0.3s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 191.60s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 317.70s (silence, strength 0.97)"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "start": 317.7,
+      "end": 489.6,
+      "title": "처음이자 마지막으로",
+      "artist": "WE GO-6",
+      "album": "SIX HEARTS",
+      "album_artist": "WE GO-6",
+      "track_number": 3,
+      "disc_number": 1,
+      "year": "2026-11-17",
+      "genre": "K-Pop",
+      "composer": "네이슨 (NATHAN)/yuka/Likey",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "3460495715"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 172.1s to 171.9s (-0.2s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 317.70s (silence, strength 0.97)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 489.60s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "start": 489.6,
+      "end": 681.6,
+      "title": "Luminaria",
+      "artist": "WE GO-6",
+      "album": "SIX HEARTS",
+      "album_artist": "WE GO-6",
+      "track_number": 4,
+      "disc_number": 1,
+      "year": "2026-11-17",
+      "genre": "K-Pop",
+      "composer": "네이슨 (NATHAN)/yuka/Roar",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "3460495716"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 191.7s to 192.0s (+0.3s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 489.60s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 681.60s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "start": 681.6,
+      "end": 869.1,
+      "title": "1004",
+      "artist": "WE GO-6",
+      "album": "SIX HEARTS",
+      "album_artist": "WE GO-6",
+      "track_number": 5,
+      "disc_number": 1,
+      "year": "2026-11-17",
+      "genre": "K-Pop",
+      "composer": "네이슨 (NATHAN)/Hey Farmer",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/wego6-sixhearts/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "3460496528"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 187.6s to 187.5s (-0.1s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 681.60s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 869.10s (silence, strength 1.00)"
+        }
+      ]
+    }
+  ],
+  "needs_review": false,
+  "review_reasons": [],
+  "timings": {
+    "fetch": 0.0,
+    "download": 0.2,
+    "analyze": 2.63,
+    "catalog": 19.3,
+    "recognize": 0.0,
+    "total": 22.35
+  }
+}

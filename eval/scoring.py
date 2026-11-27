@@ -67,7 +67,33 @@ def strip_suffixes(s: str | None) -> str:
     return s.strip()
 
 
+_ALIAS = re.compile(r"^(?P<out1>[^(（\[【]*)[(（\[【](?P<inner>[^)）\]】]+)[)）\]】](?P<out2>.*)$")
+
+
+def title_variants(s: str | None) -> list[str]:
+    """The title itself plus, for a ``Title (Alias)`` pair, the part outside and the part inside the brackets.
+
+    Version / feature brackets (``(feat. X)``, ``[Live]``) are not aliases and are left to ``strip_suffixes``.
+    """
+    s = unicodedata.normalize("NFKC", s or "").strip()
+    out = [s]
+    base = strip_suffixes(s)
+    m = _ALIAS.match(base)
+    if m:
+        outside = (m.group("out1") + m.group("out2")).strip()
+        inner = m.group("inner").strip()
+        out += [v for v in (outside, inner) if normalize(v)]
+    return out
+
+
 def title_ok(truth: str | None, pred: str | None) -> bool:
+    """Equal after normalisation, containment after stripping version suffixes, or ratio >= 0.85,
+    for any pairing of the two titles' variants (``Title (Alias)`` matches on either side of the pair)."""
+    tv, pv = title_variants(truth), title_variants(pred)
+    return any(_title_ok(a, b) for a in tv for b in pv)
+
+
+def _title_ok(truth: str, pred: str) -> bool:
     nt, np_ = normalize(truth), normalize(pred)
     if not nt or not np_:
         return False
@@ -273,6 +299,7 @@ def score_output(n_planned: int, planned_durations: list[float], files: list[dic
         if dur is not None:
             devs.append(abs(float(dur) - planned))
     copy_ok = n > 0
+    format_ok_all = n > 0
     copy_detail = []
     for f in files:
         src = f.get("source_probe") or source or {}
@@ -286,8 +313,10 @@ def score_output(n_planned: int, planned_durations: list[float], files: list[dic
                                 "channels": pr.get("channels"), "bitrate_kbps": pb,
                                 "source_bitrate_kbps": sb, "format_ok": ok, "bitrate_ok": br_ok})
         copy_ok = copy_ok and ok and br_ok
+        format_ok_all = format_ok_all and ok
     return {"files": n, "planned_tracks": n_planned, "files_match_plan": n == n_planned, "tag_completeness": comp,
             "max_duration_dev": _r(max(devs)) if devs else None, "stream_copy_ok": copy_ok,
+            "stream_copy_format_ok": format_ok_all,
             "stream_copy_mismatches": copy_detail}
 
 
@@ -301,9 +330,43 @@ def scores_boundaries(case_kind: str, mode: str) -> bool:
     return case_kind == "compilation" or (case_kind == "multipart" and mode != "hints")
 
 
+MEASURED_BASIS = "measured part offsets in the harness's lossless concatenation of the parts"
+YAML_BASIS = "cases.yaml starts (cumulative whole-second part durations from Bilibili's API)"
+
+
+def with_measured_starts(case: dict, offsets: list[float] | None) -> dict:
+    """A copy of a multipart case whose track starts are the measured part offsets.
+
+    ``cases.yaml`` builds multipart starts from Bilibili's whole-second part durations, which drift (several
+    seconds by the end of an album). The real start of part n in the concatenation is the sum of the earlier
+    parts' measured durations. The original value is kept as ``start_cases_yaml``. Cases that are not multipart,
+    or offsets that do not fit the track count, return the case unchanged.
+    """
+    if case.get("kind") != "multipart" or not offsets or len(offsets) != len(case["tracks"]):
+        return case
+    tracks = [dict(t, start=round(float(o), 3), start_cases_yaml=t["start"]) for t, o in zip(case["tracks"], offsets)]
+    return dict(case, tracks=tracks, start_basis=MEASURED_BASIS)
+
+
+def score_alt_boundaries(truth_tracks: list[dict], alt_starts: list[float], pred_tracks: list[dict],
+                         basis: str = YAML_BASIS) -> dict:
+    """Secondary boundary scores against another set of truth starts (``basis`` says which)."""
+    alt = [dict(t, start=float(s)) for t, s in zip(truth_tracks, alt_starts)]
+    b = score_boundaries(alt, pred_tracks)
+    c = boundary_counts(b["boundaries"], len(b["extra_boundaries"]))
+    return {"basis": basis, **b,
+            "metrics": rates_from_counts(c["n_truth_b"], c["n_pred_b"], c["hits"], c["abs_errs"])}
+
+
 def score_run(case: dict, mode: str, plan: dict | None, *, part_offsets: dict[str, float] | None = None,
-              output_files: list[dict] | None = None, source_probe: dict | None = None) -> dict:
-    """Scores for one case+mode. ``plan`` None means the tool produced no plan (crash / timeout)."""
+              output_files: list[dict] | None = None, source_probe: dict | None = None,
+              alt_starts: list[float] | None = None) -> dict:
+    """Scores for one case+mode. ``plan`` None means the tool produced no plan (crash / timeout).
+
+    ``alt_starts`` (synthetic multipart only) adds ``boundaries_alt_truth``: the same boundary scores against a
+    second set of truth starts. The harness passes the measured offsets as the primary truth (via
+    ``with_measured_starts``) and the ``cases.yaml`` starts here.
+    """
     truth = case["tracks"]
     end = float(case.get("end") or case["duration"])
     exp = expected_kind(case["kind"], mode)
@@ -320,6 +383,7 @@ def score_run(case: dict, mode: str, plan: dict | None, *, part_offsets: dict[st
                     "album": _album_scores(case, None), "tracks_pred": [], "boundaries": rows,
                     "extra_boundaries": [], "trim": None, "titles": titles})
         res["metrics"] = _metrics(case, res, do_b, n_pred=0)
+        res["boundaries_alt_truth"] = score_alt_boundaries(truth, alt_starts, []) if (do_b and alt_starts) else None
         res["had_problem"] = True
         res["problems"] = ["no plan (tool failed)"]
         res["output"] = None
@@ -342,6 +406,8 @@ def score_run(case: dict, mode: str, plan: dict | None, *, part_offsets: dict[st
     else:
         res["trim"] = None
     res["titles"] = score_titles(truth, tracks_pred, end)
+    res["boundaries_alt_truth"] = score_alt_boundaries(truth, alt_starts, tracks_pred) if (do_b and alt_starts) \
+        else None
     res["metrics"] = _metrics(case, res, do_b, n_pred=len(tracks_pred))
     res["problems"] = _problems(res, do_b)
     res["had_problem"] = bool(res["problems"])
@@ -422,6 +488,7 @@ def summarize(runs: list[tuple[dict, dict]]) -> dict:
     conf = {"review_problem": 0, "review_no_problem": 0, "no_review_problem": 0, "no_review_no_problem": 0,
             "failed": 0}
     trim_first, trim_last = [], []
+    alt = {"n_tb": 0, "n_pb": 0, "hits": {tol: 0 for tol in HIT_TOLERANCES}, "errs": []}
     speed_audio = speed_wall = 0.0
     for case, run in runs:
         ok += bool(run.get("ok"))
@@ -434,6 +501,14 @@ def summarize(runs: list[tuple[dict, dict]]) -> dict:
             for tol in HIT_TOLERANCES:
                 hits[tol] += c["hits"][tol]
             errs += c["abs_errs"]
+            ab = run.get("boundaries_alt_truth")
+            if ab:
+                c = boundary_counts(ab["boundaries"], len(ab["extra_boundaries"]))
+            alt["n_tb"] += c["n_truth_b"]
+            alt["n_pb"] += c["n_pred_b"]
+            for tol in HIT_TOLERANCES:
+                alt["hits"][tol] += c["hits"][tol]
+            alt["errs"] += c["abs_errs"]
         for t in run.get("titles") or []:
             n_titles += 1
             t_ok += bool(t["title_ok"])
@@ -476,5 +551,9 @@ def summarize(runs: list[tuple[dict, dict]]) -> dict:
                 "timings": {k: round(v, 1) for k, v in timings.items()},
                 "review_confusion": conf,
                 "trim_first_median_abs": _r(statistics.median(trim_first)) if trim_first else None,
-                "trim_last_median_abs": _r(statistics.median(trim_last)) if trim_last else None})
+                "trim_last_median_abs": _r(statistics.median(trim_last)) if trim_last else None,
+                "alt_truth": dict(rates_from_counts(alt["n_tb"], alt["n_pb"], alt["hits"], alt["errs"]),
+                                  boundaries=alt["n_tb"],
+                                  basis="synthetic multipart scored against cases.yaml starts; "
+                                        "other cases as in the primary numbers")})
     return out

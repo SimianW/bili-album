@@ -1,0 +1,76 @@
+{
+  "case_id": "billie-dsam-vinyl",
+  "mode": "blind_norecog",
+  "started_at": "2026-11-26T22:47:16-05:00",
+  "head_commit": "6090bd4dc463018907103a7786ceb20cb26d6375",
+  "cache": "cold",
+  "ok": true,
+  "error": null,
+  "exit_code": 0,
+  "wall_seconds": 43.1,
+  "plan_wall_seconds": 43.1,
+  "invocations": [
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "plan",
+        "--audio",
+        ".work/eval/sources/billie-dsam-vinyl/concat.m4a",
+        "--title",
+        "【黑胶试听】Billie Eilish 《Don't Smile at Me》全专辑无损黑胶试听（分p）",
+        "--workdir",
+        ".work/eval/blind_norecog/billie-dsam-vinyl",
+        "--no-text-hints",
+        "--no-recognize"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 43.1,
+      "stderr_tail": "WARNING bili_album.catalog: catalog: NetEase: netease /api/search/get: code 200\nkind: compilation (long video (26:05.21) without hints; recognition found 0 different songs at 20/50/80%)\nalbum: Billie Eilish - dont smile at me [2017-08-11] itunes\n#  start     end       title                   artist                         conf\n-  --------  --------  ----------------------  -----------------------------  ----\n1  0:03.10   3:14.80   COPYCAT                 Billie Eilish                  0.8\n2  3:14.80   6:39.40   idontwannabeyouanymore  Billie Eilish                  0.8\n3  6:39.40   9:30.40   my boy                  Billie Eilish                  0.8\n4  9:30.40   12:58.00  party favor             Billie Eilish                  0.8\n5  12:58.00  15:54.80  bellyache               Billie Eilish                  0.8\n6  15:54.80  19:15.00  ocean eyes              Billie Eilish                  0.8\n7  19:15.00  23:04.80  hostage                 Billie Eilish                  0.6\n8  23:04.80  26:04.90  &burn                   Billie Eilish & Vince Staples  0.8\nneeds_review:\n  - catalog track 4 'watch' was not found in the audio\ntimings: fetch 0.0s, download 0.35s, analyze 5.35s, catalog 36.55s, recognize 0.0s, total 42.82s\n",
+      "step": "plan",
+      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/billie-dsam-vinyl/plan.json\n"
+    }
+  ],
+  "source_prep": {
+    "title": "【黑胶试听】Billie Eilish 《Don't Smile at Me》全专辑无损黑胶试听（分p）",
+    "concat": ".work/eval/sources/billie-dsam-vinyl/concat.m4a",
+    "checks": {
+      "parts": 8,
+      "truth_tracks": 8,
+      "sum_part_durations": 1565.205,
+      "concat_duration": 1565.205,
+      "duration_diff": 0.0,
+      "duration_ok": true,
+      "codec_ok": true,
+      "part_offsets": [
+        0.0,
+        193.173,
+        399.061,
+        570.645,
+        777.024,
+        954.859,
+        1134.4,
+        1334.912
+      ],
+      "truth_minus_offset": [
+        -0.0,
+        0.827,
+        0.939,
+        1.355,
+        1.976,
+        2.141,
+        2.6,
+        3.088
+      ],
+      "truth_alignment_max_abs": 3.088,
+      "truth_alignment_ok": false
+    },
+    "seconds": 2.7
+  },
+  "part_offsets": null,
+  "source_probe": null,
+  "output_files": null,
+  "finished_at": "2026-11-26T22:47:59-05:00"
+}

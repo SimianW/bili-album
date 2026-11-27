@@ -1,0 +1,114 @@
+{
+  "case_id": "jaychou-geqian",
+  "mode": "hints",
+  "started_at": "2026-11-26T22:21:53-05:00",
+  "head_commit": "020392d698e3bd585cb65d402ab0778184a6bf03",
+  "cache": "cold",
+  "ok": true,
+  "error": null,
+  "exit_code": 0,
+  "wall_seconds": 15.94,
+  "plan_wall_seconds": 15.24,
+  "invocations": [
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "plan",
+        "https://www.bilibili.com/video/BV19Z3n6VEMo",
+        "--workdir",
+        ".work/eval/hints/jaychou-geqian"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 15.24,
+      "stderr_tail": "WARNING bili_album.catalog: catalog: NetEase: netease /api/search/get: code 200\nkind: single (duration 4:00.35 <= 9:00.00 and no tracklist hints)\nalbum: 周杰倫 - 七里香 [2004-08-03] itunes\n#  start    end      title  artist  conf\n-  -------  -------  -----  ------  ----\n1  0:00.00  4:00.35  擱淺   周杰倫  0.95\ntimings: fetch 3.47s, download 3.54s, analyze 0.0s, catalog 7.5s, recognize 0.27s, total 14.98s\n",
+      "step": "plan",
+      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/hints/jaychou-geqian/plan.json\n"
+    },
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "apply",
+        ".work/eval/hints/jaychou-geqian/plan.json",
+        "-o",
+        ".work/eval/out/jaychou-geqian"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 0.43,
+      "stderr_tail": "",
+      "step": "apply",
+      "stdout_tail": "#  title  start    end      planned  actual  file\n-  -----  -------  -------  -------  ------  -----------------\n1  擱淺   0:00.00  4:00.35  240.35   240.35  周杰倫 - 擱淺.m4a\noptional tags left empty: composer (tracks 1)\n"
+    },
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "inspect",
+        ".work/eval/out/jaychou-geqian",
+        "--json"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 0.27,
+      "stderr_tail": "",
+      "step": "inspect",
+      "stdout_tail": "[\n  {\n    \"duration\": 240.35,\n    \"bitrate_kbps\": 188,\n    \"codec\": \"mp4a.40.2\",\n    \"title\": \"擱淺\",\n    \"artist\": \"周杰倫\",\n    \"album_artist\": \"周杰倫\",\n    \"album\": \"七里香\",\n    \"year\": \"2004-08-03\",\n    \"genre\": \"華語流行樂\",\n    \"comment\": \"https://www.bilibili.com/video/BV19Z3n6VEMo 0:00.00-4:00.35\",\n    \"composer\": \"\",\n    \"lyrics\": \"373 chars\",\n    \"track\": 6,\n    \"track_total\": 10,\n    \"disc\": 1,\n    \"disc_total\": 1,\n    \"cover\": \"437822B\",\n    \"file\": \"周杰倫 - 擱淺.m4a\",\n    \"start_time\": 0.0\n  }\n]\n"
+    }
+  ],
+  "source_prep": null,
+  "part_offsets": null,
+  "source_probe": {
+    "codec": "aac",
+    "profile": "LC",
+    "sample_rate": 44100,
+    "channels": 2,
+    "bitrate_kbps": 188.1,
+    "duration": 240.35
+  },
+  "output_files": [
+    {
+      "duration": 240.35,
+      "bitrate_kbps": 188,
+      "codec": "mp4a.40.2",
+      "title": "擱淺",
+      "artist": "周杰倫",
+      "album_artist": "周杰倫",
+      "album": "七里香",
+      "year": "2004-08-03",
+      "genre": "華語流行樂",
+      "comment": "https://www.bilibili.com/video/BV19Z3n6VEMo 0:00.00-4:00.35",
+      "composer": "",
+      "lyrics": "373 chars",
+      "track": 6,
+      "track_total": 10,
+      "disc": 1,
+      "disc_total": 1,
+      "cover": "437822B",
+      "file": "周杰倫 - 擱淺.m4a",
+      "start_time": 0.0,
+      "probe": {
+        "codec": "aac",
+        "profile": "LC",
+        "sample_rate": 44100,
+        "channels": 2,
+        "bitrate_kbps": 188.1,
+        "duration": 240.35
+      },
+      "source_probe": {
+        "codec": "aac",
+        "profile": "LC",
+        "sample_rate": 44100,
+        "channels": 2,
+        "bitrate_kbps": 188.1,
+        "duration": 240.35
+      }
+    }
+  ],
+  "finished_at": "2026-11-26T22:22:09-05:00"
+}

@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "source": {
+    "url": "https://www.bilibili.com/video/BV19Z3n6VEMo",
+    "bvid": "BV19Z3n6VEMo",
+    "title": "在专业录音棚听 周杰伦《搁浅》｜Hi-Res 无损",
+    "uploader": "陈知许",
+    "duration": 240.35,
+    "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/jaychou-geqian/source.m4a",
+    "audio_format": {
+      "codec": "aac",
+      "bitrate_kbps": 188,
+      "sample_rate": 44100
+    },
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/jaychou-geqian/bili_cover.jpg",
+    "parts": 1,
+    "trim_head": 0.0,
+    "trim_tail": -0.0,
+    "text_hints": true
+  },
+  "kind": "single",
+  "kind_reason": "duration 4:00.35 <= 9:00.00 and no tracklist hints",
+  "album": {
+    "title": "七里香",
+    "artist": "周杰倫",
+    "year": "2004-08-03",
+    "genre": "華語流行樂",
+    "track_total": 10,
+    "disc_total": 1,
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/jaychou-geqian/cover.jpg",
+    "catalog": {
+      "provider": "itunes",
+      "id": "536114662@TW",
+      "url": "https://music.apple.com/tw/album/%E4%B8%83%E9%87%8C%E9%A6%99/536114662"
+    },
+    "match_reason": ""
+  },
+  "tracks": [
+    {
+      "index": 1,
+      "start": 0.0,
+      "end": 240.35,
+      "title": "擱淺",
+      "artist": "周杰倫",
+      "album": "七里香",
+      "album_artist": "周杰倫",
+      "track_number": 6,
+      "disc_number": 1,
+      "year": "2004-08-03",
+      "genre": "華語流行樂",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/jaychou-geqian/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "536115199"
+      },
+      "confidence": 0.95,
+      "evidence": [
+        {
+          "kind": "recognition",
+          "detail": "Shazam: 搁浅 - 周杰伦"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "itunes: 周杰倫 - 擱淺 (238.1s vs 240.3s) from album 七里香"
+        }
+      ]
+    }
+  ],
+  "needs_review": false,
+  "review_reasons": [],
+  "timings": {
+    "fetch": 3.47,
+    "download": 3.54,
+    "analyze": 0.0,
+    "catalog": 7.5,
+    "recognize": 0.27,
+    "total": 14.98
+  }
+}

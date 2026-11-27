@@ -1,0 +1,382 @@
+{
+  "version": 1,
+  "source": {
+    "url": "https://www.bilibili.com/video/BV1Rh9mYvEnv",
+    "bvid": "BV1Rh9mYvEnv",
+    "title": "【Hi-Res无损】张杰最新专辑《要得》全专分P纯享",
+    "uploader": "开酒馆的谢梦离",
+    "duration": 2476.306,
+    "audio_path": "",
+    "audio_format": {
+      "codec": "aac",
+      "bitrate_kbps": 203,
+      "sample_rate": 48000
+    },
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/bili_cover.jpg",
+    "parts": 10,
+    "trim_head": 0.0,
+    "trim_tail": 0.0,
+    "text_hints": true,
+    "part_paths": [
+      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part001.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part002.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part003.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part004.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part005.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part006.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part007.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part008.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part009.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part010.m4a"
+    ]
+  },
+  "kind": "multipart",
+  "kind_reason": "10 parts (分P); one track per part",
+  "album": {
+    "title": "要得",
+    "artist": "张杰",
+    "year": "2024-04-01",
+    "genre": "华语流行乐",
+    "track_total": 10,
+    "disc_total": 1,
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+    "catalog": {
+      "provider": "netease",
+      "id": "190109820",
+      "url": "https://music.163.com/#/album?id=190109820"
+    },
+    "match_reason": "netease:张杰 - 要得 (10 tracks, 2476s vs video 2476s; name 1.00, duration 1.00, tracklist 1.00)"
+  },
+  "tracks": [
+    {
+      "index": 1,
+      "start": 0.0,
+      "end": 233.685,
+      "title": "回",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 1,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139343449"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 1 name: 01.回"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 233.7s vs catalog 233.7s (+0.0s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part001.m4a"
+    },
+    {
+      "index": 2,
+      "start": 0.0,
+      "end": 229.738,
+      "title": "再生之地",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 2,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348812"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 2 name: 02.再生之地"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 229.7s vs catalog 229.7s (+0.0s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part002.m4a"
+    },
+    {
+      "index": 3,
+      "start": 0.0,
+      "end": 217.194,
+      "title": "宿命之眼",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 3,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348171"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 3 name: 03.宿命之眼"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 217.2s vs catalog 217.2s (+0.0s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part003.m4a"
+    },
+    {
+      "index": 4,
+      "start": 0.0,
+      "end": 256.811,
+      "title": "穿堂风",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 4,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348100"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 4 name: 04.穿堂风"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 256.8s vs catalog 256.8s (+0.0s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part004.m4a"
+    },
+    {
+      "index": 5,
+      "start": 0.0,
+      "end": 245.845,
+      "title": "老子数道三",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 5,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348117"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 5 name: 05.老子数道三"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 245.8s vs catalog 245.8s (+0.0s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part005.m4a"
+    },
+    {
+      "index": 6,
+      "start": 0.0,
+      "end": 194.88,
+      "title": "张三丰",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 6,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348134"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 6 name: 06.张三丰"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 194.9s vs catalog 194.9s (+0.0s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part006.m4a"
+    },
+    {
+      "index": 7,
+      "start": 0.0,
+      "end": 199.445,
+      "title": "来我家",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 7,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348855"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 7 name: 07.来我家"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 199.4s vs catalog 199.4s (+0.0s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part007.m4a"
+    },
+    {
+      "index": 8,
+      "start": 0.0,
+      "end": 255.573,
+      "title": "月光下",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 8,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348815"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 8 name: 08.月光下"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 255.6s vs catalog 255.6s (+0.0s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part008.m4a"
+    },
+    {
+      "index": 9,
+      "start": 0.0,
+      "end": 327.466,
+      "title": "轻舟",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 9,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348158"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 9 name: 09.轻舟"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 327.5s vs catalog 327.5s (+0.0s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part009.m4a"
+    },
+    {
+      "index": 10,
+      "start": 0.0,
+      "end": 315.669,
+      "title": "树呢",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 10,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2670915936"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 10 name: 10.树呢"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 315.7s vs catalog 315.6s (+0.0s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/zhangjie-yaode/part010.m4a"
+    }
+  ],
+  "needs_review": false,
+  "review_reasons": [],
+  "timings": {
+    "fetch": 2.54,
+    "download": 84.83,
+    "analyze": 0.0,
+    "catalog": 23.06,
+    "recognize": 0.0,
+    "total": 111.4
+  }
+}

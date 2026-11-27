@@ -69,7 +69,7 @@ cases:
   truth_source: single
   truth_quality: approximate
   reference: https://baike.baidu.com/item/5:20AM/64405830
-  notes: Owner-supplied. Fan AI-MV 'Si Feng edition' (司凤版) of the song 5:20AM, a ~2 min derivative, not the 2:42-3:00 original. Original by soldier (2024-01-18); the viral cover is by 刀酱 and a different song with the same name is by 周明明, so artist credit is debatable. Title in the video is written 520AM. Truth title/artist = original song.
+  notes: Owner-supplied. Fan AI-MV 'Si Feng edition' (司凤版) of the song 5:20AM, a ~2 min derivative, not the 2:42-3:00 original. Original by soldier (2024-01-18); the viral cover is by 刀酱 and a different song with the same name is by 周明明, so artist credit is debatable. Title in the video is written 520AM. Truth title/artist = original song. 2026-11-27 owner decision - for fan-made, cover or AI versions the tool should fill the ORIGINAL artist and always flag the result for review; the expected artist stays soldier.
   tracks:
   - n: 1
     start: 0.0
@@ -152,11 +152,11 @@ cases:
   truth_source: parts
   truth_quality: exact
   reference: https://music.apple.com/us/album/6833864650
-  notes: Part names are Korean (괴물(Monster), 처음이자 마지막으로(First_and_Last)); titles here use Apple Music's English spelling.
+  notes: "Part names are Korean (괴물(Monster), 처음이자 마지막으로(First_and_Last)). 2026-11-27 owner decision: foreign-language songs use the official original-script title. Changed track 1 Monster -> 괴물 and track 3 First and Last -> 처음이자 마지막으로, as on Apple Music KR (album 6833864650) and NetEase (album 409419869, which writes 괴물(Monster)); tracks 2, 4, 5 are officially Lucky Charm, Luminaria, 1004 and stay."
   tracks:
   - n: 1
     start: 0.0
-    title: Monster
+    title: 괴물
     artist: WE GO-6
     duration: 191.4
   - n: 2
@@ -166,7 +166,7 @@ cases:
     duration: 125.8
   - n: 3
     start: 318.0
-    title: First and Last
+    title: 처음이자 마지막으로
     artist: WE GO-6
     duration: 172.1
   - n: 4
@@ -437,7 +437,7 @@ cases:
   truth_source: description
   truth_quality: good
   reference: https://music.apple.com/us/album/6830057356
-  notes: Uploader description timestamps match cumulative official durations to within 1 s.
+  notes: "Uploader description timestamps match cumulative official durations to within 1 s. 2026-11-27 original-title check: Apple Music KR (album 6830057356) lists SUPERSTAR, Dancing in the Dark, While We’re Young, Very First Love (첫사랑), Moonlight Shadow, the same as the US storefront, so no title changed (track 4's official title itself carries both forms)."
   tracks:
   - n: 1
     start: 0.0
@@ -550,7 +550,7 @@ cases:
   truth_source: description
   truth_quality: good
   reference: https://music.apple.com/tw/song/6829122414
-  notes: 'Uploader description timestamps verified against audio (silence gaps/onsets within 0.6 s, mostly 0.3 s). Durations of 10 of 12 songs match Apple Music within 3 s. Track 10 (时过境迁): the only Apple match is by 承桓 (236.1 s, equals the video span) while the uploader credits 苏艺馨Chency; artist here follows the uploader and is unverified. Track 6 official title is 甲乙丙丁Strangers (uploader wrote 甲乙丙丁 (你我怎么两清)); track 3 Korean title is 연애의 조건. Artist/title uncertainty on tracks 3, 6, 10 only.'
+  notes: 'Uploader description timestamps verified against audio (silence gaps/onsets within 0.6 s, mostly 0.3 s). Durations of 10 of 12 songs match Apple Music within 3 s. Track 10 (时过境迁): the only Apple match is by 承桓 (236.1 s, equals the video span) while the uploader credits 苏艺馨Chency; artist here follows the uploader and is unverified. Track 6 official title is 甲乙丙丁Strangers (uploader wrote 甲乙丙丁 (你我怎么两清)); track 3 Korean title is 연애의 조건. Artist/title uncertainty on tracks 3, 6, 10 only. 2026-11-27 owner decision (original-script titles): track 3 changed from Love Options (연애의 조건) to 연애의 조건, as on Apple Music KR (song 727452833, 194.07 s) and NetEase (연애의 조건 (LOVE OPTIONS)); track 12 You Are All I Need is the official title on Apple Music JP and stays; no other track is Korean.'
   tracks:
   - n: 1
     start: 0.0
@@ -564,7 +564,7 @@ cases:
     duration: 263.3
   - n: 3
     start: 481.2
-    title: Love Options (연애의 조건)
+    title: 연애의 조건
     artist: BESTie
     duration: 194.1
   - n: 4

@@ -1,0 +1,400 @@
+{
+  "version": 1,
+  "source": {
+    "url": "",
+    "bvid": "offline-57a45c2187",
+    "title": "【Hi-Res无损】张杰最新专辑《要得》全专分P纯享",
+    "uploader": "",
+    "duration": 2476.306,
+    "audio_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/zhangjie-yaode/source.m4a",
+    "audio_format": {
+      "codec": "aac",
+      "bitrate_kbps": 207,
+      "sample_rate": 48000
+    },
+    "cover_path": "",
+    "parts": 1,
+    "trim_head": 0.0,
+    "trim_tail": 0.306,
+    "text_hints": false
+  },
+  "kind": "compilation",
+  "kind_reason": "long video (41:16.31) without hints; catalog album fits: netease:张杰 - 要得 (10 tracks, 2476s vs video 2476s; name 1.00, duration 1.00)",
+  "album": {
+    "title": "要得",
+    "artist": "张杰",
+    "year": "2024-04-01",
+    "genre": "华语流行乐",
+    "track_total": 10,
+    "disc_total": 1,
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/zhangjie-yaode/cover.jpg",
+    "catalog": {
+      "provider": "netease",
+      "id": "190109820",
+      "url": "https://music.163.com/#/album?id=190109820"
+    },
+    "match_reason": "netease:张杰 - 要得 (10 tracks, 2476s vs video 2476s; name 1.00, duration 1.00)"
+  },
+  "tracks": [
+    {
+      "index": 1,
+      "start": 0.0,
+      "end": 234.4,
+      "title": "回",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 1,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139343449"
+      },
+      "confidence": 0.7,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 233.7s to 234.4s (+0.7s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 234.40s (silence, strength 1.00)"
+        },
+        {
+          "kind": "recognition",
+          "detail": "recognition unavailable"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "start": 234.4,
+      "end": 464.4,
+      "title": "再生之地",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 2,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348812"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 229.7s to 230.0s (+0.3s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 234.40s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 464.40s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "start": 464.4,
+      "end": 684.2,
+      "title": "宿命之眼",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 3,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348171"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 217.2s to 219.8s (+2.6s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 464.40s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 684.20s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "start": 684.2,
+      "end": 939.4,
+      "title": "穿堂风",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 4,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348100"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 256.8s to 255.2s (-1.6s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 684.20s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 939.40s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "start": 939.4,
+      "end": 1183.2,
+      "title": "老子数道三",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 5,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348117"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 245.8s to 243.8s (-2.0s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 939.40s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 1183.20s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "start": 1183.2,
+      "end": 1378.1,
+      "title": "张三丰",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 6,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348134"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 194.9s to 194.9s (+0.0s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 1183.20s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 1378.10s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "start": 1378.1,
+      "end": 1577.5,
+      "title": "来我家",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 7,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348855"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 199.4s to 199.4s (-0.0s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 1378.10s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 1577.50s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "start": 1577.5,
+      "end": 1833.2,
+      "title": "月光下",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 8,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348815"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 255.6s to 255.7s (+0.1s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 1577.50s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 1833.20s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "start": 1833.2,
+      "end": 2164.3,
+      "title": "轻舟",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 9,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2139348158"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 327.5s to 331.1s (+3.6s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 1833.20s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 2164.30s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "start": 2164.3,
+      "end": 2476.0,
+      "title": "树呢",
+      "artist": "张杰",
+      "album": "要得",
+      "album_artist": "张杰",
+      "track_number": 10,
+      "disc_number": 1,
+      "year": "2024-04-01",
+      "genre": "华语流行乐",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/zhangjie-yaode/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "2670915936"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 315.6s to 311.7s (-3.9s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 2164.30s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 2476.00s (silence, strength 1.00)"
+        }
+      ]
+    }
+  ],
+  "needs_review": false,
+  "review_reasons": [],
+  "timings": {
+    "fetch": 0.0,
+    "download": 0.48,
+    "analyze": 7.68,
+    "catalog": 22.91,
+    "recognize": 0.0,
+    "total": 31.99
+  }
+}

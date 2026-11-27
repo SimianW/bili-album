@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "source": {
+    "url": "https://www.bilibili.com/video/BV1VR4y1Y7QS",
+    "bvid": "BV1VR4y1Y7QS",
+    "title": "百万级装备听《Yellow》- Coldplay【Hi-Res】",
+    "uploader": "JLRS日落fm",
+    "duration": 269.952,
+    "audio_path": "/home/simon/Dev/bili-album/.work/eval/blind/coldplay-yellow/source.m4a",
+    "audio_format": {
+      "codec": "aac",
+      "bitrate_kbps": 249,
+      "sample_rate": 48000
+    },
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/coldplay-yellow/bili_cover.jpg",
+    "parts": 1,
+    "trim_head": 0.0,
+    "trim_tail": 0.0,
+    "text_hints": false
+  },
+  "kind": "single",
+  "kind_reason": "duration 4:29.95 <= 9:00.00 and no tracklist hints",
+  "album": {
+    "title": "Best 00s Pop Ever",
+    "artist": "Various Artists",
+    "year": "2021-01-08",
+    "genre": "",
+    "track_total": 22,
+    "disc_total": 1,
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/coldplay-yellow/cover.jpg",
+    "catalog": {
+      "provider": "netease",
+      "id": "121218701",
+      "url": "https://music.163.com/#/album?id=121218701"
+    },
+    "match_reason": ""
+  },
+  "tracks": [
+    {
+      "index": 1,
+      "start": 0.0,
+      "end": 269.952,
+      "title": "Yellow",
+      "artist": "Coldplay",
+      "album": "Best 00s Pop Ever",
+      "album_artist": "Various Artists",
+      "track_number": 1,
+      "disc_number": 1,
+      "year": "2021-01-08",
+      "genre": "",
+      "composer": "Chris Martin/Guy Berryman/Jonny Buckland/Will Champion",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/coldplay-yellow/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "1809627093"
+      },
+      "confidence": 0.95,
+      "evidence": [
+        {
+          "kind": "recognition",
+          "detail": "Shazam: Yellow - Coldplay"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "netease: Coldplay - Yellow (270.4s vs 270.0s) from album Best 00s Pop Ever"
+        }
+      ]
+    }
+  ],
+  "needs_review": false,
+  "review_reasons": [],
+  "timings": {
+    "fetch": 2.74,
+    "download": 3.71,
+    "analyze": 0.0,
+    "catalog": 7.53,
+    "recognize": 0.26,
+    "total": 14.43
+  }
+}

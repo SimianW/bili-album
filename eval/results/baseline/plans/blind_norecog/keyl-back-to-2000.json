@@ -1,0 +1,400 @@
+{
+  "version": 1,
+  "source": {
+    "url": "https://www.bilibili.com/video/BV1rV41137jv",
+    "bvid": "BV1rV41137jv",
+    "title": "KEY.L刘聪新专辑「回到2000」全专无损纯享",
+    "uploader": "开酒馆的谢梦离",
+    "duration": 2303.001,
+    "audio_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/keyl-back-to-2000/source.m4a",
+    "audio_format": {
+      "codec": "aac",
+      "bitrate_kbps": 150,
+      "sample_rate": 44100
+    },
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/keyl-back-to-2000/bili_cover.jpg",
+    "parts": 1,
+    "trim_head": 1.7,
+    "trim_tail": 0.301,
+    "text_hints": false
+  },
+  "kind": "compilation",
+  "kind_reason": "long video (38:23.00) without hints; catalog album fits: netease:KEY.L刘聪 - 回到2000 (10 tracks, 2306s vs video 2303s; name 0.65, duration 0.97)",
+  "album": {
+    "title": "回到2000",
+    "artist": "KEY.L刘聪",
+    "year": "2023-08-13",
+    "genre": "",
+    "track_total": 10,
+    "disc_total": 1,
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/keyl-back-to-2000/cover.png",
+    "catalog": {
+      "provider": "netease",
+      "id": "172054725",
+      "url": "https://music.163.com/#/album?id=172054725"
+    },
+    "match_reason": "netease:KEY.L刘聪 - 回到2000 (10 tracks, 2306s vs video 2303s; name 0.65, duration 0.97)"
+  },
+  "tracks": [
+    {
+      "index": 1,
+      "start": 1.7,
+      "end": 197.9,
+      "title": "未来等你",
+      "artist": "KEY.L刘聪 & c0de731",
+      "album": "回到2000",
+      "album_artist": "KEY.L刘聪",
+      "track_number": 1,
+      "disc_number": 1,
+      "year": "2023-08-13",
+      "genre": "",
+      "composer": "KEY.L刘聪",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/keyl-back-to-2000/cover.png",
+      "catalog": {
+        "provider": "netease",
+        "id": "2072614086"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 197.2s to 196.2s (-1.0s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 1.70s (silence, strength 0.78)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 197.90s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "start": 197.9,
+      "end": 545.1,
+      "title": "夜雨",
+      "artist": "KEY.L刘聪",
+      "album": "回到2000",
+      "album_artist": "KEY.L刘聪",
+      "track_number": 2,
+      "disc_number": 1,
+      "year": "2023-08-13",
+      "genre": "",
+      "composer": "KEY.L刘聪",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/keyl-back-to-2000/cover.png",
+      "catalog": {
+        "provider": "netease",
+        "id": "2072301451"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 348.0s to 347.2s (-0.8s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 197.90s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 545.10s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "start": 545.1,
+      "end": 754.9,
+      "title": "随身听2000",
+      "artist": "KEY.L刘聪 & c0de731",
+      "album": "回到2000",
+      "album_artist": "KEY.L刘聪",
+      "track_number": 3,
+      "disc_number": 1,
+      "year": "2023-08-13",
+      "genre": "",
+      "composer": "KEY.L刘聪",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/keyl-back-to-2000/cover.png",
+      "catalog": {
+        "provider": "netease",
+        "id": "2072610413"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 209.1s to 209.8s (+0.7s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 545.10s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 754.90s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "start": 754.9,
+      "end": 950.7,
+      "title": "黑本子",
+      "artist": "KEY.L刘聪 & c0de731",
+      "album": "回到2000",
+      "album_artist": "KEY.L刘聪",
+      "track_number": 4,
+      "disc_number": 1,
+      "year": "2023-08-13",
+      "genre": "",
+      "composer": "KEY.L刘聪",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/keyl-back-to-2000/cover.png",
+      "catalog": {
+        "provider": "netease",
+        "id": "1960903012"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 195.8s to 195.8s (-0.0s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 754.90s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 950.70s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "start": 950.7,
+      "end": 1166.9,
+      "title": "走出核工厂",
+      "artist": "KEY.L刘聪",
+      "album": "回到2000",
+      "album_artist": "KEY.L刘聪",
+      "track_number": 5,
+      "disc_number": 1,
+      "year": "2023-08-13",
+      "genre": "",
+      "composer": "KEY.L刘聪",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/keyl-back-to-2000/cover.png",
+      "catalog": {
+        "provider": "netease",
+        "id": "2072614138"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 216.3s to 216.2s (-0.1s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 950.70s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 1166.90s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "start": 1166.9,
+      "end": 1357.2,
+      "title": "苦海",
+      "artist": "KEY.L刘聪 & 梁笑生AIRBUS130 & c0de731",
+      "album": "回到2000",
+      "album_artist": "KEY.L刘聪",
+      "track_number": 6,
+      "disc_number": 1,
+      "year": "2023-08-13",
+      "genre": "",
+      "composer": "KEY.L刘聪",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/keyl-back-to-2000/cover.png",
+      "catalog": {
+        "provider": "netease",
+        "id": "2072614148"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 190.0s to 190.3s (+0.3s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 1166.90s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 1357.20s (silence, strength 1.00)"
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "start": 1357.2,
+      "end": 1571.1,
+      "title": "Homiez Only",
+      "artist": "KEY.L刘聪 & c0de731",
+      "album": "回到2000",
+      "album_artist": "KEY.L刘聪",
+      "track_number": 7,
+      "disc_number": 1,
+      "year": "2023-08-13",
+      "genre": "",
+      "composer": "KEY.L刘聪",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/keyl-back-to-2000/cover.png",
+      "catalog": {
+        "provider": "netease",
+        "id": "2072614166"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 214.0s to 213.9s (-0.1s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 1357.20s (silence, strength 1.00)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 1571.10s (silence, strength 0.84)"
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "start": 1571.1,
+      "end": 1838.6,
+      "title": "午夜心碎台北",
+      "artist": "KEY.L刘聪 & 功夫胖KUNGFU-PEN & MC HotDog 热狗 & c0de731 & Whle",
+      "album": "回到2000",
+      "album_artist": "KEY.L刘聪",
+      "track_number": 8,
+      "disc_number": 1,
+      "year": "2023-08-13",
+      "genre": "",
+      "composer": "KEY.L刘聪/功夫胖KUNGFU-PEN/MC HotDog 热狗",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/keyl-back-to-2000/cover.png",
+      "catalog": {
+        "provider": "netease",
+        "id": "2072610460"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 267.9s to 267.5s (-0.4s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 1571.10s (silence, strength 0.84)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 1838.60s (silence, strength 0.84)"
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "start": 1838.6,
+      "end": 2026.2,
+      "title": "一个人待会儿",
+      "artist": "KEY.L刘聪 & c0de731",
+      "album": "回到2000",
+      "album_artist": "KEY.L刘聪",
+      "track_number": 9,
+      "disc_number": 1,
+      "year": "2023-08-13",
+      "genre": "",
+      "composer": "KEY.L刘聪",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/keyl-back-to-2000/cover.png",
+      "catalog": {
+        "provider": "netease",
+        "id": "2072610467"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 188.1s to 187.6s (-0.5s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 1838.60s (silence, strength 0.84)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 2026.20s (silence, strength 0.94)"
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "start": 2026.2,
+      "end": 2302.7,
+      "title": "千禧年代",
+      "artist": "KEY.L刘聪 & Bramble & c0de731",
+      "album": "回到2000",
+      "album_artist": "KEY.L刘聪",
+      "track_number": 10,
+      "disc_number": 1,
+      "year": "2023-08-13",
+      "genre": "",
+      "composer": "KEY.L刘聪",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind_norecog/keyl-back-to-2000/cover.png",
+      "catalog": {
+        "provider": "netease",
+        "id": "2065905084"
+      },
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "aligned catalog length 279.3s to 276.5s (-2.8s)"
+        },
+        {
+          "kind": "silence",
+          "detail": "start at 2026.20s (silence, strength 0.94)"
+        },
+        {
+          "kind": "silence",
+          "detail": "end at 2302.70s (silence, strength 1.00)"
+        }
+      ]
+    }
+  ],
+  "needs_review": false,
+  "review_reasons": [],
+  "timings": {
+    "fetch": 2.5,
+    "download": 6.2,
+    "analyze": 7.34,
+    "catalog": 31.64,
+    "recognize": 0.0,
+    "total": 48.5
+  }
+}

@@ -1,0 +1,316 @@
+{
+  "version": 1,
+  "source": {
+    "url": "https://www.bilibili.com/video/BV1TK4y1n7S4",
+    "bvid": "BV1TK4y1n7S4",
+    "title": "【黑胶试听】Billie Eilish 《Don't Smile at Me》全专辑无损黑胶试听（分p）",
+    "uploader": "Eki钱",
+    "duration": 1565.205,
+    "audio_path": "",
+    "audio_format": {
+      "codec": "aac",
+      "bitrate_kbps": 317,
+      "sample_rate": 48000
+    },
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/bili_cover.jpg",
+    "parts": 8,
+    "trim_head": 0.0,
+    "trim_tail": 0.0,
+    "text_hints": true,
+    "part_paths": [
+      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part001.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part002.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part003.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part004.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part005.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part006.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part007.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part008.m4a"
+    ]
+  },
+  "kind": "multipart",
+  "kind_reason": "8 parts (分P); one track per part",
+  "album": {
+    "title": "dont smile at me",
+    "artist": "Billie Eilish",
+    "year": "2017-08-11",
+    "genre": "Alternative",
+    "track_total": 9,
+    "disc_total": 1,
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+    "catalog": {
+      "provider": "itunes",
+      "id": "1440898929@US",
+      "url": "https://music.apple.com/us/album/dont-smile-at-me/1440898929"
+    },
+    "match_reason": "itunes:Billie Eilish - dont smile at me (9 tracks, 1738s vs video 1565s; name 1.00, duration 0.08, tracklist 0.89)"
+  },
+  "tracks": [
+    {
+      "index": 1,
+      "start": 0.0,
+      "end": 193.173,
+      "title": "COPYCAT",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 1,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "FINNEAS/Billie Eilish",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899117"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 1 name: COPYCAT"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 193.2s vs catalog 193.4s (-0.2s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part001.m4a"
+    },
+    {
+      "index": 2,
+      "start": 0.0,
+      "end": 205.888,
+      "title": "idontwannabeyouanymore",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 2,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "Finneas O'Connell/Billie Eilish O'Connell",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899127"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 2 name: idontwannabeyouanymore"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 205.9s vs catalog 203.6s (+2.3s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part002.m4a"
+    },
+    {
+      "index": 3,
+      "start": 0.0,
+      "end": 171.584,
+      "title": "my boy",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 3,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "Finneas O'Connell/Billie Eilish O'Connell",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899130"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 3 name: My Boy"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 171.6s vs catalog 170.9s (+0.7s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part003.m4a"
+    },
+    {
+      "index": 4,
+      "start": 0.0,
+      "end": 206.379,
+      "title": "party favor",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 5,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "Finneas O'Connell/Billie Eilish O'Connell",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899140"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 4 name: Party Favor"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 206.4s vs catalog 204.8s (+1.6s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part004.m4a"
+    },
+    {
+      "index": 5,
+      "start": 0.0,
+      "end": 177.835,
+      "title": "watch",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 4,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "FINNEAS",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899134"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 5 name: watch"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 177.8s vs catalog 177.5s (+0.3s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part005.m4a"
+    },
+    {
+      "index": 6,
+      "start": 0.0,
+      "end": 179.541,
+      "title": "bellyache",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 6,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "Finneas O'Connell/Billie Eilish O'Connell",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899447"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 6 name: Bellyache"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 179.5s vs catalog 179.2s (+0.4s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part006.m4a"
+    },
+    {
+      "index": 7,
+      "start": 0.0,
+      "end": 200.512,
+      "title": "ocean eyes",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 7,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "FINNEAS",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899467"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 7 name: Ocean Eyes"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 200.5s vs catalog 200.4s (+0.1s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part007.m4a"
+    },
+    {
+      "index": 8,
+      "start": 0.0,
+      "end": 230.293,
+      "title": "hostage",
+      "artist": "Billie Eilish",
+      "album": "dont smile at me",
+      "album_artist": "Billie Eilish",
+      "track_number": 8,
+      "disc_number": 1,
+      "year": "2017-08-11",
+      "genre": "Alternative",
+      "composer": "Finneas O'Connell/Billie Eilish O'Connell",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/cover.jpg",
+      "catalog": {
+        "provider": "itunes",
+        "id": "1440899606"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 8 name: hostage"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 230.3s vs catalog 229.4s (+0.9s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/billie-dsam-vinyl/part008.m4a"
+    }
+  ],
+  "needs_review": false,
+  "review_reasons": [],
+  "timings": {
+    "fetch": 2.41,
+    "download": 196.02,
+    "analyze": 0.0,
+    "catalog": 37.51,
+    "recognize": 0.0,
+    "total": 236.85
+  }
+}

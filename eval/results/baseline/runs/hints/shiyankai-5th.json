@@ -1,0 +1,114 @@
+{
+  "case_id": "shiyankai-5th",
+  "mode": "hints",
+  "started_at": "2026-11-26T22:24:12-05:00",
+  "head_commit": "6090bd4dc463018907103a7786ceb20cb26d6375",
+  "cache": "cold",
+  "ok": true,
+  "error": null,
+  "exit_code": 0,
+  "wall_seconds": 19.87,
+  "plan_wall_seconds": 19.18,
+  "invocations": [
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "plan",
+        "https://www.bilibili.com/video/BV1T2Wu6KE6V",
+        "--workdir",
+        ".work/eval/hints/shiyankai-5th"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 19.18,
+      "stderr_tail": "kind: single (duration 3:25.33 <= 9:00.00 and no tracklist hints)\nalbum: 石衍恺 - 5th [2023-12-18] netease\n#  start    end      title  artist  conf\n-  -------  -------  -----  ------  ----\n1  0:00.00  3:25.33  5th    石衍恺  0.75\ntimings: fetch 2.9s, download 3.45s, analyze 0.0s, catalog 6.0s, recognize 6.32s, total 18.9s\n",
+      "step": "plan",
+      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/hints/shiyankai-5th/plan.json\n"
+    },
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "apply",
+        ".work/eval/hints/shiyankai-5th/plan.json",
+        "-o",
+        ".work/eval/out/shiyankai-5th"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 0.42,
+      "stderr_tail": "",
+      "step": "apply",
+      "stdout_tail": "#  title  start    end      planned  actual  file\n-  -----  -------  -------  -------  ------  ----------------\n1  5th    0:00.00  3:25.33  205.33   205.33  石衍恺 - 5th.m4a\noptional tags left empty: genre (tracks 1)\n"
+    },
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "inspect",
+        ".work/eval/out/shiyankai-5th",
+        "--json"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 0.27,
+      "stderr_tail": "",
+      "step": "inspect",
+      "stdout_tail": "[\n  {\n    \"duration\": 205.334,\n    \"bitrate_kbps\": 182,\n    \"codec\": \"mp4a.40.2\",\n    \"title\": \"5th\",\n    \"artist\": \"石衍恺\",\n    \"album_artist\": \"石衍恺\",\n    \"album\": \"5th\",\n    \"year\": \"2023-12-18\",\n    \"genre\": \"\",\n    \"comment\": \"https://www.bilibili.com/video/BV1T2Wu6KE6V 0:00.00-3:25.33\",\n    \"composer\": \"石衍恺\",\n    \"lyrics\": \"1256 chars\",\n    \"track\": 1,\n    \"track_total\": 1,\n    \"disc\": 1,\n    \"disc_total\": 1,\n    \"cover\": \"140035B\",\n    \"file\": \"石衍恺 - 5th.m4a\",\n    \"start_time\": 0.0\n  }\n]\n"
+    }
+  ],
+  "source_prep": null,
+  "part_offsets": null,
+  "source_probe": {
+    "codec": "aac",
+    "profile": "LC",
+    "sample_rate": 44100,
+    "channels": 2,
+    "bitrate_kbps": 182.2,
+    "duration": 205.334
+  },
+  "output_files": [
+    {
+      "duration": 205.334,
+      "bitrate_kbps": 182,
+      "codec": "mp4a.40.2",
+      "title": "5th",
+      "artist": "石衍恺",
+      "album_artist": "石衍恺",
+      "album": "5th",
+      "year": "2023-12-18",
+      "genre": "",
+      "comment": "https://www.bilibili.com/video/BV1T2Wu6KE6V 0:00.00-3:25.33",
+      "composer": "石衍恺",
+      "lyrics": "1256 chars",
+      "track": 1,
+      "track_total": 1,
+      "disc": 1,
+      "disc_total": 1,
+      "cover": "140035B",
+      "file": "石衍恺 - 5th.m4a",
+      "start_time": 0.0,
+      "probe": {
+        "codec": "aac",
+        "profile": "LC",
+        "sample_rate": 44100,
+        "channels": 2,
+        "bitrate_kbps": 182.2,
+        "duration": 205.334
+      },
+      "source_probe": {
+        "codec": "aac",
+        "profile": "LC",
+        "sample_rate": 44100,
+        "channels": 2,
+        "bitrate_kbps": 182.2,
+        "duration": 205.334
+      }
+    }
+  ],
+  "finished_at": "2026-11-26T22:24:32-05:00"
+}

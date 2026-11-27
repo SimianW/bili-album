@@ -1,0 +1,37 @@
+{
+  "case_id": "user-520am-derivative",
+  "mode": "blind",
+  "started_at": "2026-11-26T22:26:57-05:00",
+  "head_commit": "6090bd4dc463018907103a7786ceb20cb26d6375",
+  "cache": "cold",
+  "ok": true,
+  "error": null,
+  "exit_code": 0,
+  "wall_seconds": 17.84,
+  "plan_wall_seconds": 17.84,
+  "invocations": [
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "plan",
+        "https://www.bilibili.com/video/BV1vQybzKEhr",
+        "--workdir",
+        ".work/eval/blind/user-520am-derivative",
+        "--no-text-hints"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 17.84,
+      "stderr_tail": "kind: single (duration 2:00.79 <= 9:00.00 and no tracklist hints)\nalbum: 苏也莉 - 520am [2026-11-25] netease\n#  start    end      title  artist  conf\n-  -------  -------  -----  ------  ----\n1  0:00.00  2:00.79  520am  苏也莉  0.5\nneeds_review:\n  - track 1: matched 苏也莉 - 520am on title and length only; the video title names no artist and recognition found nothing, so this may be a different version (cover, fan edit, AI remake)\n  - track 1 '520am': low confidence 0.50\ntimings: fetch 2.34s, download 3.24s, analyze 0.0s, catalog 5.49s, recognize 6.3s, total 17.57s\n",
+      "step": "plan",
+      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/blind/user-520am-derivative/plan.json\n"
+    }
+  ],
+  "source_prep": null,
+  "part_offsets": null,
+  "source_probe": null,
+  "output_files": null,
+  "finished_at": "2026-11-26T22:27:15-05:00"
+}

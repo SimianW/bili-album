@@ -1,0 +1,37 @@
+{
+  "case_id": "keyl-back-to-2000",
+  "mode": "blind",
+  "started_at": "2026-11-26T22:49:41-05:00",
+  "head_commit": "6090bd4dc463018907103a7786ceb20cb26d6375",
+  "cache": "cold",
+  "ok": true,
+  "error": null,
+  "exit_code": 0,
+  "wall_seconds": 564.06,
+  "plan_wall_seconds": 564.06,
+  "invocations": [
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "plan",
+        "https://www.bilibili.com/video/BV1rV41137jv",
+        "--workdir",
+        ".work/eval/blind/keyl-back-to-2000",
+        "--no-text-hints"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 564.06,
+      "stderr_tail": "kind: compilation (long video (38:23.00) without hints; catalog album fits: netease:KEY.L刘聪 - 回到2000 (10 tracks, 2306s vs video 2303s; name 0.65, duration 0.97))\nalbum: KEY.L刘聪 - 回到2000 [2023-08-13] netease\n#   start     end       title         artist                                     conf\n--  --------  --------  ------------  -----------------------------------------  ----\n1   0:01.70   3:17.90   未来等你      KEY.L刘聪 & c0de731                        1.0\n2   3:17.90   9:05.10   夜雨          KEY.L刘聪                                  1.0\n3   9:05.10   12:34.90  随身听2000    KEY.L刘聪 & c0de731                        1.0\n4   12:34.90  15:50.70  黑本子        KEY.L刘聪 & c0de731                        1.0\n5   15:50.70  19:26.90  走出核工厂    KEY.L刘聪                                  1.0\n6   19:26.90  22:37.20  苦海          KEY.L刘聪 & 梁笑生AIRBUS130 & c0de731      1.0\n7   22:37.20  26:11.10  Homiez Only   KEY.L刘聪 & c0de731                        1.0\n8   26:11.10  30:38.60  午夜心碎台北  KEY.L刘聪 & 功夫胖KUNGFU-PEN & MC HotDog…  1.0\n9   30:38.60  33:46.20  一个人待会儿  KEY.L刘聪 & c0de731                        1.0\n10  33:46.20  38:22.70  千禧年代      KEY.L刘聪 & Bramble & c0de731              1.0\ntimings: fetch 2.57s, download 240.1s, analyze 7.2s, catalog 32.91s, recognize 279.98s, total 563.78s\n",
+      "step": "plan",
+      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/blind/keyl-back-to-2000/plan.json\n"
+    }
+  ],
+  "source_prep": null,
+  "part_offsets": null,
+  "source_probe": null,
+  "output_files": null,
+  "finished_at": "2026-11-26T22:59:05-05:00"
+}

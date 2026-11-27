@@ -223,6 +223,9 @@ def test_score_output():
     assert o["stream_copy_ok"]
     o2 = sc.score_output(2, [100.0, 50.0], [_file(100.0)], dict(src, bitrate_kbps=320))
     assert not o2["files_match_plan"] and not o2["stream_copy_ok"]
+    assert o2["stream_copy_format_ok"]          # only the bitrate differs (VBR source, short cut)
+    o3 = sc.score_output(1, [100.0], [_file(100.0)], dict(src, sample_rate=44100))
+    assert not o3["stream_copy_format_ok"]
 
 
 # ---------------------------------------------------------------- summary pooling
@@ -256,3 +259,70 @@ def test_summary_review_confusion_all_cells():
     conf = sc.summarize(runs)["review_confusion"]
     assert conf == {"review_problem": 1, "review_no_problem": 1, "no_review_problem": 1,
                     "no_review_no_problem": 1, "failed": 0}
+
+
+def test_alt_truth_boundaries_for_synthetic_multipart():
+    case = {"id": "m", "kind": "multipart", "duration": 400.0, "album": None, "album_artist": None, "year": None,
+            "tracks": _truth([0.0, 100.0, 200.0, 300.0], ["One", "Two", "Three", "Four"])}
+    plan = _plan([0.0, 99.5, 198.5, 297.0], ["One", "Two", "Three", "Four"])
+    r = sc.score_run(case, "blind", plan, alt_starts=[0.0, 99.6, 198.8, 297.2])
+    assert [b["error"] for b in r["boundaries"]] == [-0.5, -1.5, -3.0]
+    assert [b["error"] for b in r["boundaries_alt_truth"]["boundaries"]] == [-0.1, -0.3, -0.2]
+    assert r["boundaries_alt_truth"]["metrics"]["hit_1s"] == 1.0
+    r.update(ok=True, wall_seconds=1.0)
+    s = sc.summarize([(case, r)])
+    assert s["hit_1s"] == round(1 / 3, 4) and s["alt_truth"]["hit_1s"] == 1.0
+    assert sc.score_run(case, "hints", plan, alt_starts=[0.0, 99.6, 198.8, 297.2])["boundaries_alt_truth"] is None
+
+
+# ---------------------------------------------------------------- Title (Alias) pairs
+
+@pytest.mark.parametrize("truth,pred,ok", [
+    ("Very First Love (첫사랑)", "첫사랑", True),            # inside the brackets
+    ("Very First Love (첫사랑)", "Very First Love", True),   # outside the brackets
+    ("괴물", "괴물(Monster)", True),                           # alias pair on the predicted side
+    ("처음이자 마지막으로", "First and Last", False),          # a translation alone is not the original title
+    ("연애의 조건", "연애의 조건 (LOVE OPTIONS)", True),
+    ("甲乙丙丁Strangers", "甲乙丙丁 (你我怎么两清)", True),     # outside part contained after normalisation
+    ("Very First Love (첫사랑)", "Moonlight Shadow", False),
+    ("Starboy (feat. Daft Punk)", "Starboy", True),           # version brackets still handled by stripping
+])
+def test_title_alias_pairs(truth, pred, ok):
+    assert sc.title_ok(truth, pred) is ok
+
+
+def test_title_variants():
+    assert sc.title_variants("Very First Love (첫사랑)") == ["Very First Love (첫사랑)", "Very First Love", "첫사랑"]
+    assert sc.title_variants("Yellow") == ["Yellow"]
+    assert sc.title_variants("Hong Kong (feat. 王菲季候风)") == ["Hong Kong (feat. 王菲季候风)"]
+
+
+# ---------------------------------------------------------------- measured truth for synthetic multipart
+
+MP = {"id": "m", "kind": "multipart", "duration": 700.0, "album": None, "album_artist": None, "year": None,
+      "tracks": _truth([0.0, 234.0, 464.0], ["A", "B", "C"])}
+
+
+def test_with_measured_starts_replaces_and_keeps_yaml():
+    ce = sc.with_measured_starts(MP, [0.0, 233.685, 463.4234])
+    assert [t["start"] for t in ce["tracks"]] == [0.0, 233.685, 463.423]
+    assert [t["start_cases_yaml"] for t in ce["tracks"]] == [0.0, 234.0, 464.0]
+    assert ce["start_basis"] == sc.MEASURED_BASIS
+    assert [t["start"] for t in MP["tracks"]] == [0.0, 234.0, 464.0]        # input not mutated
+
+
+def test_with_measured_starts_ignores_bad_input():
+    assert sc.with_measured_starts(MP, None) is MP
+    assert sc.with_measured_starts(MP, [0.0, 233.7]) is MP                # wrong count
+    assert sc.with_measured_starts(CASE, [0.0, 1.0, 2.0, 3.0]) is CASE    # not multipart
+
+
+def test_measured_truth_is_primary_and_yaml_is_alt():
+    ce = sc.with_measured_starts(MP, [0.0, 233.685, 463.423])
+    plan = _plan([0.0, 233.7, 466.0], ["A", "B", "C"])
+    yaml_starts = [t["start_cases_yaml"] for t in ce["tracks"]]
+    r = sc.score_run(ce, "blind", plan, alt_starts=yaml_starts)
+    assert [b["truth_start"] for b in r["boundaries"]] == [233.685, 463.423]
+    assert [b["error"] for b in r["boundaries"]] == [0.015, 2.577]
+    assert r["boundaries_alt_truth"]["basis"] == sc.YAML_BASIS
+    assert [b["error"] for b in r["boundaries_alt_truth"]["boundaries"]] == [-0.3, 2.0]

@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "source": {
+    "url": "https://www.bilibili.com/video/BV1vQybzKEhr",
+    "bvid": "BV1vQybzKEhr",
+    "title": "《520AM》司凤版⚡思罢吗乐队激情演奏！小时候这集听哭了😭【AI MV大赛】",
+    "uploader": "69岁牢二次元",
+    "duration": 120.787,
+    "audio_path": "/home/simon/Dev/bili-album/.work/eval/blind/user-520am-derivative/source.m4a",
+    "audio_format": {
+      "codec": "aac",
+      "bitrate_kbps": 192,
+      "sample_rate": 48000
+    },
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/user-520am-derivative/bili_cover.jpg",
+    "parts": 1,
+    "trim_head": 0.0,
+    "trim_tail": 0.0,
+    "text_hints": false
+  },
+  "kind": "single",
+  "kind_reason": "duration 2:00.79 <= 9:00.00 and no tracklist hints",
+  "album": {
+    "title": "520am",
+    "artist": "苏也莉",
+    "year": "2026-11-25",
+    "genre": "",
+    "track_total": 1,
+    "disc_total": 1,
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/user-520am-derivative/cover.jpg",
+    "catalog": {
+      "provider": "netease",
+      "id": "411998800",
+      "url": "https://music.163.com/#/album?id=411998800"
+    },
+    "match_reason": ""
+  },
+  "tracks": [
+    {
+      "index": 1,
+      "start": 0.0,
+      "end": 120.787,
+      "title": "520am",
+      "artist": "苏也莉",
+      "album": "520am",
+      "album_artist": "苏也莉",
+      "track_number": 1,
+      "disc_number": 1,
+      "year": "2026-11-25",
+      "genre": "",
+      "composer": "",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/blind/user-520am-derivative/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "3465628706"
+      },
+      "confidence": 0.5,
+      "evidence": [
+        {
+          "kind": "catalog_duration",
+          "detail": "netease: 苏也莉 - 520am (121.0s vs 120.8s) from album 520am"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "artist not confirmed: the video title names no artist and recognition found nothing"
+        }
+      ]
+    }
+  ],
+  "needs_review": true,
+  "review_reasons": [
+    "track 1: matched 苏也莉 - 520am on title and length only; the video title names no artist and recognition found nothing, so this may be a different version (cover, fan edit, AI remake)",
+    "track 1 '520am': low confidence 0.50"
+  ],
+  "timings": {
+    "fetch": 2.34,
+    "download": 3.24,
+    "analyze": 0.0,
+    "catalog": 5.49,
+    "recognize": 6.3,
+    "total": 17.57
+  }
+}

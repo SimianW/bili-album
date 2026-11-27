@@ -1,0 +1,217 @@
+{
+  "version": 1,
+  "source": {
+    "url": "https://www.bilibili.com/video/BV1gzsB6tEBt",
+    "bvid": "BV1gzsB6tEBt",
+    "title": "WE GO-6  出道专辑《SIX HEARTS》全专音源",
+    "uploader": "keep-door-closed",
+    "duration": 869.473,
+    "audio_path": "",
+    "audio_format": {
+      "codec": "aac",
+      "bitrate_kbps": 205,
+      "sample_rate": 44100
+    },
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/bili_cover.jpg",
+    "parts": 5,
+    "trim_head": 0.0,
+    "trim_tail": 0.0,
+    "text_hints": true,
+    "part_paths": [
+      "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part001.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part002.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part003.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part004.m4a",
+      "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part005.m4a"
+    ]
+  },
+  "kind": "multipart",
+  "kind_reason": "5 parts (分P); one track per part",
+  "album": {
+    "title": "SIX HEARTS",
+    "artist": "WE GO-6",
+    "year": "2026-11-17",
+    "genre": "K-Pop",
+    "track_total": 5,
+    "disc_total": 1,
+    "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/cover.jpg",
+    "catalog": {
+      "provider": "netease",
+      "id": "409419869",
+      "url": "https://music.163.com/#/album?id=409419869"
+    },
+    "match_reason": "netease:WE GO-6 - SIX HEARTS (5 tracks, 869s vs video 869s; name 1.00, duration 0.98, tracklist 1.00)"
+  },
+  "tracks": [
+    {
+      "index": 1,
+      "start": 0.0,
+      "end": 191.658,
+      "title": "괴물(Monster)",
+      "artist": "WE GO-6",
+      "album": "SIX HEARTS",
+      "album_artist": "WE GO-6",
+      "track_number": 1,
+      "disc_number": 1,
+      "year": "2026-11-17",
+      "genre": "K-Pop",
+      "composer": "네이슨 (NATHAN)/이범훈/동경(Full8loom)/Summer Soul/Paran/Roho/chAN's (TAKE A CHANCE)/Hiily (TAKE A CHANCE)/강히아(HYA)/sid/황순규/Roar/Nino/Benji Bae",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "3460495713"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 1 name: 괴물(Monster)"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 191.7s vs catalog 191.4s (+0.2s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part001.m4a"
+    },
+    {
+      "index": 2,
+      "start": 0.0,
+      "end": 125.852,
+      "title": "Lucky Charm",
+      "artist": "WE GO-6",
+      "album": "SIX HEARTS",
+      "album_artist": "WE GO-6",
+      "track_number": 2,
+      "disc_number": 1,
+      "year": "2026-11-17",
+      "genre": "K-Pop",
+      "composer": "네이슨 (NATHAN)/yuka/Myrhee (644ultramarine)/Coll’ 8va (644ultramarine)/sid",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "3460496527"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 2 name: Lucky Charm"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 125.9s vs catalog 125.8s (+0.1s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part002.m4a"
+    },
+    {
+      "index": 3,
+      "start": 0.0,
+      "end": 171.364,
+      "title": "처음이자 마지막으로",
+      "artist": "WE GO-6",
+      "album": "SIX HEARTS",
+      "album_artist": "WE GO-6",
+      "track_number": 3,
+      "disc_number": 1,
+      "year": "2026-11-17",
+      "genre": "K-Pop",
+      "composer": "네이슨 (NATHAN)/yuka/Likey",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "3460495715"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 3 name: 처음이자 마지막으로(First_and_Last)"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 171.4s vs catalog 172.1s (-0.8s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part003.m4a"
+    },
+    {
+      "index": 4,
+      "start": 0.0,
+      "end": 192.656,
+      "title": "Luminaria",
+      "artist": "WE GO-6",
+      "album": "SIX HEARTS",
+      "album_artist": "WE GO-6",
+      "track_number": 4,
+      "disc_number": 1,
+      "year": "2026-11-17",
+      "genre": "K-Pop",
+      "composer": "네이슨 (NATHAN)/yuka/Roar",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "3460495716"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 4 name: Luminaria"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 192.7s vs catalog 191.7s (+1.0s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part004.m4a"
+    },
+    {
+      "index": 5,
+      "start": 0.0,
+      "end": 187.943,
+      "title": "1004",
+      "artist": "WE GO-6",
+      "album": "SIX HEARTS",
+      "album_artist": "WE GO-6",
+      "track_number": 5,
+      "disc_number": 1,
+      "year": "2026-11-17",
+      "genre": "K-Pop",
+      "composer": "네이슨 (NATHAN)/Hey Farmer",
+      "lyrics": "",
+      "cover_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/cover.jpg",
+      "catalog": {
+        "provider": "netease",
+        "id": "3460496528"
+      },
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "kind": "part",
+          "detail": "part 5 name: 1004"
+        },
+        {
+          "kind": "catalog_duration",
+          "detail": "length 187.9s vs catalog 187.6s (+0.4s)"
+        }
+      ],
+      "audio_path": "/home/simon/Dev/bili-album/.work/eval/hints/wego6-sixhearts/part005.m4a"
+    }
+  ],
+  "needs_review": false,
+  "review_reasons": [],
+  "timings": {
+    "fetch": 2.39,
+    "download": 13.97,
+    "analyze": 0.0,
+    "catalog": 19.08,
+    "recognize": 0.0,
+    "total": 36.03
+  }
+}

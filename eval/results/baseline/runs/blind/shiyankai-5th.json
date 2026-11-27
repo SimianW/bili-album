@@ -1,0 +1,37 @@
+{
+  "case_id": "shiyankai-5th",
+  "mode": "blind",
+  "started_at": "2026-11-26T22:24:37-05:00",
+  "head_commit": "6090bd4dc463018907103a7786ceb20cb26d6375",
+  "cache": "cold",
+  "ok": true,
+  "error": null,
+  "exit_code": 0,
+  "wall_seconds": 93.41,
+  "plan_wall_seconds": 93.41,
+  "invocations": [
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "plan",
+        "https://www.bilibili.com/video/BV1T2Wu6KE6V",
+        "--workdir",
+        ".work/eval/blind/shiyankai-5th",
+        "--no-text-hints"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 93.41,
+      "stderr_tail": "kind: single (duration 3:25.33 <= 9:00.00 and no tracklist hints)\nalbum: 石衍恺 - 5th [2023-12-18] netease\n#  start    end      title  artist  conf\n-  -------  -------  -----  ------  ----\n1  0:00.00  3:25.33  5th    石衍恺  0.75\ntimings: fetch 2.39s, download 3.01s, analyze 0.0s, catalog 6.01s, recognize 81.52s, total 93.13s\n",
+      "step": "plan",
+      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/blind/shiyankai-5th/plan.json\n"
+    }
+  ],
+  "source_prep": null,
+  "part_offsets": null,
+  "source_probe": null,
+  "output_files": null,
+  "finished_at": "2026-11-26T22:26:10-05:00"
+}

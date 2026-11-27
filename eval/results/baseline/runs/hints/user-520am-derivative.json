@@ -1,0 +1,114 @@
+{
+  "case_id": "user-520am-derivative",
+  "mode": "hints",
+  "started_at": "2026-11-26T22:26:33-05:00",
+  "head_commit": "6090bd4dc463018907103a7786ceb20cb26d6375",
+  "cache": "cold",
+  "ok": true,
+  "error": null,
+  "exit_code": 0,
+  "wall_seconds": 19.3,
+  "plan_wall_seconds": 18.62,
+  "invocations": [
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "plan",
+        "https://www.bilibili.com/video/BV1vQybzKEhr",
+        "--workdir",
+        ".work/eval/hints/user-520am-derivative"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 18.62,
+      "stderr_tail": "kind: single (duration 2:00.79 <= 9:00.00 and no tracklist hints)\nalbum: 苏也莉 - 520am [2026-11-25] netease\n#  start    end      title  artist  conf\n-  -------  -------  -----  ------  ----\n1  0:00.00  2:00.79  520am  苏也莉  0.5\nneeds_review:\n  - track 1: matched 苏也莉 - 520am on title and length only; the video title names no artist and recognition found nothing, so this may be a different version (cover, fan edit, AI remake)\n  - track 1 '520am': low confidence 0.50\ntimings: fetch 2.95s, download 3.31s, analyze 0.0s, catalog 5.52s, recognize 6.33s, total 18.3s\n",
+      "step": "plan",
+      "stdout_tail": "/home/simon/Dev/bili-album/.work/eval/hints/user-520am-derivative/plan.json\n"
+    },
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "apply",
+        ".work/eval/hints/user-520am-derivative/plan.json",
+        "-o",
+        ".work/eval/out/user-520am-derivative"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 0.41,
+      "stderr_tail": "",
+      "step": "apply",
+      "stdout_tail": "#  title  start    end      planned  actual  file\n-  -----  -------  -------  -------  ------  ------------------\n1  520am  0:00.00  2:00.79  120.79   120.79  苏也莉 - 520am.m4a\noptional tags left empty: genre (tracks 1); composer (tracks 1); lyrics (tracks 1)\n"
+    },
+    {
+      "cmd": [
+        "uv",
+        "run",
+        "bili-album",
+        "inspect",
+        ".work/eval/out/user-520am-derivative",
+        "--json"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 0.27,
+      "stderr_tail": "",
+      "step": "inspect",
+      "stdout_tail": "[\n  {\n    \"duration\": 120.787,\n    \"bitrate_kbps\": 192,\n    \"codec\": \"mp4a.40.2\",\n    \"title\": \"520am\",\n    \"artist\": \"苏也莉\",\n    \"album_artist\": \"苏也莉\",\n    \"album\": \"520am\",\n    \"year\": \"2026-11-25\",\n    \"genre\": \"\",\n    \"comment\": \"https://www.bilibili.com/video/BV1vQybzKEhr 0:00.00-2:00.79\",\n    \"composer\": \"\",\n    \"lyrics\": \"\",\n    \"track\": 1,\n    \"track_total\": 1,\n    \"disc\": 1,\n    \"disc_total\": 1,\n    \"cover\": \"117261B\",\n    \"file\": \"苏也莉 - 520am.m4a\",\n    \"start_time\": 0.0\n  }\n]\n"
+    }
+  ],
+  "source_prep": null,
+  "part_offsets": null,
+  "source_probe": {
+    "codec": "aac",
+    "profile": "LC",
+    "sample_rate": 48000,
+    "channels": 2,
+    "bitrate_kbps": 192.6,
+    "duration": 120.787
+  },
+  "output_files": [
+    {
+      "duration": 120.787,
+      "bitrate_kbps": 192,
+      "codec": "mp4a.40.2",
+      "title": "520am",
+      "artist": "苏也莉",
+      "album_artist": "苏也莉",
+      "album": "520am",
+      "year": "2026-11-25",
+      "genre": "",
+      "comment": "https://www.bilibili.com/video/BV1vQybzKEhr 0:00.00-2:00.79",
+      "composer": "",
+      "lyrics": "",
+      "track": 1,
+      "track_total": 1,
+      "disc": 1,
+      "disc_total": 1,
+      "cover": "117261B",
+      "file": "苏也莉 - 520am.m4a",
+      "start_time": 0.0,
+      "probe": {
+        "codec": "aac",
+        "profile": "LC",
+        "sample_rate": 48000,
+        "channels": 2,
+        "bitrate_kbps": 192.6,
+        "duration": 120.787
+      },
+      "source_probe": {
+        "codec": "aac",
+        "profile": "LC",
+        "sample_rate": 48000,
+        "channels": 2,
+        "bitrate_kbps": 192.6,
+        "duration": 120.787
+      }
+    }
+  ],
+  "finished_at": "2026-11-26T22:26:52-05:00"
+}
