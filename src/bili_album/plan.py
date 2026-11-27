@@ -7,7 +7,7 @@ download   audio stream(s) and the Bilibili cover
 analyze    boundary candidates from the audio (silence / dip / novelty)
 catalog    album / track lookup (NetEase, iTunes) and lyrics
 recognize  Shazam clips: verify titles, pin track starts, or scan unknown mixes
-refine     millisecond refinement of the boundaries between tracks (:mod:`refine`)
+cuts       where a cut goes near a recognised start, and its millisecond refinement (:mod:`cuts`)
 """
 
 from __future__ import annotations
@@ -17,24 +17,23 @@ import json
 import logging
 import math
 import re
-import subprocess
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import analyze as an
 from .align import align, snap
-from .analyze import DIGITAL_DB, Candidate, level_between
+from .analyze import Candidate
 from .bilibili import Bilibili, Part, VideoInfo, extract_bvid
 from .catalog import (DERIVED_TRACK, AlbumMatch, CatAlbum, Catalog, CatTrack, latin_only, rank_releases,
                       release_kind)
+from .cuts import CUT_MARGIN, place_cut, refine_cuts  # noqa: F401  (CUT_MARGIN: re-exported for callers)
 from .hints import (HintEntry, HintList, TitleGuess, derivative_cues, fmt_ts, guess_from_hint,
                     guess_from_title, name_like, names_in_prose, parse_timestamps, parse_tracklist_file,
                     part_title, plausible_list)
 from .media import audio_info, image_kind, prepare_offline_audio, square_cover
 from .net import Http
 from .recognize import NullRecognizer, Recognition, Recognizer, ShazamRecognizer
-from .refine import refine_starts
 from .textnorm import has_han, has_kana, norm, similarity, strip_decorations, strip_translation, to_simplified
 
 log = logging.getLogger(__name__)
@@ -42,7 +41,6 @@ log = logging.getLogger(__name__)
 SINGLE_MAX = 540.0          # "short" video: about 9 minutes
 REVIEW_TRIM = 5.0           # seconds of trimmed head/tail worth a review line
 LOW_CONF = 0.6
-CUT_MARGIN = 0.3            # a cut stays this far before a recognised recording start
 SAMPLE_REQUESTS = 5         # Shazam requests a sampled check of a clean alignment may use
 WEAK_STRENGTH = 0.4         # a dip / novelty start weaker than this is a weak signal
 
@@ -190,36 +188,6 @@ def sample_indices(n: int, k: int = 3) -> list[int]:
     if n <= k:
         return list(range(n))
     return sorted({min(n - 1, int((2 * j + 1) * n / (2 * k))) for j in range(k)})
-
-
-def place_cut(imp: float, cands: list[Candidate], feats, lo: float = 0.0) -> tuple[float, str]:
-    """Where to cut before a recording that recognition says starts at ``imp``.
-
-    Rule: a cut may not land after ``imp - CUT_MARGIN``, unless everything between that point
-    and the cut is digital silence (then nothing audible is lost and the gap stays with the
-    previous track). If ``imp`` falls in a low-level run, the run's own cut (the end of its
-    deepest block, see :mod:`analyze`) is proposed first; otherwise ``imp - CUT_MARGIN``.
-    Returns (time, explanation for the evidence)."""
-    gap = next((c for c in cands if c.kind == "silence" and c.gap_start - 0.3 <= imp <= c.gap_end + 0.3), None)
-    limit = imp - CUT_MARGIN
-    if gap:
-        new = gap.time
-        what = ("digital silence" if gap.digital else f"quiet gap (floor {gap.floor_db:.0f} dB, not silence)")
-        note = f"recording starts at {imp:.2f}s inside a {what} {gap.gap_start:.2f}-{gap.gap_end:.2f}s"
-    else:
-        new = limit
-        note = f"recording starts at {imp:.2f}s, no silence there"
-    if new > limit:
-        lvl = level_between(feats, limit, new) if feats is not None else 0.0
-        if lvl <= DIGITAL_DB:
-            note += f"; cut {new - imp:+.2f}s from it stays in digital silence"
-        else:
-            new = limit
-            note += (f"; cut held {CUT_MARGIN}s before the recognised start (sound up to {lvl:.0f} dB in between, "
-                     "so cutting later would clip the intro)")
-    else:
-        note += f"; cut {new - imp:+.2f}s from it"
-    return max(lo, new), note
 
 
 @dataclass
@@ -749,52 +717,11 @@ class Planner:
         return segs, album
 
     def _refine_cuts(self, audio: Path, segs: list[Seg]) -> None:
-        """Refine every start that is also the previous track's end (see :mod:`refine`).
-
-        Track 1 and starts after unexported material keep their place. A start pinned by
-        recognition may still move earlier, but never later than the recognised start minus
-        ``CUT_MARGIN`` (or its current place, if that is already later: digital silence)."""
-        info = self.refine_info
+        """Millisecond refinement of the shared boundaries (see :func:`cuts.refine_cuts`)."""
         if not self.o.refine:
-            info.update(reason="refinement off")
+            self.refine_info.update(reason="refinement off")
             return
-        idx = [i for i in range(1, len(segs)) if abs(segs[i - 1].end - segs[i].start) < 1e-6]
-        if not idx:
-            info.update(reason="no boundary between adjacent tracks")
-            return
-        bounds = []
-        for i in idx:
-            s, hi = segs[i], None
-            imp = s.recog.implied_start if getattr(s, "pinned", False) and s.recog is not None else None
-            if imp is not None:
-                hi = max(s.start, imp - CUT_MARGIN)
-            bounds.append((segs[i - 1].start + 1.0, hi))
-        try:
-            res = self.timer.run("refine", refine_starts, audio, [segs[i].start for i in idx],
-                                 channels=audio_info(audio)["channels"] or 2, bounds=bounds,
-                                 **self.o.refine_options)
-        except (OSError, ValueError, subprocess.SubprocessError) as e:
-            log.warning("refinement skipped: %s", e)
-            info.update(reason=f"refinement failed: {e}")
-            return
-        methods: dict[str, int] = {}
-        moved = 0
-        for i, (new, method) in zip(idx, res):
-            s, prev = segs[i], segs[i - 1]
-            methods[method] = methods.get(method, 0) + 1
-            delta = new - s.start
-            if method == "fallback":
-                s.evidence.append(ev("refine", f"start {s.start:.3f}s kept: no clear edge within the search window"))
-                continue
-            if abs(delta) < 0.0005:
-                s.evidence.append(ev("refine", f"start {s.start:.3f}s confirmed ({method})"))
-                continue
-            s.evidence.append(ev("refine", f"start {s.start:.3f}s -> {new:.3f}s ({method}, {delta * 1000:+.0f} ms)"))
-            prev.end = new
-            s.start = new
-            moved += 1
-        info.update(boundaries=len(idx), moved=moved, methods=methods,
-                    reason=f"{moved} of {len(idx)} boundaries moved")
+        self.refine_info = self.timer.run("refine", refine_cuts, audio, segs, self.o.refine_options)
 
     def _match_titles(self, titles: list[str], album: CatAlbum | None) -> list[CatTrack | None]:
         if not album:

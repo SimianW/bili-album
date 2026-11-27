@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from bili_album import plan as plan_mod
+from bili_album import cuts as cuts_mod
 from bili_album.plan import Planner, PlanOptions, Seg
 from bili_album.recognize import Recognition
 from bili_album.refine import RefineParams, refine_starts
@@ -119,8 +119,8 @@ def fake_refine(results, calls):
 
 def test_planner_refines_only_shared_boundaries(tmp_path, monkeypatch):
     calls = []
-    monkeypatch.setattr(plan_mod, "refine_starts", fake_refine([(99.95, "silence"), (300.0, "fallback")], calls))
-    monkeypatch.setattr(plan_mod, "audio_info", lambda a: {"channels": 2})
+    monkeypatch.setattr(cuts_mod, "refine_starts", fake_refine([(99.95, "silence"), (300.0, "fallback")], calls))
+    monkeypatch.setattr(cuts_mod, "audio_info", lambda a: {"channels": 2})
     p = planner(tmp_path, refine_options={"search_ms": 800})
     s = segs4()
     p._refine_cuts(Path("x.m4a"), s)
@@ -137,8 +137,8 @@ def test_planner_refines_only_shared_boundaries(tmp_path, monkeypatch):
 
 def test_recognised_start_caps_the_window(tmp_path, monkeypatch):
     calls = []
-    monkeypatch.setattr(plan_mod, "refine_starts", fake_refine([(99.0, "silence")], calls))
-    monkeypatch.setattr(plan_mod, "audio_info", lambda a: {"channels": 2})
+    monkeypatch.setattr(cuts_mod, "refine_starts", fake_refine([(99.0, "silence")], calls))
+    monkeypatch.setattr(cuts_mod, "audio_info", lambda a: {"channels": 2})
     s = [Seg(0.0, 100.0, "a"), Seg(100.0, 200.0, "b")]
     s[1].pinned = True
     s[1].recog = Recognition(clip_start=110.0, clip_len=12.0, title="b", artist="x", offset=9.8)  # starts at 100.2
@@ -148,7 +148,7 @@ def test_recognised_start_caps_the_window(tmp_path, monkeypatch):
 
 
 def test_refinement_off_or_failing_changes_nothing(tmp_path, monkeypatch):
-    monkeypatch.setattr(plan_mod, "audio_info", lambda a: {"channels": 2})
+    monkeypatch.setattr(cuts_mod, "audio_info", lambda a: {"channels": 2})
     s = segs4()
     p = planner(tmp_path, refine=False)
     p._refine_cuts(Path("x.m4a"), s)
@@ -156,7 +156,15 @@ def test_refinement_off_or_failing_changes_nothing(tmp_path, monkeypatch):
 
     def boom(*a, **k):
         raise ValueError("ffmpeg: broken")
-    monkeypatch.setattr(plan_mod, "refine_starts", boom)
+    monkeypatch.setattr(cuts_mod, "refine_starts", boom)
     p = planner(tmp_path)
+    p._refine_cuts(Path("x.m4a"), s)
+    assert [x.start for x in s] == [0.0, 100.0, 205.0, 300.0] and "failed" in p.refine_info["reason"]
+
+
+def test_unknown_refine_option_keeps_the_boundaries(tmp_path, monkeypatch):
+    monkeypatch.setattr(cuts_mod, "audio_info", lambda a: {"channels": 2})
+    s = segs4()
+    p = planner(tmp_path, refine_options={"no_such_option": 1})
     p._refine_cuts(Path("x.m4a"), s)
     assert [x.start for x in s] == [0.0, 100.0, 205.0, 300.0] and "failed" in p.refine_info["reason"]
