@@ -1453,7 +1453,7 @@ class Planner:
                 "parts": max(1, len(part_files)),
                 "trim_head": trim_head,
                 "trim_tail": trim_tail,
-                "text_hints": self.o.text_hints,
+                "text_hints": self.o.text_hints, "refine": self.o.refine, "refine_options": dict(self.o.refine_options),
                 "derivative": bool(self.derivative),
             },
             "kind": kind,

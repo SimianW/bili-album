@@ -155,3 +155,29 @@ def test_page_carries_the_menu_with_its_fields():
     assert 'id="refm"' in html and "const BiliRefine" in html and "BiliRefine.options()" in html
     assert html.index("const BiliRefine") < html.index("options = BiliRefine.options()")   # defined before the page uses it
     assert '"name": "search_ms"' in html and '"label": "搜索范围"' in html and '"default": 1500' in html
+
+
+def test_review_replan_keeps_the_refinement_settings(tmp_path, monkeypatch):
+    # Review finding: a re-plan asked for by the review rebuilt PlanOptions without them, so a link
+    # sent with refinement off (or a custom pre-roll) was re-planned with the defaults.
+    from bili_album import plan as plan_mod
+    from bili_album.review import default_replanner
+    seen = []
+
+    def fake_make_plan(url, po):
+        seen.append(po)
+        out = tmp_path / "plan.json"
+        out.write_text("{}", encoding="utf-8")
+        return out
+    monkeypatch.setattr(plan_mod, "make_plan", fake_make_plan)
+    plan = {"source": {"url": URL, "text_hints": True, "refine": False, "refine_options": {"pre_roll_ms": 120}}}
+    default_replanner(tmp_path / "plan.json")(plan, {"album_hint": "x - y"})
+    assert seen[0].refine is False and seen[0].refine_options == {"pre_roll_ms": 120}
+    plan["source"] = {"url": URL, "text_hints": True}          # a plan written before refinement existed
+    default_replanner(tmp_path / "plan.json")(plan, {})
+    assert seen[1].refine is True and seen[1].refine_options == {}
+
+
+def test_clean_options_refuses_an_overflowing_number():
+    with pytest.raises(ValueError):
+        clean_options({"search_ms": float("inf")})

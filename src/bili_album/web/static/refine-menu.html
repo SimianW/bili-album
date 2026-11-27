@@ -7,6 +7,7 @@
 .bp .refm .trig { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; font: inherit; font-size: 13px;
   color: var(--ink2); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
 .bp .refm .trig[aria-expanded=true] { border-color: var(--accent); color: var(--ink); }
+.bp .refm .trig[aria-expanded=true] .chev { transform: rotate(180deg); }
 .bp .refm .trig:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .bp .refm .st { color: var(--ink); font-weight: 600; }
 .bp .refm .st.off { color: var(--ink2); font-weight: 400; }
@@ -30,12 +31,14 @@
   border-top: 1px solid var(--line); font-size: 12px; color: var(--ink2); }
 .bp .refm .foot button { background: none; border: 0; padding: 0; font: inherit; color: var(--ink2); border-bottom: 1px solid var(--line); cursor: pointer; white-space: nowrap; }
 @media (max-width: 519.98px) {
-  .bp .top { position: relative; }
+  /* The open menu takes its own row between the header and the link box (approved mockup, phone). */
+  .bp .top { flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 0 10px; }
+  .bp .top .brand { margin-right: auto; }
+  .bp .who, .bp .refm { display: contents; }
   .bp .who b { display: none; }
-  .bp .refm { position: static; }
   .bp .refm .lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .bp .refm .trig { padding: 0 8px; }
-  .bp .refm .pop { left: 0; right: 0; width: auto; }
+  .bp .refm .pop { position: static; flex: 0 0 100%; width: auto; margin-top: 10px; }
 }
 </style>
 <script>
@@ -78,7 +81,8 @@ const BiliRefine = (function () {
 
   const root = document.getElementById("refm");
   const st = el("span", { class: "st" });
-  let chev = icon("M4 6l4 4 4-4");
+  const chev = icon("M4 6l4 4 4-4");
+  chev.setAttribute("class", "chev");   // turned by CSS; replacing it would detach a clicked target
   const trig = el("button", { type: "button", class: "trig", "aria-expanded": "false", "aria-haspopup": "dialog", onclick: () => show(pop.hidden) },
     icon("M2 4h7M12 4h2M2 12h3M8 12h6", [[10.5, 4], [6.5, 12]]), el("span", { class: "lbl", text: "切点精修" }), st, chev);
   const bOn = el("button", { type: "button", text: "开启", onclick: () => { on = true; changed(); } });
@@ -140,8 +144,6 @@ const BiliRefine = (function () {
   function show(open) {
     pop.hidden = !open;
     trig.setAttribute("aria-expanded", String(open));
-    const next = icon(open ? "M4 10l4-4 4 4" : "M4 6l4 4 4-4");
-    chev.replaceWith(next); chev = next;
   }
   document.addEventListener("click", e => { if (!pop.hidden && !root.contains(e.target)) show(false); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !pop.hidden) { show(false); trig.focus(); } });
