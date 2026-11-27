@@ -1,0 +1,25 @@
+name: PR body
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  pr-body:
+    name: ${{ github.event.pull_request.draft && 'pr-body (draft, runs when ready)' || 'pr-body' }}
+    runs-on: ubuntu-latest
+    steps:
+      - if: ${{ !github.event.pull_request.draft }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}  # The head, not the merge ref.
+          fetch-depth: 0                                  # The Verdict sha needs history.
+      - if: ${{ !github.event.pull_request.draft }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - if: ${{ !github.event.pull_request.draft }}
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: origin/${{ github.event.pull_request.base.ref }}
+        run: python3 scripts/check-pr-body.py "$BASE_REF"
