@@ -492,7 +492,7 @@ html, body { margin: 0; background: var(--bg); }
       const only = names.size === 1 ? Array.from(names)[0] : "";
       if (only && only !== artist && tracks.every(t => t.artist === artist)) artist = only;
     }
-    return "将放到音乐库的「" + safeFolder(artist) + " / " + safeFolder(title) + "」文件夹。";
+    return "将放到音乐库的「" + safeFolder((s => { const t = s.replace(/(^|[^A-Za-z0-9])(AC[\/／]DC|K[\/／]DA)(?![A-Za-z0-9])/gi, (m, a, n) => a + n.replace("/", "\u0001").replace("／", "\u0002")).replace(/([぀-ヿ㐀-鿿가-힯豈-﫿])\s*(?:feat|ft)\.\s*/gi, "$1/").split(/\s*[\/／|｜;；\\＼、]\s*|(?:\s+|\s*[(（\[【]\s*)(?:feat\.?|ft\.?|featuring)\s+/i).map(x => x.trim().replace(/^[(（\[【](?=[^)）\]】]*$)/, "")).find(x => x) || "", p = t.split(/\s*[&＆,，]\s*/); return ((p.length > 1 && p.every(x => !x.trim() || (/[぀-ヿ㐀-鿿가-힯豈-﫿]/.test(x) && !/[A-Za-z]/.test(x))) ? p.find(x => x.trim()) : t).replace(/\u0001/g, "/").replace(/\u0002/g, "／").trim()) || s; })(artist)) + " / " + safeFolder(title) + "」文件夹。";  // = artists.first_artist
   }
 
   function failedCard(job) {

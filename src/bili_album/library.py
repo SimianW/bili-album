@@ -1,6 +1,6 @@
 """Import cut-and-tagged files into the Jellyfin music library, then confirm Jellyfin sees them.
 
-Layout: ``LIBRARY_DIR/<Album Artist>/<Album>/NN-<Title>.m4a`` plus ``cover.jpg|png``
+Layout: ``LIBRARY_DIR/<first Album Artist>/<Album>/NN-<Title>.m4a`` plus ``cover.jpg|png``
 (a single goes to ``<Artist>/<Album or Title>/01-<Title>.m4a``). Files are copied
 into a hidden temporary sibling folder on the same filesystem and renamed into
 place, so Jellyfin's real-time monitor never sees half-written files. Nothing
@@ -32,7 +32,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Callable
 
-from .apply import PlanError, apply_plan, sanitize
+from .apply import PlanError, apply_plan, first_artist, sanitize
 from .config import Config, load_config
 from .media import image_kind
 from .net import Http, HttpError
@@ -305,7 +305,7 @@ def destination(cfg: Config, album_artist: str, album: str) -> tuple[Path, str]:
     lib = cfg.library_dir
     if lib is None:
         raise JellyfinError("BILI_ALBUM_LIBRARY_DIR is not configured")
-    rel = Path(sanitize(album_artist or "Unknown Artist")) / sanitize(album or "Unknown Album")
+    rel = Path(sanitize(first_artist(album_artist) or "Unknown Artist")) / sanitize(album or "Unknown Album")
     return Path(lib) / rel, f"{cfg.jellyfin_library_path.rstrip('/')}/{rel.as_posix()}"
 
 

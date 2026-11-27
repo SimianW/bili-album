@@ -14,6 +14,7 @@ import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .artists import first_artist, split_artists  # first_artist: also library's folder rule
 from .hints import fmt_ts
 from .media import audio_info, cut, image_kind
 from .tag import OPTIONAL, REQUIRED, read_tags, write_tags
@@ -47,7 +48,8 @@ def output_paths(plan: dict, outdir: Path) -> tuple[Path | None, list[Path]]:
     tracks = plan["tracks"]
     if plan["kind"] == "single":
         t = tracks[0]
-        return None, [outdir / f"{sanitize(t['artist'] or 'Unknown Artist')} - {sanitize(t['title'])}.m4a"]
+        who = "、".join(split_artists(t["artist"])) or "Unknown Artist"
+        return None, [outdir / f"{sanitize(who)} - {sanitize(t['title'])}.m4a"]
     album = plan["album"]["title"] or (tracks[0]["album"] if tracks else "") or "Unknown Album"
     folder = outdir / sanitize(album)
     width = max(2, len(str(len(tracks))))

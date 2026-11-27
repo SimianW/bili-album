@@ -10,6 +10,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - Added `deploy/bili-album-update.py` and systemd user units to automatically fetch and install new GitHub releases into the live web checkout.
 
+### Changed
+
+- Albums and songs with several artists now show each artist separately in Jellyfin (for example 周杰伦 and 费玉清 instead of one combined "周杰伦 & 费玉清"), and an album with several album artists is filed under the first one's folder.
+
 ## [0.1.0] - 2026-11-27
 
 ### Added

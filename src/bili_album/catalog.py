@@ -135,7 +135,7 @@ class NetEase(Provider):
         artists = a.get("artists") or ([a["artist"]] if a.get("artist") else [])
         return CatAlbum(
             provider="netease", id=str(a["id"]), title=a.get("name", ""),
-            artist=" & ".join(x.get("name", "") for x in artists if x.get("name")) or "",
+            artist="/".join(x.get("name", "") for x in artists if x.get("name")) or "",
             url=f"https://music.163.com/#/album?id={a['id']}", year=year, release_date=date,
             cover_url=(a.get("picUrl") or "").replace("http://", "https://"),
             track_count=int(a.get("size") or 0))
@@ -156,7 +156,7 @@ class NetEase(Provider):
             except ValueError:
                 disc = 1
             tracks.append(CatTrack(
-                title=s.get("name", ""), artist=" & ".join(x["name"] for x in s.get("ar") or [] if x.get("name")),
+                title=s.get("name", ""), artist="/".join(x["name"] for x in s.get("ar") or [] if x.get("name")),
                 duration=(s.get("dt") or 0) / 1000.0, number=int(s.get("no") or 0), disc=disc,
                 id=str(s.get("id", "")), provider="netease"))
         full.tracks = drop_full_length(tracks)
@@ -174,7 +174,7 @@ class NetEase(Provider):
         for s in (j.get("result") or {}).get("songs") or []:
             al = s.get("album") or {}
             t = CatTrack(title=s.get("name", ""),
-                         artist=" & ".join(x["name"] for x in s.get("artists") or [] if x.get("name")),
+                         artist="/".join(x["name"] for x in s.get("artists") or [] if x.get("name")),
                          duration=(s.get("duration") or 0) / 1000.0, number=int(s.get("no") or 0),
                          id=str(s.get("id", "")), provider="netease")
             al_artists = [al["artist"]] if (al.get("artist") or {}).get("name") else (s.get("artists") or [])
