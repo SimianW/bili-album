@@ -1,0 +1,32 @@
+name: File length
+
+on:
+  # edited: a fixed PR body re-runs the check for its Cap raised items.
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  file-length:
+    runs-on: ubuntu-latest
+    steps:
+      # Full history, so the merge base with the PR's base branch is there to read CAPS from.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Check every code file's length
+        if: github.event_name == 'push'
+        run: python3 scripts/file-length.py
+      - name: Check every code file's length, and each cap the PR adds or raises
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: origin/${{ github.event.pull_request.base.ref }}
+        run: python3 scripts/file-length.py "$BASE_REF"
