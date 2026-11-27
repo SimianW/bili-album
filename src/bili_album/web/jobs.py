@@ -23,6 +23,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from .cleanup import clean_job
 from .runner import STAGES, Outcome, Runner, clean_text
 from .urls import video_key
 
@@ -35,6 +36,8 @@ GENERIC_ERROR = "处理时出错了，可以再试一次。"
 ID_RE = re.compile(r"^[0-9a-f]{12}$")
 MAX_FIELD = 300
 MAX_DONE = 20
+MAX_QUEUED = 20
+QUEUE_FULL = "排队的任务太多了，稍后再试。"
 
 
 class JobError(Exception):
@@ -69,6 +72,9 @@ def _new_job(url: str, now: float) -> dict:
         "kept": False,
         "edited": [],
         "confirm_error": "",
+        "submitted_by": None,   # {"id", "name"} of the signed-in user; None before sign-in existed
+        "actions": [],          # [{"action", "by": {"id", "name"}, "at"}]: confirm, replace, keep, retry
+        "cleaned": None,        # {"at", "bytes"} once the big files of a finished job are deleted
         "version": 0,
     }
 
@@ -123,6 +129,45 @@ class JobManager:
                 self._save(job)
             else:
                 self.jobs[job["id"]] = job
+        for job in list(self.jobs.values()):
+            self._clean_if_finished(job)
+
+    # ------------------------------------------------------------------ clean-up
+
+    @staticmethod
+    def _finished_for_good(job: dict) -> bool:
+        """Imported (shown by Jellyfin or not) or ended with 「保留原来的」: the audio is not needed again."""
+        res = job.get("result") or {}
+        return job.get("status") == "done" and (bool(job.get("kept")) or bool(res.get("imported")))
+
+    def _clean_if_finished(self, job: dict) -> None:
+        if not self._finished_for_good(job) or job.get("cleaned"):
+            return
+        d = self.job_dir(job["id"])
+        if Path(os.path.realpath(d)).parent != self.data_dir:
+            return
+        freed = clean_job(d)
+        with self._lock:
+            job["cleaned"] = {"at": time.time(), "bytes": freed}
+            self._save(job)
+        log.info("job %s: removed big files (%d bytes)", job["id"], freed)
+
+    def _audit(self, action: str, job: dict, by: dict | None) -> None:
+        """Deleted jobs leave one line in ``audit.log``: when, what, which video, who."""
+        line = json.dumps({"at": time.time(), "action": action, "job": job["id"], "url": job.get("url", ""),
+                           "by": (by or {}).get("name")}, ensure_ascii=False)
+        with open(self.data_dir / "audit.log", "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+
+    @staticmethod
+    def _by(by: dict | None) -> dict | None:
+        if not by:
+            return None
+        return {"id": str(by.get("id", ""))[:100], "name": str(by.get("name", ""))[:MAX_FIELD]}
+
+    def _record(self, job: dict, action: str, by: dict | None) -> None:
+        if by:
+            job.setdefault("actions", []).append({"action": action, "by": self._by(by), "at": time.time()})
 
     def _scrub(self, value: Any) -> Any:
         if isinstance(value, str):
@@ -146,8 +191,14 @@ class JobManager:
     # ------------------------------------------------------------------ views
 
     def public(self, job: dict) -> dict:
-        out = {k: copy.deepcopy(v) for k, v in job.items() if k not in ("cover", "key", "action")}
+        out = {k: copy.deepcopy(v) for k, v in job.items()
+               if k not in ("cover", "key", "action", "submitted_by", "actions")}
         out["has_cover"] = bool(job.get("cover"))
+        # names only: Jellyfin user ids stay on the server
+        sb = job.get("submitted_by")
+        out["submitted_by"] = {"name": sb.get("name", "")} if isinstance(sb, dict) else None
+        out["actions"] = [{"action": a.get("action"), "name": (a.get("by") or {}).get("name", ""), "at": a.get("at")}
+                          for a in job.get("actions") or [] if isinstance(a, dict)]
         if job["status"] == "queued":
             out["ahead"] = self._ahead(job["id"])
         return self._scrub(out)
@@ -193,13 +244,16 @@ class JobManager:
 
     # ------------------------------------------------------------------ actions
 
-    def submit(self, url: str) -> dict:
+    def submit(self, url: str, by: dict | None = None) -> dict:
         key = video_key(url)
         with self._lock:
             for j in self.jobs.values():
                 if j["status"] in ACTIVE and j["key"] == key:
                     raise JobError(409, "这个视频已经在处理了。", existing_id=j["id"])
+            if sum(1 for j in self.jobs.values() if j["status"] == "queued") >= MAX_QUEUED:
+                raise JobError(429, QUEUE_FULL)
             job = _new_job(url, time.time())
+            job["submitted_by"] = self._by(by)
             while job["id"] in self.jobs:
                 job["id"] = uuid.uuid4().hex[:12]
             self.jobs[job["id"]] = job
@@ -212,7 +266,7 @@ class JobManager:
         if job["status"] not in statuses:
             raise JobError(409, f"这个任务现在不能这样操作（{job['status']}）。")
 
-    def confirm(self, job_id: str, edits: list[dict]) -> dict:
+    def confirm(self, job_id: str, edits: list[dict], by: dict | None = None) -> dict:
         with self._lock:
             job = self._job(job_id)
             self._require(job, "needs_confirmation")
@@ -224,6 +278,7 @@ class JobManager:
                 t["title"], t["artist"] = e["title"], e["artist"]
             job["pending_edits"] = clean
             job["confirm_error"] = ""
+            self._record(job, "confirm", by)
             self._requeue(job, "confirm", front=True)
             return self.public(job)
 
@@ -250,24 +305,26 @@ class JobManager:
             out.append({"index": idx, "title": title, "artist": artist})
         return out
 
-    def replace(self, job_id: str) -> dict:
+    def replace(self, job_id: str, by: dict | None = None) -> dict:
         with self._lock:
             job = self._job(job_id)
             self._require(job, "duplicate")
+            self._record(job, "replace", by)
             self._requeue(job, "replace", front=True)
             return self.public(job)
 
-    def retry(self, job_id: str) -> dict:
+    def retry(self, job_id: str, by: dict | None = None) -> dict:
         with self._lock:
             job = self._job(job_id)
             self._require(job, "failed")
+            self._record(job, "retry", by)
             job["stages"] = {s: "pending" for s in STAGES}
             job["error"] = None
             job["result"] = None
             self._requeue(job, "start", front=False)
             return self.public(job)
 
-    def keep(self, job_id: str) -> dict:
+    def keep(self, job_id: str, by: dict | None = None) -> dict:
         with self._lock:
             job = self._job(job_id)
             self._require(job, "duplicate")
@@ -277,22 +334,27 @@ class JobManager:
             job["kept"] = True
             job["finished"] = time.time()
             job["message"] = "保留了音乐库里原来的专辑。"
+            self._record(job, "keep", by)
             self._save(job)
+        self._clean_if_finished(job)
+        with self._lock:
             return self.public(job)
 
-    def discard(self, job_id: str) -> None:
+    def discard(self, job_id: str, by: dict | None = None) -> None:
         with self._lock:
             job = self._job(job_id)
             self._require(job, "needs_confirmation")
         self.runner.discard(self.workdir(job_id))
+        self._audit("discard", job, by)
         self._delete(job_id)
 
-    def remove(self, job_id: str) -> None:
+    def remove(self, job_id: str, by: dict | None = None) -> None:
         with self._lock:
             job = self._job(job_id)
             self._require(job, "queued", "failed")
             if job_id in self.queue:
                 self.queue.remove(job_id)
+        self._audit("remove", job, by)
         self._delete(job_id)
 
     def _delete(self, job_id: str) -> None:
@@ -421,3 +483,4 @@ class JobManager:
             elif out.status == "done":
                 job["stages"] = {s: "done" for s in STAGES}
             self._save(job)
+        self._clean_if_finished(job)

@@ -7,9 +7,9 @@
 #   systemctl --user enable --now bili-album-web
 #   loginctl enable-linger "$USER"     # keep it running without a login session
 #
-# It listens on the Tailscale address only. Configuration (model proxy, Jellyfin,
-# library folder) is read by the program itself from ~/.config/bili-album/env;
-# no secret is passed through the unit or its environment.
+# It listens on loopback and the Tailscale address, never on every interface. Configuration
+# (model proxy, Jellyfin, library folder, optional BILI_ALBUM_TRUSTED_PROXIES) is read by the
+# program itself from ~/.config/bili-album/env; no secret is passed through the unit.
 
 [Unit]
 Description=bili-album web page (paste a Bilibili link, import into Jellyfin)
@@ -19,8 +19,10 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=%h/Dev/bili-album
-ExecStart=%h/.local/bin/uv run --frozen bili-album serve --host 100.87.146.105 --port 5191
-# The Tailscale address may not exist yet right after boot: keep retrying.
+# Loopback (IPv4 and IPv6) for the owner's reverse proxy, which reaches http://localhost:5191 (= ::1),
+# plus the Tailscale address. Sign-in with Jellyfin accounts is on by default.
+ExecStart=%h/.local/bin/uv run --frozen bili-album serve --host 127.0.0.1 --host ::1 --host 100.87.146.105 --port 5191
+# The Tailscale address may not exist yet right after boot: a failed bind fails the start; keep retrying.
 Restart=on-failure
 RestartSec=10
 Environment=PYTHONUNBUFFERED=1

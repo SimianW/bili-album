@@ -144,14 +144,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--json", action="store_true", help="print the final job state as JSON")
 
     p = sub.add_parser("serve", help="web page: paste a link, the album lands in Jellyfin")
-    p.add_argument("--host", default="127.0.0.1", help="address to listen on (default 127.0.0.1; never 0.0.0.0)")
-    p.add_argument("--port", type=int, default=5191, help="port (default 5191)")
-    p.add_argument("--data-dir", type=Path, help="job folders (default: .work/web/ in the repo)")
-    p.add_argument("--fake", action="store_true",
-                   help="replay scripted jobs instead of running the pipeline (no network, no import)")
-    p.add_argument("--fake-speed", type=float, default=1.0, help="--fake: delay divisor (2 = twice as fast)")
-    p.add_argument("--fake-hold", action="append", default=[], metavar="STAGE=SECONDS",
-                   help="--fake: stay SECONDS longer in STAGE (plan, review, cut, import); repeatable")
+    from .web.cli import add_serve_args
+    add_serve_args(p)
 
     a = ap.parse_args(argv)
     logging.basicConfig(level=logging.DEBUG if a.verbose else logging.WARNING,
@@ -282,21 +276,8 @@ def _cmd_ingest(a) -> int:
 
 
 def _cmd_serve(a, ap) -> int:
-    from .web.server import serve
-
-    hold = {}
-    for item in a.fake_hold:
-        stage, _, secs = item.partition("=")
-        try:
-            hold[stage] = float(secs)
-        except ValueError:
-            ap.error(f"--fake-hold expects STAGE=SECONDS, got {item!r}")
-    if a.host in ("0.0.0.0", "::", ""):
-        ap.error("--host must be a specific address (127.0.0.1 or the Tailscale address), not every interface")
-    if not 0 < a.port < 65536:
-        ap.error("--port must be between 1 and 65535")
-    data_dir = a.data_dir or REPO_ROOT / ".work" / "web"
-    return serve(a.host, a.port, data_dir, fake=a.fake, fake_speed=a.fake_speed, fake_hold=hold)
+    from .web.cli import run_serve
+    return run_serve(a, ap, REPO_ROOT)
 
 
 if __name__ == "__main__":

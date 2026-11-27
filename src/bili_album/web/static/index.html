@@ -50,7 +50,7 @@ html, body { margin: 0; background: var(--bg); }
 .bp .btn:disabled { opacity: .6; cursor: default; }
 .bp .btn:focus-visible, .bp a:focus-visible, .bp .open:focus-visible, .bp summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .bp .hint { color: var(--ink2); font-size: 12.5px; margin: 8px 2px 0; }
-.bp .err { color: var(--bad); font-size: 12.5px; margin: 8px 2px 0; }
+.bp p.err { color: var(--bad); font-size: 12.5px; margin: 8px 2px 0; }
 .bp .empty { color: var(--ink2); font-size: 13px; margin: 26px 2px 0; }
 
 .bp h2 { font-size: 13px; font-weight: 600; color: var(--ink2); margin: 26px 2px 8px; }
@@ -120,7 +120,23 @@ html, body { margin: 0; background: var(--bg); }
 .bp .row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
 .bp .row.flag input { border-color: var(--warn-seg); background: var(--warn-soft); }
 .bp .row .ro { min-width: 0; overflow-wrap: anywhere; }
-.bp .dest { margin: 8px 2px 0; font-size: 12.5px; color: var(--ink2); overflow-wrap: anywhere; }
+.bp .dest { margin: 8px 0 0; font-size: 13px; color: var(--ink2); overflow-wrap: anywhere; }
+
+.bp .who { display:flex; gap:14px; align-items:baseline; font-size:13px; color:var(--ink2); }
+.bp .who b { color:var(--ink); font-weight:600; }
+.bp .who button { background:none; border:0; padding:0; font:inherit; color:var(--ink2); border-bottom:1px solid var(--line); cursor:pointer; }
+.bp .who button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bp .login { max-width:360px; margin:28px auto 8px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:24px 22px 22px; }
+.bp .login h1 { font-size:20px; font-weight:700; letter-spacing:-0.01em; margin:0 0 4px; }
+.bp .login p { margin:0 0 18px; color:var(--ink2); font-size:13.5px; }
+.bp .login label { display:block; font-size:13px; font-weight:600; margin:12px 0 6px; }
+.bp .login input { width:100%; height:46px; padding:0 14px; font:inherit; font-size:16px; color:var(--ink); background:var(--surface); border:1.5px solid var(--line); border-radius:10px; outline:none; }
+.bp .login input:focus-visible { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+.bp .login input.err { border-color:var(--bad); }
+.bp .login .btn { width:100%; margin-top:18px; height:48px; }
+.bp .login .msg { margin:10px 0 0; font-size:13px; color:var(--bad); }
+.bp .login .fine { margin:14px 0 0; font-size:12.5px; color:var(--ink2); }
+.bp .by { color:var(--ink2); font-size:12.5px; }
 .bp .acts { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
 .bp .acts .sp { flex: 1; }
 .bp .acts .q { font-size: 13.5px; font-weight: 600; }
@@ -140,12 +156,22 @@ html, body { margin: 0; background: var(--bg); }
   .bp .row .d { grid-row: 1; grid-column: 3; }
   .bp .hint { display: none; }
   .bp .job.held .head .tag, .bp .job.held .stages, .bp .job.held .src { display: none; }
+  .bp .login { margin-top: 8px; }
 }
 </style>
 </head>
 <body>
-<div class="bp"><div class="col">
-  <div class="top"><span class="brand">bili-album</span><a id="lib" href="#" target="_blank" rel="noopener noreferrer" hidden>打开音乐库</a></div>
+<div class="bp">
+<form class="login" id="loginview" novalidate hidden>
+  <h1>bili-album</h1><p>用你的 Jellyfin 账号登录。</p>
+  <label for="lu">用户名</label><input id="lu" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="256">
+  <label for="lp">密码</label><input id="lp" name="password" type="password" autocomplete="current-password" aria-describedby="lmsg">
+  <p class="msg" id="lmsg" role="alert" hidden></p>
+  <button class="btn" type="submit" id="lbtn">登录</button>
+  <p class="fine">密码只用来向 Jellyfin 核对一次，不会保存。</p>
+</form>
+<div class="col" id="main" hidden>
+  <div class="top"><span class="brand">bili-album</span><span class="who"><b id="whoname" hidden></b><button id="logout" type="button" hidden>退出</button><a id="lib" href="#" target="_blank" rel="noopener noreferrer" hidden>打开音乐库</a></span></div>
   <form class="paste" id="form" novalidate>
     <input id="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="粘贴 B 站视频链接" aria-label="B 站视频链接" aria-describedby="urlerr">
     <button class="btn" type="submit">导入到 Jellyfin</button>
@@ -269,10 +295,12 @@ html, body { margin: 0; background: var(--bg); }
     try {
       const t0 = Date.now() / 1000;
       const r = await api("GET", "/api/jobs");
+      if (r.status === 401) { showLogin(); return; }
       if (r.ok) {
         clockOffset = r.data.now - (t0 + Date.now() / 1000) / 2;
         jobs = r.data.jobs || [];
         libraryUrl = safeHttp(r.data.library_url || "") || "";
+        showMain(r.data.me, r.data.auth);
         render();
       }
     } catch (e) { /* server away: keep the last view and try again */ }
@@ -288,6 +316,7 @@ html, body { margin: 0; background: var(--bg); }
       ? await api("DELETE", "/api/jobs/" + job.id)
       : await api("POST", "/api/jobs/" + job.id + "/" + action, body);
     u.busy = false;
+    if (r.status === 401) { showLogin(); return; }
     if (!r.ok) u.error = (r.data && r.data.error) || "操作没有成功，请再试一次。";
     else if (action === "keep") expanded.delete(job.id);
     else if (action === "discard" || action === "delete") ui.delete(job.id);
@@ -393,7 +422,7 @@ html, body { margin: 0; background: var(--bg); }
     if (!flagged.length) flagged = tracks;
     const rest = tracks.filter(t => !flagged.includes(t));
     const card = h("div", { class: "job held" });
-    card.append(h("div", { class: "head" }, coverEl(job), h("div", { class: "grow" }, titleEl(job), subEl(albumLine(job))),
+    card.append(h("div", { class: "head" }, coverEl(job), h("div", { class: "grow" }, titleEl(job), subEl(albumLine(job)), byEl(job)),
       h("span", { class: "tag warn" }, icon(ICON_WARN), "等你确认")));
     card.append(stagesEl(job));
     card.append(...stripEl(job));
@@ -471,7 +500,7 @@ html, body { margin: 0; background: var(--bg); }
     const stage = STAGE_NAMES[err.stage] || STAGE_NAMES.plan;
     const u = uiOf(job.id);
     return h("div", { class: "job" },
-      h("div", { class: "head" }, coverEl(job), h("div", { class: "grow" }, titleEl(job), subEl("在「" + stage + "」这一步停下")),
+      h("div", { class: "head" }, coverEl(job), h("div", { class: "grow" }, titleEl(job), subEl("在「" + stage + "」这一步停下"), byEl(job)),
         h("span", { class: "tag bad" }, "没有成功")),
       h("div", { class: "box bad" }, err.message || job.message || "处理时出错了，可以再试一次。"),
       h("div", { class: "acts" },
@@ -494,7 +523,7 @@ html, body { margin: 0; background: var(--bg); }
     const text = "音乐库的「" + folder + "」文件夹里已经有" + (n ? " " + n + " 个文件" : "文件") + "。可以用这次的结果替换，或者保留原来的。";
     return h("div", { class: "job" },
       h("div", { class: "head" }, coverEl(job), h("div", { class: "grow" }, titleEl(job),
-        subEl([job.album && job.album.kind !== "single" ? job.album.artist : "", (job.tracks || []).length + " 首", "已切分完成"].filter(Boolean).join("，"))),
+        subEl([job.album && job.album.kind !== "single" ? job.album.artist : "", (job.tracks || []).length + " 首", "已切分完成"].filter(Boolean).join("，")), byEl(job)),
         h("span", { class: "tag warn" }, "音乐库里已有")),
       h("div", { class: "box warn" }, text),
       h("div", { class: "acts" },
@@ -524,7 +553,7 @@ html, body { margin: 0; background: var(--bg); }
     const card = h("div", { class: "job" });
     card.append(h("div", { class: "head" }, coverEl(job),
       h("button", { class: "open", type: "button", "aria-expanded": "true", onclick: () => { expanded.delete(job.id); rerender(job.id); } },
-        titleEl(job), subEl(albumLine(job))),
+        titleEl(job), subEl(albumLine(job)), creditEl(job)),
       doneTag(job)));
     card.append(...stripEl(job));
     card.append(h("div", { class: "acts" }, jellyfinLink(job), h("span", { class: "sp" }),
@@ -554,12 +583,47 @@ html, body { margin: 0; background: var(--bg); }
     return lines;
   }
 
+  // ---- who did what
+  function submitter(job) { return (job.submitted_by && job.submitted_by.name) || ""; }
+  function rel(ts) {
+    const s = now() - ts;
+    if (s < 60) return "刚刚";
+    if (s < 3600) return Math.floor(s / 60) + " 分钟前";
+    const d = new Date(ts * 1000), t = new Date(now() * 1000);
+    const day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const days = Math.round((day(t) - day(d)) / 86400000);
+    const hm = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    if (days === 0) return Math.floor(s / 3600) + " 小时前";
+    if (days === 1) return "昨天 " + hm;
+    if (d.getFullYear() === t.getFullYear()) return (d.getMonth() + 1) + "月" + d.getDate() + "日";
+    return d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日";
+  }
+  // 「<名字> 提交，<相对时间>」 under a held card's subtitle; kept current by tick().
+  function byEl(job) {
+    const name = submitter(job);
+    if (!name) return null;
+    return h("div", { class: "by", "data-by": name, "data-ts": job.created }, name + " 提交，" + rel(job.created));
+  }
+  const VERB = { confirm: "确认", replace: "替换", keep: "保留", retry: "重试" };
+  // Done card: 「benson 提交，simon 确认」 when someone other than the submitter acted on the job.
+  function creditEl(job) {
+    const name = submitter(job);
+    if (!name) return null;
+    const parts = [name + " 提交"];
+    for (const a of job.actions || []) {
+      const p = a.name + " " + (VERB[a.action] || a.action);
+      if (a.name && a.name !== name && !parts.includes(p)) parts.push(p);
+    }
+    return parts.length > 1 ? h("div", { class: "by" }, parts.join("，")) : null;
+  }
+
   function pastRow(job) {
     const res = job.result || {};
     const single = hasAlbum(job) && job.album.kind === "single";
     const sub = [hasAlbum(job) ? job.album.artist : "",
                  hasAlbum(job) ? (single ? "单曲" : (job.tracks || []).length + " 首") : "",
-                 job.finished ? when(job.finished) : ""].filter(Boolean).join("，");
+                 job.finished ? when(job.finished) : "",
+                 submitter(job) ? submitter(job) + " 提交" : ""].filter(Boolean).join("，");
     let right = jellyfinLink(job);
     if (!right) right = doneTag(job);
     return h("div", { class: "past" }, coverEl(job, true),
@@ -658,6 +722,9 @@ html, body { margin: 0; background: var(--bg); }
   }
 
   function tick() {
+    for (const el of document.querySelectorAll(".by[data-ts]")) {
+      el.textContent = el.dataset.by + " 提交，" + rel(Number(el.dataset.ts));
+    }
     for (const el of document.querySelectorAll(".tag.run[data-since]")) {
       el.textContent = "处理中 " + mmss(now() - Number(el.dataset.since));
     }
@@ -687,10 +754,62 @@ html, body { margin: 0; background: var(--bg); }
     try { r = await api("POST", "/api/jobs", { url }); } catch (err) { showErr("连不上服务，请稍后再试。"); return; }
     if (r.ok) { input.value = ""; seenActive.add(r.data.job.id); await refresh(); }
     else if (r.status === 409 && r.data.existing_id) { input.value = ""; await refresh(); flash(r.data.existing_id); }
+    else if (r.status === 401) showLogin();
     else showErr((r.data && r.data.error) || BAD_URL);
   });
 
-  if (window.matchMedia("(min-width: 520px)").matches) input.focus();
+  // ------------------------------------------------------------ sign-in
+  const loginView = document.getElementById("loginview"), mainView = document.getElementById("main");
+  const lu = document.getElementById("lu"), lp = document.getElementById("lp");
+  const lmsg = document.getElementById("lmsg"), lbtn = document.getElementById("lbtn");
+  const MSG = { 400: "请填写用户名和密码。", 401: "用户名或密码不对。", 429: "试的次数太多了，5 分钟后再试。",
+                503: "现在连不上 Jellyfin，稍后再试。" };
+  function loginMsg(text, fields) {
+    lmsg.textContent = text || ""; lmsg.hidden = !text;
+    for (const f of [lu, lp]) {
+      const bad = !!text && fields.includes(f);
+      f.classList.toggle("err", bad);
+      f.setAttribute("aria-invalid", bad ? "true" : "false");
+    }
+  }
+  function showLogin() {
+    clearTimeout(pollTimer);
+    jobs = []; cardCache.clear(); ui.clear(); expanded.clear(); seenActive.clear();
+    for (const c of document.querySelectorAll("#main .cards")) c.replaceChildren();
+    mainView.hidden = true;
+    if (loginView.hidden) { loginView.hidden = false; loginMsg("", []); lu.focus(); }
+  }
+  let mainShown = false;
+  function showMain(me, authOn) {
+    loginView.hidden = true;
+    mainView.hidden = false;
+    const name = document.getElementById("whoname"), out = document.getElementById("logout");
+    name.textContent = (me && me.name) || "";
+    name.hidden = !(me && me.name);
+    out.hidden = !authOn;
+    if (!mainShown) {
+      mainShown = true;
+      if (window.matchMedia("(min-width: 520px)").matches) input.focus();
+    }
+  }
+  loginView.addEventListener("submit", async e => {
+    e.preventDefault();
+    const name = lu.value.trim(), pw = lp.value;
+    if (!name || !pw) { loginMsg(MSG[400], [!name ? lu : null, !pw ? lp : null].filter(Boolean)); return; }
+    lbtn.disabled = true; lbtn.textContent = "正在登录…"; loginMsg("", []);
+    let r;
+    try { r = await api("POST", "/api/login", { username: name, password: pw }); }
+    catch (err) { r = { ok: false, status: 0, data: {} }; }
+    lbtn.disabled = false; lbtn.textContent = "登录";
+    if (r.ok) { lp.value = ""; mainShown = false; refresh(); return; }
+    loginMsg(MSG[r.status] || (r.status ? (r.data && r.data.error) : "") || "连不上服务，请稍后再试。", [lp]);
+  });
+  document.getElementById("logout").addEventListener("click", async () => {
+    try { await api("POST", "/api/logout", {}); } catch (e) { /* signed out locally either way */ }
+    mainShown = false;
+    showLogin();
+  });
+
   refresh();
 })();
 </script>
