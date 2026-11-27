@@ -133,6 +133,14 @@ def test_full_width_colons_count_as_times():
     assert texts(Fake({1: page})._comments(vi()))[0] == fw
 
 
+def test_two_song_reply_tracklist_is_kept_and_one_time_chatter_is_not():
+    # The planner accepts a two-entry list (hints.plausible_list); the collection must not drop it.
+    two = "00:00 第一首\n04:12 第二首"
+    page = {"replies": [r(2, 7, previews=[r(21, UP, two), r(22, UP, "04:12 这句好听"),
+                                         r(23, UP, "00:00 a\n00:05 b\n00:09 c")])]}
+    assert texts(Fake({1: page})._comments(vi())) == [two, "c2"]
+
+
 def test_reply_address_prefix_is_removed():
     page = {"replies": [r(2, 7, previews=[r(21, UP, "回复 @某人 :" + TL), r(22, UP, "回复 @x：" + TL + " again")])]}
     cs = Fake({1: page})._comments(vi())

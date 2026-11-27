@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import logging
 import re
-import unicodedata
 from dataclasses import dataclass
 from typing import Callable
+
+from .hints import parse_timestamps, plausible_list
 
 log = logging.getLogger(__name__)
 
@@ -23,10 +24,9 @@ COMMENT_PAGES = 5
 UPLOADER_THREADS = 5
 THREAD_PAGES = 2
 # Uploader comments found beyond the first page (previews, threads, extra pages) are kept only
-# when they look like a tracklist: at least MIN_STAMPS mm:ss times. Replies lose their
+# when they read as a tracklist by the planner's own rule (hints.plausible_list: two or more
+# increasing times inside the video), so one-time chatter stays out. Replies lose their
 # "回复 @name :" address prefix, which would otherwise end up in a track title.
-MIN_STAMPS = 3
-_STAMP = re.compile(r"\d{1,2}:\d{2}")
 _REPLY_PREFIX = re.compile(r"^\s*回复\s*@[^:：\n]*[:：]\s*")
 
 
@@ -40,7 +40,8 @@ class Comment:
     reply: bool = False   # a reply inside another comment's thread, not a top-level comment
 
 
-def collect_comments(api: Callable[[str, dict], dict], aid: int, uploader_mid: int) -> list[Comment]:
+def collect_comments(api: Callable[[str, dict], dict], aid: int, uploader_mid: int,
+                     duration: float | None = None) -> list[Comment]:
     """First page of comments in like order plus the pinned ones, and every uploader comment
     that can be reached cheaply:
 
@@ -51,7 +52,8 @@ def collect_comments(api: Callable[[str, dict], dict], aid: int, uploader_mid: i
        top 3), up to ``COMMENT_PAGES`` pages, keeping only the uploader's comments from the
        extra pages.
 
-    Uploader comments from 1-3 count only with at least ``MIN_STAMPS`` times in them. Order:
+    Uploader comments from 1-3 count only when ``plausible_list`` accepts their times for a video
+    of ``duration`` seconds. Order:
     pinned, then the uploader's, then the rest in like order."""
     url = "https://api.bilibili.com/x/v2/reply"
     try:
@@ -74,8 +76,7 @@ def collect_comments(api: Callable[[str, dict], dict], aid: int, uploader_mid: i
         text = (r.get("content") or {}).get("message", "")
         if reply:
             text = _REPLY_PREFIX.sub("", text, count=1)
-        # Counted like hints.py parses: NFKC folds the full-width colon in "00：00".
-        if only_mine and len(_STAMP.findall(unicodedata.normalize("NFKC", text))) < MIN_STAMPS:
+        if only_mine and not plausible_list(parse_timestamps(text), duration):
             return
         seen.add(r.get("rpid"))
         c = Comment(text=text,

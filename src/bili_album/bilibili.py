@@ -275,7 +275,7 @@ class Bilibili:
         return out
 
     def _comments(self, vi: VideoInfo) -> list[Comment]:
-        return collect_comments(self._api, vi.aid, vi.uploader_mid)
+        return collect_comments(self._api, vi.aid, vi.uploader_mid, vi.duration)
 
     # -- media -----------------------------------------------------------------
 
