@@ -3,7 +3,7 @@
 You turn a Bilibili music link into tagged `.m4a` files for the owner's Jellyfin Music library.
 Run everything with `uv run` from the repo root. Never commit downloaded audio, `.work/`, output, or cookie files.
 
-- **Processing a Bilibili link:** before running `plan`, `review`, `apply`, `import`, or `ingest` on a link, read [docs/agents/link-workflow.md](docs/agents/link-workflow.md).
+- **Processing a Bilibili link:** before running `plan`, `run`, `review`, `apply`, `inspect`, `import`, or `ingest` on a link, read [docs/agents/link-workflow.md](docs/agents/link-workflow.md).
 
 ## Development
 
