@@ -154,14 +154,18 @@ def cut_tracks(src: Path, ranges: list[tuple[float, float]], dsts: list[Path], *
             raise FileExistsError(d)
     stream = audio_stream(src)
     if stream.get("codec_name") not in COPY_CODECS:
+        # media.cut writes a hidden ".<stem>.part.m4a" first: remove that too when ffmpeg fails.
         written: list[Path] = []
         try:
             for (s, e), d in zip(ranges, dsts):
-                cut(src, d, s, e, overwrite=overwrite)
                 written.append(d)
-        except BaseException:
+                cut(src, d, s, e, overwrite=overwrite)
+        except BaseException as err:
             for d in written:
                 d.unlink(missing_ok=True)
+                d.with_name("." + d.stem + ".part.m4a").unlink(missing_ok=True)
+            if isinstance(err, subprocess.CalledProcessError):
+                raise PacketCutError(f"ffmpeg could not encode {src.name}: exit {err.returncode}") from err
             raise
         return [Cut(s, e, "encode") for s, e in ranges]
     rate = int(stream["sample_rate"])

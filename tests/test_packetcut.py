@@ -206,9 +206,32 @@ def test_encode_path_failure_leaves_no_file(tmp_path, monkeypatch):
         return real(*a, **k)
     monkeypatch.setattr(packetcut, "cut", second_fails)
     dsts = [tmp_path / "a.m4a", tmp_path / "b.m4a"]
-    with pytest.raises(subprocess.CalledProcessError):
+    with pytest.raises(PacketCutError):
         cut_tracks(flac, [(0.0, 4.0), (4.0, 10.0)], dsts)
     assert not any(d.exists() for d in dsts)
+
+
+def test_encode_failure_after_the_part_file_is_written(tmp_path, monkeypatch):
+    # ffmpeg dies after creating media.cut's hidden part file: no file is left, and apply reports a
+    # cut failure (not an unexpected error).
+    from bili_album import media
+    from bili_album.apply import CutError, apply_plan
+    from bili_album.messages import explain
+    flac = gen(tmp_path / "src.flac", ["-c:a", "flac"])
+
+    real = subprocess.run
+
+    def dies(args, *a, **k):
+        if args[0] != "ffmpeg":
+            return real(args, *a, **k)
+        Path(args[-1]).write_bytes(b"half")
+        raise subprocess.CalledProcessError(1, args)
+    monkeypatch.setattr(media.subprocess, "run", dies)
+    p = _apply_plan_file(tmp_path, [(flac, 0.0, 4.0), (flac, 4.0, 10.0)], kind="compilation")
+    with pytest.raises(CutError) as e:
+        apply_plan(p, tmp_path / "out")
+    assert explain(e.value, "cut").code == "cut_failed"
+    assert not [x for x in (tmp_path / "out").rglob("*") if x.is_file()]
 
 
 def test_cut_failures_and_range_problems_read_differently():
