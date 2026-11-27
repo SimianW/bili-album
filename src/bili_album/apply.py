@@ -15,7 +15,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .hints import fmt_ts
-from .media import audio_info, cut, image_kind
+from .media import audio_info, image_kind
+from .packetcut import Cut, cut_tracks
 from .tag import OPTIONAL, REQUIRED, read_tags, write_tags
 
 DUR_TOL = 0.1
@@ -137,11 +138,16 @@ def apply_plan(plan_path: Path, outdir: Path, *, force: bool = False, make_zip: 
     track_total = alb.get("track_total") or len(tracks)
     disc_total = alb.get("disc_total") or 1
     url = plan["source"].get("url") or ""
+    # One packet-aligned pass per source file (see packetcut); tracks keep their plan order.
+    by_source: dict[Path, list[int]] = {}
+    for i, t in enumerate(tracks):
+        by_source.setdefault(track_source(plan, t), []).append(i)
+    cuts: dict[int, Cut] = {}
+    for src, idx in by_source.items():
+        done = cut_tracks(src, [(float(tracks[i]["start"]), float(tracks[i]["end"])) for i in idx],
+                          [files[i] for i in idx], overwrite=force)
+        cuts.update(zip(idx, done))
     for t, dst in zip(tracks, files):
-        src = track_source(plan, t)
-        if dst.exists() and force:
-            dst.unlink()
-        cut(src, dst, float(t["start"]), float(t["end"]), overwrite=force)
         span = f"{fmt_ts(t['start'])}-{fmt_ts(t['end'])}"
         comment = f"{url} {span}".strip() if url else f"{plan['source'].get('title', '')} {span}".strip()
         if t.get("audio_path") and plan["source"].get("parts", 1) > 1:
@@ -166,12 +172,14 @@ def apply_plan(plan_path: Path, outdir: Path, *, force: bool = False, make_zip: 
     produced = [f for f in files if f.exists()]
     if len(produced) != len(tracks):
         res.warnings.append(f"{len(tracks)} planned tracks but {len(produced)} files")
-    for t, f in zip(tracks, files):
+    for i, (t, f) in enumerate(zip(tracks, files)):
         tags = read_tags(f)
         info = audio_info(f)
         planned = float(t["end"]) - float(t["start"])
+        c = cuts[i]
         row = {"index": t["index"], "title": t["title"], "start": t["start"], "end": t["end"],
-               "planned": round(planned, 3), "actual": round(info["duration"], 3), "file": str(f)}
+               "planned": round(planned, 3), "actual": round(info["duration"], 3), "file": str(f),
+               "cut_start": round(c.start, 3), "cut_end": round(c.end, 3), "cut": c.mode}
         res.rows.append(row)
         if abs(info["duration"] - planned) > DUR_TOL:
             res.warnings.append(f"track {t['index']}: duration {info['duration']:.3f}s vs planned {planned:.3f}s")
