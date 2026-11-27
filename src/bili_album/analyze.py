@@ -4,8 +4,14 @@ One ffmpeg decode (8 kHz mono s16) is streamed into numpy and reduced to a
 10 Hz feature track: RMS level in dBFS and 32 log-spaced band energies.
 From that we derive boundary *candidates*:
 
-- ``silence``: runs below an adaptive threshold. The cut is placed just before
-  the next onset, so the gap stays at the tail of the previous track.
+- ``silence``: runs below an adaptive threshold. A run is often not one gap but
+  a fade-out, a short true gap and a soft intro. The cut goes at the end of the
+  run's deepest block (frames within ``CORE_DB`` of the run's minimum, or at digital-silence
+  level), just before
+  the level rises out of it, so a quiet intro stays with its own song. For a run
+  that is uniformly quiet (a plain gap) that block is the whole run and the cut
+  lands just before the next onset, as before. ``floor_db`` records the block's
+  level: at or below ``DIGITAL_DB`` it is digital silence.
 - ``dip``: deep local minima of the smoothed level (fades / crossfades).
 - ``novelty``: peaks of a timbral change curve (two-sided window distance), for
   gapless albums where nothing goes quiet.
@@ -27,6 +33,8 @@ HOP = 800  # 0.1 s
 WIN = 1600
 FPS = SR / HOP
 N_BANDS = 32
+DIGITAL_DB = -70.0   # a block this quiet is digital silence: nothing audible can be cut
+CORE_DB = 6.0        # frames within this of a run's minimum form its deepest block
 
 
 @dataclass
@@ -36,6 +44,13 @@ class Candidate:
     kind: str            # silence | dip | novelty
     gap_start: float = 0.0
     gap_end: float = 0.0
+    floor_db: float = 0.0    # silence: median level of the deepest block (dBFS)
+    core_start: float = 0.0  # silence: the deepest block inside [gap_start, gap_end]
+    core_end: float = 0.0
+
+    @property
+    def digital(self) -> bool:
+        return self.kind == "silence" and self.floor_db <= DIGITAL_DB
 
     def to_dict(self) -> dict:
         return {k: round(v, 3) if isinstance(v, float) else v for k, v in asdict(self).items()}
@@ -185,6 +200,39 @@ def _peaks(x: np.ndarray, min_dist: int, min_height: float) -> list[int]:
     return sorted(idx)
 
 
+def quiet_core(f: Features, s: float, e: float) -> tuple[float, float, float]:
+    """The deepest block of the low-level run [s, e]: the longest stretch of frames within
+    ``CORE_DB`` of the run's minimum or at digital-silence level (the later one on a tie).
+    Returns (start, end, median dB)."""
+    i0, i1 = int(round(s * FPS)), max(int(round(s * FPS)) + 1, int(round(e * FPS)))
+    seg = f.rms_db[i0:i1]
+    if len(seg) == 0:
+        return s, e, 0.0
+    # Anything at digital-silence level is as good as the minimum (faint noise after a zero block).
+    low = (seg <= float(seg.min()) + CORE_DB) | (seg <= DIGITAL_DB)
+    best = (0, 0)
+    i = 0
+    while i < len(seg):
+        if low[i]:
+            j = i
+            while j < len(seg) and low[j]:
+                j += 1
+            if j - i >= best[1] - best[0]:
+                best = (i, j)
+            i = j
+        else:
+            i += 1
+    a, b = best
+    return (i0 + a) / FPS, (i0 + b) / FPS, float(np.median(seg[a:b]))
+
+
+def level_between(f: Features, t0: float, t1: float) -> float:
+    """Loudest 0.1 s frame between t0 and t1 (dBFS); -inf when the span is empty."""
+    i0, i1 = int(np.floor(min(t0, t1) * FPS)), int(np.ceil(max(t0, t1) * FPS))
+    seg = f.rms_db[max(0, i0):max(0, i1)]
+    return float(seg.max()) if len(seg) else float("-inf")
+
+
 def candidates(f: Features) -> list[Candidate]:
     out: list[Candidate] = []
     runs, thr = silence_runs(f)
@@ -192,9 +240,10 @@ def candidates(f: Features) -> list[Candidate]:
         if s <= 0.05 or e >= f.duration - 0.05:
             continue
         gap = e - s
-        cut = max(s, e - min(0.2, gap / 2))
+        cs, ce, floor = quiet_core(f, s, e)
+        cut = max(cs, ce - min(0.2, (ce - cs) / 2))
         strength = min(1.0, 0.55 + 0.25 * min(gap, 2.0) / 2.0 + 0.2 * min(depth, 40) / 40)
-        out.append(Candidate(cut, strength, "silence", s, e))
+        out.append(Candidate(cut, strength, "silence", s, e, floor, cs, ce))
     # Level dips that do not reach silence (fades, crossfades).
     sm = _smooth(f.rms_db, 10)
     ctx = _smooth(f.rms_db, 150)
