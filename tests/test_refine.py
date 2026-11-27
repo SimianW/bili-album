@@ -222,3 +222,35 @@ def test_moved_cuts_redo_the_catalog_length_check(tmp_path, monkeypatch):
     p._refine_cuts(Path("x.m4a"), s)
     lens = [next(e["detail"] for e in x.evidence if e["kind"] == "catalog_duration") for x in s]
     assert lens[0].startswith("length 101.5s vs catalog 107.0s") and lens[1].startswith("length 98.5s vs")
+
+
+@needs_ffmpeg
+def test_a_run_whose_cut_is_past_the_cap_does_not_make_a_tie(tmp_path):
+    # Review finding: quiet runs end at 19.5 s and 20.5 s, equally far from the guess (20.0 s, also the
+    # recognition cap). The second run's cut lies past the cap, so it must not count as a rival.
+    rng = np.random.default_rng(2)
+    t = np.arange(24 * 16000) / 16000
+    x = 0.3 * np.sin(2 * np.pi * 440 * t)
+    x[((t >= 18.88) & (t < 19.5)) | ((t >= 19.9) & (t < 20.5))] = 0
+    x += rng.normal(0, 0.001, t.size)
+    audio = write_wav(tmp_path / "two-gaps.wav", x)
+    [(start, method)] = refine_starts(audio, [20.0], channels=1, bounds=[(None, 20.0)])
+    assert method == "silence" and 19.3 <= start <= 19.5
+
+
+def test_moved_cuts_rescore_catalog_aligned_lengths(tmp_path, monkeypatch):
+    # Review finding: a catalog-aligned track (no timestamps) kept its pre-refinement length verdict.
+    from bili_album.catalog import CatTrack
+    monkeypatch.setattr(cuts_mod, "refine_starts", fake_refine([(51.117, "spectral")], []))
+    monkeypatch.setattr(cuts_mod, "audio_info", lambda a: {"channels": 2})
+    p = planner(tmp_path)
+    s = [Seg(0.0, 51.7, "a", confidence=0.55), Seg(51.7, 102.0, "b", confidence=0.55)]
+    s[0].cat = CatTrack(title="a", artist="x", duration=51.0, number=1)
+    s[1].cat = CatTrack(title="b", artist="x", duration=56.5, number=2)
+    for x in s:
+        p._score_aligned_length(x)
+    assert s[1].confidence == pytest.approx(0.40) and s[1].length_mismatch is not None
+    p._refine_cuts(Path("x.m4a"), s)
+    assert s[1].confidence == pytest.approx(0.70) and s[1].length_mismatch is None
+    assert [e["detail"] for e in s[1].evidence if e["kind"] == "catalog_duration"] == [
+        "aligned catalog length 56.5s to 50.9s (-5.6s)"]

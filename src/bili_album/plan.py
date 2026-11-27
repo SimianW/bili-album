@@ -722,8 +722,11 @@ class Planner:
             self.refine_info.update(reason="refinement off")
             return
         self.refine_info = self.timer.run("refine", refine_cuts, audio, segs, self.o.refine_options)
-        if self.refine_info["moved"]:   # lengths changed: redo the catalog length check where it ran
+        if self.refine_info["moved"]:   # lengths changed: redo the catalog length checks where they ran
             self._check_durations([s for s in segs if hasattr(s, "len_adj")])
+            for s in segs:
+                if hasattr(s, "align_adj"):
+                    self._score_aligned_length(s)
 
     def _match_titles(self, titles: list[str], album: CatAlbum | None) -> list[CatTrack | None]:
         if not album:
@@ -810,6 +813,20 @@ class Planner:
             s.len_adj = adj  # type: ignore[attr-defined]
             s.confidence += adj
 
+    @staticmethod
+    def _score_aligned_length(s: Seg) -> None:
+        """Aligned catalog length vs the track's span (+-0.15, ``length_mismatch``). Re-running after
+        refinement moved a cut replaces the earlier verdict."""
+        s.confidence -= getattr(s, "align_adj", 0.0)
+        s.evidence = [e for e in s.evidence if not e.get("_align")]
+        dev, src = (s.end - s.start) - s.cat.duration, getattr(s, "align_source", "")
+        s.evidence.append({**ev("catalog_duration", f"aligned catalog length {s.cat.duration:.1f}s to {s.end - s.start:.1f}s "
+                                f"({dev:+.1f}s)" + (f"; titles from {src}" if src else "")), "_align": 1})
+        ok = abs(dev) <= max(6.0, 0.04 * s.cat.duration)
+        s.align_adj = 0.15 if ok else -0.15  # type: ignore[attr-defined]
+        s.length_mismatch = None if ok else dev  # type: ignore[attr-defined]
+        s.confidence += s.align_adj
+
     def _from_titles_and_album(self, hl: HintList, album: CatAlbum, duration, cands) -> list[Seg]:
         cats = self._match_titles([e.title for e in hl.entries], album)
         sub = CatAlbum(**{**album.__dict__, "tracks": [c for c in cats if c]})
@@ -835,15 +852,8 @@ class Planner:
                 ct = album.tracks[sg.expected_index]
                 s = Seg(sg.start, sg.end, title=ct.title, artist=ct.artist, cat=ct, confidence=0.55,
                         start_kind=sg.start_point.kind)
-                dev = sg.deviation or 0.0
-                tol = max(6.0, 0.04 * ct.duration)
-                s.evidence.append(ev("catalog_duration", f"aligned catalog length {ct.duration:.1f}s to "
-                                     f"{sg.end - sg.start:.1f}s ({dev:+.1f}s)" + (f"; titles from {source}" if source else "")))
-                if abs(dev) <= tol:
-                    s.confidence += 0.15
-                else:
-                    s.confidence -= 0.15
-                    s.length_mismatch = dev  # type: ignore[attr-defined]
+                s.align_source = source  # type: ignore[attr-defined]
+                self._score_aligned_length(s)
             s.start_strength = sg.start_point.strength  # type: ignore[attr-defined]
             for p, which in ((sg.start_point, "start"), (sg.end_point, "end")):
                 if p.kind in ("silence", "dip", "novelty"):
