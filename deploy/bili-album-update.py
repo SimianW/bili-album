@@ -23,6 +23,7 @@ import subprocess
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -69,7 +70,7 @@ class ReleaseCheck:
 
 @dataclasses.dataclass(frozen=True)
 class UpdateResult:
-    action: str  # "up_to_date", "updated", "would_update", "deferred", "skipped_failed", "no_release", "locked"
+    action: str  # up_to_date|updated|rolled_back|would_update|deferred|skipped_failed|no_release|locked
     tag: str | None = None
     commit: str | None = None
     previous_commit: str | None = None
@@ -96,8 +97,7 @@ def _run(cmd: list[str], *, cwd: Path | None = None, timeout: float = 120.0) -> 
 def _git(live_dir: Path, *args: str, check: bool = True, timeout: float = 120.0) -> subprocess.CompletedProcess[str]:
     proc = _run(["git", "-C", str(live_dir), *args], timeout=timeout)
     if check and proc.returncode != 0:
-        detail = proc.stderr.strip() or proc.stdout.strip() or f"exit {proc.returncode}"
-        raise UpdateError(f"git {args[0]} failed: {detail}")
+        raise UpdateError(f"git {args[0]} failed: {proc.stderr.strip() or proc.stdout.strip() or f'exit {proc.returncode}'}")
     return proc
 
 
@@ -105,6 +105,15 @@ def validate_repo(repo: str) -> str:
     if not REPO_RE.fullmatch(repo):
         raise UpdateError(f"invalid GitHub repository name: {repo!r}")
     return repo
+
+
+def validate_health_url(url: str) -> str:
+    if not url:
+        return ""
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise UpdateError(f"invalid health URL (expected http:// or https://): {url!r}")
+    return url
 
 
 def validate_tag(live_dir: Path, tag: object) -> str:
@@ -153,11 +162,7 @@ def acquire_lock(lock_path: Path):
 def fetch_latest_release(cfg: UpdaterConfig, state: dict) -> ReleaseCheck:
     repo = validate_repo(cfg.repo)
     url = f"{cfg.api_base.rstrip('/')}/repos/{repo}/releases/latest"
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": USER_AGENT,
-    }
+    headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": USER_AGENT}
     saved_etag, saved_tag = state.get("etag"), state.get("tag")
     if state.get("repo") == repo and isinstance(saved_etag, str) and saved_etag and isinstance(saved_tag, str) and saved_tag:
         headers["If-None-Match"] = saved_etag
@@ -165,8 +170,7 @@ def fetch_latest_release(cfg: UpdaterConfig, state: dict) -> ReleaseCheck:
     req = urllib.request.Request(url, headers=headers, method="GET")
     try:
         with urllib.request.urlopen(req, timeout=cfg.http_timeout) as resp:
-            raw = resp.read().decode("utf-8", errors="replace")
-            etag = resp.headers.get("ETag")
+            raw, etag = resp.read().decode("utf-8", errors="replace"), resp.headers.get("ETag")
     except urllib.error.HTTPError as exc:
         if exc.code == 304:
             return ReleaseCheck(status="not_modified", tag=saved_tag, etag=saved_etag)
@@ -184,8 +188,7 @@ def fetch_latest_release(cfg: UpdaterConfig, state: dict) -> ReleaseCheck:
         raise UpdateError("GitHub API returned unexpected JSON payload")
     if data.get("draft") or data.get("prerelease"):
         return ReleaseCheck(status="none")
-    tag = validate_tag(cfg.live_dir, data.get("tag_name"))
-    return ReleaseCheck(status="ok", tag=tag, etag=etag)
+    return ReleaseCheck(status="ok", tag=validate_tag(cfg.live_dir, data.get("tag_name")), etag=etag)
 
 
 def active_jobs(data_dir: Path | None) -> list[str]:
@@ -194,10 +197,8 @@ def active_jobs(data_dir: Path | None) -> list[str]:
         return []
     found: list[str] = []
     for entry in sorted(data_dir.iterdir()):
-        if not (entry.is_dir() and JOB_ID_RE.fullmatch(entry.name)):
-            continue
         job_file = entry / "job.json"
-        if not job_file.is_file():
+        if not (entry.is_dir() and JOB_ID_RE.fullmatch(entry.name) and job_file.is_file()):
             continue
         try:
             job = json.loads(job_file.read_text(encoding="utf-8"))
@@ -223,13 +224,10 @@ def _ensure_clean_checkout(live_dir: Path) -> None:
 
 
 def _sync_env(live_dir: Path, uv_bin: str, *, timeout: float, offline: bool = False) -> None:
-    cmd = [uv_bin, "sync", "--frozen"]
-    if offline:
-        cmd.append("--offline")
+    cmd = [uv_bin, "sync", "--frozen"] + (["--offline"] if offline else [])
     proc = _run(cmd, cwd=live_dir, timeout=timeout)
     if proc.returncode != 0:
-        detail = proc.stderr.strip() or proc.stdout.strip() or f"exit {proc.returncode}"
-        raise UpdateError(f"uv sync failed: {detail}")
+        raise UpdateError(f"uv sync failed: {proc.stderr.strip() or proc.stdout.strip() or f'exit {proc.returncode}'}")
 
 
 def _probe_health(url: str, timeout: float) -> str | None:
@@ -250,13 +248,11 @@ def _restart_and_verify(cfg: UpdaterConfig) -> None:
         return
     proc = _run([cfg.systemctl_bin, "--user", "restart", cfg.service], timeout=60.0)
     if proc.returncode != 0:
-        detail = proc.stderr.strip() or proc.stdout.strip() or f"exit {proc.returncode}"
-        raise UpdateError(f"failed to restart {cfg.service}: {detail}")
+        raise UpdateError(f"failed to restart {cfg.service}: {proc.stderr.strip() or proc.stdout.strip() or f'exit {proc.returncode}'}")
 
     deadline = time.monotonic() + max(0.0, cfg.startup_timeout)
     if not cfg.health_url:
-        wait = min(max(0.0, cfg.startup_timeout), 2.0)
-        if wait > 0:
+        if (wait := min(max(0.0, cfg.startup_timeout), 2.0)) > 0:
             time.sleep(wait)
         if _run([cfg.systemctl_bin, "--user", "is-active", "--quiet", cfg.service], timeout=15.0).returncode != 0:
             raise UpdateError(f"{cfg.service} is not active after restart")
@@ -271,8 +267,7 @@ def _restart_and_verify(cfg: UpdaterConfig) -> None:
         if err is None:
             return
         last_err = err
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
+        if (remaining := deadline - time.monotonic()) <= 0:
             raise UpdateError(f"{cfg.service} did not become ready at {cfg.health_url}: {last_err}")
         time.sleep(min(cfg.poll_interval, remaining))
 
@@ -294,14 +289,92 @@ def _rollback(cfg: UpdaterConfig, uv_bin: str, prev_commit: str, *, restart_serv
             log.error("rollback online uv sync failed: %s", exc2)
             return False
     if restart_service and cfg.service:
-        proc = _run([cfg.systemctl_bin, "--user", "restart", cfg.service], timeout=60.0)
-        if proc.returncode != 0:
-            log.error("rollback service restart failed: %s", proc.stderr.strip())
+        try:
+            _restart_and_verify(cfg)
+        except UpdateError as exc:
+            log.error("rollback service verification failed: %s", exc)
             return False
     return True
 
 
+def _enter_rollback(
+    cfg: UpdaterConfig, state: dict, uv_bin: str, *, tag: str, target: str, prev: str, restart: bool, mark_failed: bool,
+) -> bool:
+    state["pending_deploy"] = {"phase": "rollback", "tag": tag, "target_commit": target, "previous_commit": prev, "restart_service": restart}
+    if mark_failed:
+        state.update(failed_commit=target, failed_tag=tag)
+    save_state(cfg.state_file, state)
+    ok = _rollback(cfg, uv_bin, prev, restart_service=restart)
+    if ok:
+        state["pending_deploy"] = None
+        save_state(cfg.state_file, state)
+    return ok
+
+
+def _apply_release(cfg: UpdaterConfig, state: dict, *, tag: str, target: str, prev: str, uv_bin: str) -> UpdateResult:
+    state["pending_deploy"] = {"phase": "deploy", "tag": tag, "target_commit": target, "previous_commit": prev}
+    save_state(cfg.state_file, state)
+
+    try:
+        _git(cfg.live_dir, "checkout", "--detach", target)
+    except UpdateError:
+        if _git(cfg.live_dir, "rev-parse", "HEAD", check=False).stdout.strip() == prev:
+            state["pending_deploy"] = None
+            save_state(cfg.state_file, state)
+        raise
+
+    try:
+        _sync_env(cfg.live_dir, uv_bin, timeout=cfg.uv_timeout)
+    except UpdateError:
+        _enter_rollback(cfg, state, uv_bin, tag=tag, target=target, prev=prev, restart=False, mark_failed=True)
+        raise
+
+    if busy := active_jobs(cfg.data_dir):
+        log.info("deferring restart for %s (%s): web job(s) became active during sync: %s", tag, target[:7], ", ".join(busy))
+        _enter_rollback(cfg, state, uv_bin, tag=tag, target=target, prev=prev, restart=False, mark_failed=False)
+        return UpdateResult(action="deferred", tag=tag, commit=target, previous_commit=prev)
+
+    try:
+        _restart_and_verify(cfg)
+    except UpdateError:
+        _enter_rollback(cfg, state, uv_bin, tag=tag, target=target, prev=prev, restart=True, mark_failed=True)
+        raise
+
+    state.update(installed_tag=tag, installed_commit=target, pending_deploy=None, failed_commit=None, failed_tag=None, updated_at=time.time())
+    save_state(cfg.state_file, state)
+    log.info("updated %s from %s to %s (%s)", cfg.live_dir, prev[:7], tag, target[:7])
+    return UpdateResult(action="updated", tag=tag, commit=target, previous_commit=prev)
+
+
+def _recover_pending(cfg: UpdaterConfig, state: dict) -> UpdateResult | None:
+    pending = state.get("pending_deploy")
+    if not isinstance(pending, dict):
+        return None
+    phase, prev, target, tag = pending.get("phase"), pending.get("previous_commit"), pending.get("target_commit"), pending.get("tag")
+    if not (isinstance(prev, str) and isinstance(target, str) and isinstance(tag, str)) or prev.startswith("-") or target.startswith("-"):
+        state["pending_deploy"] = None
+        save_state(cfg.state_file, state)
+        return None
+    if cfg.dry_run:
+        log.info("[dry-run] would recover pending %s for %s", phase or "deploy", tag)
+        return UpdateResult(action="would_update", tag=tag, commit=target, previous_commit=prev)
+    if busy := active_jobs(cfg.data_dir):
+        log.info("deferring pending %s recovery for %s: active web job(s): %s", phase or "deploy", tag, ", ".join(busy))
+        return UpdateResult(action="deferred", tag=tag, commit=target, previous_commit=prev)
+    _ensure_clean_checkout(cfg.live_dir)
+    uv_bin = resolve_uv_bin(cfg.uv_bin)
+    if phase == "rollback":
+        if not _rollback(cfg, uv_bin, prev, restart_service=bool(pending.get("restart_service", True))):
+            raise UpdateError(f"failed to complete pending rollback to {prev[:7]}")
+        state["pending_deploy"] = None
+        save_state(cfg.state_file, state)
+        log.info("completed pending rollback to %s", prev[:7])
+        return UpdateResult(action="rolled_back", tag=tag, commit=prev, previous_commit=target)
+    return _apply_release(cfg, state, tag=tag, target=target, prev=prev, uv_bin=uv_bin)
+
+
 def run_update(cfg: UpdaterConfig) -> UpdateResult:
+    validate_health_url(cfg.health_url)
     if not cfg.live_dir.is_dir():
         raise UpdateError(f"live checkout directory does not exist: {cfg.live_dir}")
     _git(cfg.live_dir, "rev-parse", "--git-dir")
@@ -316,6 +389,9 @@ def run_update(cfg: UpdaterConfig) -> UpdateResult:
 
 def _run_update_locked(cfg: UpdaterConfig) -> UpdateResult:
     state = load_state(cfg.state_file)
+    if recovered := _recover_pending(cfg, state):
+        return recovered
+
     check = fetch_latest_release(cfg, state)
     if check.status == "none" or check.tag is None:
         log.info("no published GitHub release for %s", cfg.repo)
@@ -324,11 +400,9 @@ def _run_update_locked(cfg: UpdaterConfig) -> UpdateResult:
     tag = validate_tag(cfg.live_dir, check.tag)
     head = _git(cfg.live_dir, "rev-parse", "HEAD").stdout.strip()
     local_commit = _resolve_tag_commit(cfg.live_dir, tag)
-    pending = state.get("pending_deploy") if isinstance(state.get("pending_deploy"), dict) else None
 
     if (
         check.status == "not_modified"
-        and pending is None
         and local_commit is not None
         and head == local_commit
         and state.get("installed_tag") == tag
@@ -338,107 +412,45 @@ def _run_update_locked(cfg: UpdaterConfig) -> UpdateResult:
         return UpdateResult(action="up_to_date", tag=tag, commit=head)
 
     if cfg.dry_run:
-        if pending is None and local_commit is not None and head == local_commit:
-            log.info("[dry-run] already at %s (%s)", tag, head[:7])
+        if local_commit is not None and head == local_commit:
             return UpdateResult(action="up_to_date", tag=tag, commit=head)
-        if pending is None and local_commit is not None and state.get("failed_commit") == local_commit:
-            log.info("[dry-run] skipping previously failed release %s (%s)", tag, local_commit[:7])
+        if local_commit is not None and state.get("failed_commit") == local_commit:
             return UpdateResult(action="skipped_failed", tag=tag, commit=local_commit, previous_commit=head)
-        if busy := active_jobs(cfg.data_dir):
-            log.info("[dry-run] would defer update to %s (active jobs: %s)", tag, ", ".join(busy))
+        if active_jobs(cfg.data_dir):
             return UpdateResult(action="deferred", tag=tag, commit=local_commit)
         log.info("[dry-run] would update %s from %s to %s", cfg.live_dir, head[:7], tag)
         return UpdateResult(action="would_update", tag=tag, commit=local_commit, previous_commit=head)
 
-    # Fetch the release tag whenever GitHub reports a new/changed release or the tag is missing locally.
     # git fetch only writes objects and refs/tags/<tag>; it never mutates the working tree or .venv.
     if check.status == "ok" or local_commit is None:
         _git(cfg.live_dir, "fetch", "--force", "origin", f"refs/tags/{tag}:refs/tags/{tag}")
-        target_commit = _resolve_tag_commit(cfg.live_dir, tag)
-        if target_commit is None:
+        target = _resolve_tag_commit(cfg.live_dir, tag)
+        if target is None:
             raise UpdateError(f"tag {tag} did not resolve to a commit after fetch")
-        state = {
-            **state,
-            "repo": cfg.repo,
-            "etag": check.etag,
-            "tag": tag,
-        }
+        state = {**state, "repo": cfg.repo, "etag": check.etag, "tag": tag}
         save_state(cfg.state_file, state)
     else:
-        target_commit = local_commit
+        target = local_commit
 
-    if pending is None and state.get("failed_commit") == target_commit:
-        log.warning(
-            "skipping release %s (%s): previous install failed and was rolled back; waiting for a new commit",
-            tag,
-            target_commit[:7],
-        )
-        return UpdateResult(action="skipped_failed", tag=tag, commit=target_commit, previous_commit=head)
+    if state.get("failed_commit") == target:
+        log.warning("skipping release %s (%s): previous install failed; waiting for a new commit", tag, target[:7])
+        return UpdateResult(action="skipped_failed", tag=tag, commit=target, previous_commit=head)
 
-    if pending is None and head == target_commit:
+    if head == target:
         state.update(
-            repo=cfg.repo,
-            etag=check.etag,
-            tag=tag,
-            installed_tag=tag,
-            installed_commit=target_commit,
-            failed_commit=None,
-            failed_tag=None,
-            updated_at=state.get("updated_at") or time.time(),
+            repo=cfg.repo, etag=check.etag, tag=tag, installed_tag=tag, installed_commit=target,
+            failed_commit=None, failed_tag=None, updated_at=state.get("updated_at") or time.time(),
         )
         save_state(cfg.state_file, state)
-        log.info("checkout already at %s (%s); recorded release state", tag, target_commit[:7])
-        return UpdateResult(action="up_to_date", tag=tag, commit=target_commit)
+        log.info("checkout already at %s (%s); recorded release state", tag, target[:7])
+        return UpdateResult(action="up_to_date", tag=tag, commit=target)
 
-    rollback_commit = pending.get("previous_commit") if pending and isinstance(pending.get("previous_commit"), str) else head
     if busy := active_jobs(cfg.data_dir):
-        log.info("deferring update to %s (%s): active web job(s): %s", tag, target_commit[:7], ", ".join(busy))
-        return UpdateResult(action="deferred", tag=tag, commit=target_commit, previous_commit=rollback_commit)
+        log.info("deferring update to %s (%s): active web job(s): %s", tag, target[:7], ", ".join(busy))
+        return UpdateResult(action="deferred", tag=tag, commit=target, previous_commit=head)
 
     _ensure_clean_checkout(cfg.live_dir)
-    uv_bin = resolve_uv_bin(cfg.uv_bin)
-
-    state["pending_deploy"] = {"tag": tag, "target_commit": target_commit, "previous_commit": rollback_commit}
-    save_state(cfg.state_file, state)
-
-    try:
-        _git(cfg.live_dir, "checkout", "--detach", target_commit)
-    except UpdateError:
-        if _git(cfg.live_dir, "rev-parse", "HEAD", check=False).stdout.strip() == rollback_commit:
-            state["pending_deploy"] = None
-            save_state(cfg.state_file, state)
-        raise
-
-    try:
-        _sync_env(cfg.live_dir, uv_bin, timeout=cfg.uv_timeout)
-    except UpdateError:
-        if _rollback(cfg, uv_bin, rollback_commit, restart_service=False):
-            state.update(pending_deploy=None, failed_commit=target_commit, failed_tag=tag)
-            save_state(cfg.state_file, state)
-        raise
-
-    if busy := active_jobs(cfg.data_dir):
-        log.info("deferring restart for %s (%s): web job(s) became active during sync: %s", tag, target_commit[:7], ", ".join(busy))
-        if _rollback(cfg, uv_bin, rollback_commit, restart_service=False):
-            state["pending_deploy"] = None
-            save_state(cfg.state_file, state)
-        return UpdateResult(action="deferred", tag=tag, commit=target_commit, previous_commit=rollback_commit)
-
-    try:
-        _restart_and_verify(cfg)
-    except UpdateError:
-        if _rollback(cfg, uv_bin, rollback_commit, restart_service=True):
-            state.update(pending_deploy=None, failed_commit=target_commit, failed_tag=tag)
-            save_state(cfg.state_file, state)
-        raise
-
-    state.update(
-        repo=cfg.repo, etag=check.etag, tag=tag, installed_tag=tag, installed_commit=target_commit,
-        pending_deploy=None, failed_commit=None, failed_tag=None, updated_at=time.time(),
-    )
-    save_state(cfg.state_file, state)
-    log.info("updated %s from %s to %s (%s)", cfg.live_dir, rollback_commit[:7], tag, target_commit[:7])
-    return UpdateResult(action="updated", tag=tag, commit=target_commit, previous_commit=rollback_commit)
+    return _apply_release(cfg, state, tag=tag, target=target, prev=head, uv_bin=resolve_uv_bin(cfg.uv_bin))
 
 
 def parse_args(argv: list[str] | None = None) -> UpdaterConfig:
@@ -463,9 +475,8 @@ def parse_args(argv: list[str] | None = None) -> UpdaterConfig:
 
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
-    cfg = parse_args(argv)
     try:
-        run_update(cfg)
+        run_update(parse_args(argv))
     except UpdateError as exc:
         log.error("%s", exc)
         return 1

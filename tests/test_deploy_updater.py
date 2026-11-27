@@ -54,6 +54,7 @@ class FakeHTTP:
         self.etag = '"etag-1"'
         self.payload: dict | None = {"tag_name": "v0.1.0", "draft": False, "prerelease": False}
         self.health_statuses: list[int] = [200]
+        self.health_fn = None
         self.requests: list[dict] = []
         self.health_hits = 0
         parent = self
@@ -64,8 +65,11 @@ class FakeHTTP:
 
             def do_GET(self):
                 if self.path == "/health":
-                    idx = min(parent.health_hits, len(parent.health_statuses) - 1)
-                    code = parent.health_statuses[idx]
+                    if parent.health_fn is not None:
+                        code = parent.health_fn()
+                    else:
+                        idx = min(parent.health_hits, len(parent.health_statuses) - 1)
+                        code = parent.health_statuses[idx]
                     parent.health_hits += 1
                     self.send_response(code)
                     self.end_headers()
@@ -264,10 +268,12 @@ def test_rolls_back_when_uv_sync_fails_and_skips_retry_until_new_commit(env):
 
 
 def test_rolls_back_when_service_not_active_and_stops_restart_loop(env):
+    # Fail is-active only while the live checkout sits on the broken commit c2; succeed after rollback to c1.
     bad_systemctl = _make_script(
         env["tmp"] / "bad-systemctl",
         f'echo "systemctl $*" >> "{env["log"]}"\n'
-        'case "$*" in *is-active*) exit 3 ;; *) exit 0 ;; esac\n',
+        f'head=$(git -C "{env["live"]}" rev-parse HEAD)\n'
+        f'case "$*" in *is-active*) [ "$head" = "{env["c2"]}" ] && exit 3 || exit 0 ;; *) exit 0 ;; esac\n',
     )
     with pytest.raises(U.UpdateError, match="not active after restart"):
         U.run_update(_cfg(env, systemctl_bin=bad_systemctl))
@@ -280,6 +286,7 @@ def test_rolls_back_when_service_not_active_and_stops_restart_loop(env):
         "systemctl --user is-active --quiet bili-album-web.service",
         "uv sync --frozen --offline",
         "systemctl --user restart bili-album-web.service",
+        "systemctl --user is-active --quiet bili-album-web.service",
     ]
 
     # Second run skips the failed commit without restarting the live service again.
@@ -309,7 +316,7 @@ def test_polls_health_endpoint_and_rolls_back_when_never_ready(env):
     assert res.action == "updated"
     assert env["gh"].health_hits == 2
 
-    # Next release stays active in systemd but never returns HTTP 200 -> rollback.
+    # Next release stays active in systemd but never returns HTTP 200 -> rollback restores c2 and succeeds on c2.
     (env["work"] / "version.txt").write_text("0.2.0\n", encoding="utf-8")
     _git(env["work"], "add", "version.txt")
     _git(env["work"], "commit", "-q", "-m", "v0.2.0")
@@ -318,15 +325,18 @@ def test_polls_health_endpoint_and_rolls_back_when_never_ready(env):
     _git(env["work"], "push", "-q", "origin", "HEAD:main", "refs/tags/v0.2.0")
     env["gh"].payload = {"tag_name": "v0.2.0", "draft": False, "prerelease": False}
     env["gh"].etag = '"etag-3"'
-    env["gh"].health_statuses = [503]
+    env["gh"].health_fn = lambda: 503 if (env["live"] / "version.txt").read_text(encoding="utf-8").strip() == "0.2.0" else 200
     env["gh"].health_hits = 0
 
     with pytest.raises(U.UpdateError, match="did not become ready"):
         U.run_update(_cfg(env, startup_timeout=0.15, poll_interval=0.05))
     assert _git(env["live"], "rev-parse", "HEAD") == env["c2"]
+    state = json.loads(env["state_file"].read_text(encoding="utf-8"))
+    assert state["pending_deploy"] is None
+    assert state["failed_commit"] == c3
 
 
-def test_recovers_interrupted_deploy_when_head_already_at_target(env):
+def test_recovers_interrupted_deploy_even_when_github_unreachable(env):
     # Simulate updater killed right after git checkout --detach c2, before uv sync / restart.
     _git(env["live"], "fetch", "origin", "refs/tags/v0.1.0:refs/tags/v0.1.0")
     _git(env["live"], "checkout", "-q", "--detach", env["c2"])
@@ -338,21 +348,68 @@ def test_recovers_interrupted_deploy_when_head_already_at_target(env):
             "tag": "v0.1.0",
             "installed_tag": None,
             "installed_commit": env["c1"],
-            "pending_deploy": {"tag": "v0.1.0", "target_commit": env["c2"], "previous_commit": env["c1"]},
+            "pending_deploy": {"phase": "deploy", "tag": "v0.1.0", "target_commit": env["c2"], "previous_commit": env["c1"]},
         },
     )
+    env["gh"].status = 500  # Recovery runs before GitHub polling.
 
     res = U.run_update(_cfg(env))
     assert res.action == "updated"
     assert res.previous_commit == env["c1"]
-    assert env["log"].read_text(encoding="utf-8").splitlines() == [
-        "uv sync --frozen",
-        "systemctl --user restart bili-album-web.service",
-        "systemctl --user is-active --quiet bili-album-web.service",
-    ]
+    assert not env["gh"].requests
     state = json.loads(env["state_file"].read_text(encoding="utf-8"))
     assert state["pending_deploy"] is None
     assert state["installed_commit"] == env["c2"]
+
+
+def test_completes_interrupted_rollback_without_redeploying_failed_target(env):
+    _git(env["live"], "fetch", "origin", "refs/tags/v0.1.0:refs/tags/v0.1.0")
+    U.save_state(
+        env["state_file"],
+        {
+            "repo": "SimianW/bili-album",
+            "etag": '"etag-1"',
+            "tag": "v0.1.0",
+            "installed_tag": None,
+            "installed_commit": env["c1"],
+            "failed_commit": env["c2"],
+            "failed_tag": "v0.1.0",
+            "pending_deploy": {
+                "phase": "rollback", "tag": "v0.1.0", "target_commit": env["c2"],
+                "previous_commit": env["c1"], "restart_service": True,
+            },
+        },
+    )
+    res = U.run_update(_cfg(env))
+    assert res.action == "rolled_back"
+    assert res.commit == env["c1"]
+    assert _git(env["live"], "rev-parse", "HEAD") == env["c1"]
+    assert json.loads(env["state_file"].read_text(encoding="utf-8"))["pending_deploy"] is None
+    # Next tick sees failed_commit and skips v0.1.0 cleanly.
+    assert U.run_update(_cfg(env)).action == "skipped_failed"
+
+
+def test_rejects_malformed_health_url_before_mutating(env):
+    with pytest.raises(U.UpdateError, match="invalid health URL"):
+        U.run_update(_cfg(env, health_url="localhost/"))
+    assert _git(env["live"], "rev-parse", "HEAD") == env["c1"]
+    assert not env["log"].exists()
+    assert not env["state_file"].exists()
+
+
+def test_shipped_systemd_units_match_paths_port_and_rate_budget():
+    deploy_dir = SCRIPT_PATH.parent
+    web_unit = (deploy_dir / "bili-album-web.service").read_text(encoding="utf-8")
+    upd_unit = (deploy_dir / "bili-album-update.service").read_text(encoding="utf-8")
+    timer_unit = (deploy_dir / "bili-album-update.timer").read_text(encoding="utf-8")
+
+    assert "WorkingDirectory=%h/Dev/bili-album-live" in web_unit
+    assert "--live-dir %h/Dev/bili-album-live" in upd_unit
+    assert "--data-dir %h/Dev/bili-album/.work/web" in web_unit
+    assert "--data-dir %h/Dev/bili-album/.work/web" in upd_unit
+    assert "--port 5191" in web_unit
+    assert "--health-url http://127.0.0.1:5191/" in upd_unit
+    assert "OnUnitActiveSec=3min" in timer_unit
 
 
 def test_refuses_dirty_tracked_checkout(env):

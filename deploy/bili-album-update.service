@@ -9,6 +9,8 @@
 #   systemctl --user enable --now bili-album-update.timer
 #
 # Adjust --live-dir and --data-dir if bili-album-web.service uses different paths.
+# A rolled-back commit is recorded as failed_commit in ~/.local/state/bili-album/updater.json and
+# skipped until a new release commit appears; delete that state file to force a retry of the same tag.
 
 [Unit]
 Description=Update bili-album live checkout to the latest GitHub release
