@@ -541,3 +541,84 @@ def test_weak_start_is_flagged_unless_recognition_pins_it():
     b.pinned = True
     p2._flag_weak_starts([a, b])
     assert not p2.review
+
+
+# ----------------------------------------------------------------------------- Simplified Chinese output (O3)
+
+def test_to_simplified_helper():
+    from bili_album.textnorm import to_simplified
+    assert to_simplified("周杰倫") == "周杰伦"
+    assert to_simplified("愛在西元前") == "爱在西元前"
+    assert to_simplified("華語流行樂") == "华语流行乐"
+    assert to_simplified("周杰倫 - Mojito") == "周杰伦 - Mojito"
+    assert to_simplified("爸，我回來了") == "爸，我回来了"          # punctuation and width untouched
+    assert to_simplified("夜に駆ける") == "夜に駆ける"              # kana: Japanese, never converted
+    assert to_simplified("残酷な天使のテーゼ") == "残酷な天使のテーゼ"
+    assert to_simplified("괴물") == "괴물" and to_simplified("Lucky Charm") == "Lucky Charm"
+
+
+def _tag_plan(tracks, album_title, album_artist, genre=""):
+    return {"album": {"title": album_title, "artist": album_artist, "genre": genre},
+            "tracks": [{"index": i + 1, "title": t, "artist": a, "album": album_title, "album_artist": album_artist,
+                        "genre": genre, "composer": "", "lyrics": ly, "evidence": [{"kind": "catalog_duration",
+                                                                                   "detail": f"itunes: {a} - {t}"}]}
+                       for i, (t, a, ly) in enumerate(tracks)],
+            "review_reasons": [], "source": {"title": "愛在西元前 原視頻"}}
+
+
+def test_simplify_plan_chinese_release():
+    from bili_album.plan import simplify_plan
+    p = _tag_plan([("愛在西元前", "周杰倫", "古巴比倫王頒布了漢摩拉比法典"), ("忍者", "周杰倫", "")],
+                  "范特西", "周杰倫", "華語流行樂")
+    assert simplify_plan(p) == []
+    t = p["tracks"][0]
+    assert (t["title"], t["artist"], t["album_artist"], t["genre"]) == ("爱在西元前", "周杰伦", "周杰伦", "华语流行乐")
+    assert t["lyrics"] == "古巴比伦王颁布了汉摩拉比法典" and p["album"]["artist"] == "周杰伦"
+    assert t["evidence"][0]["detail"] == "itunes: 周杰伦 - 爱在西元前"
+    assert p["source"]["title"] == "愛在西元前 原視頻"          # the raw input record is kept
+
+
+def test_simplify_plan_leaves_japanese_kanji_alone():
+    from bili_album.plan import simplify_plan
+    # Kanji-only title 「戀愛」 in an album whose other titles have kana: Japanese, untouched.
+    p = _tag_plan([("戀愛", "某歌手", ""), ("夜に駆ける", "某歌手", "沈むように溶けてゆくように")],
+                  "戀愛の歌", "某歌手")
+    assert simplify_plan(p) == []
+    assert p["tracks"][0]["title"] == "戀愛" and p["tracks"][1]["title"] == "夜に駆ける"
+
+
+def test_simplify_plan_records_doubt_when_language_unclear():
+    from bili_album.plan import simplify_plan
+    p = _tag_plan([("戀愛", "Somebody", "")], "Album", "Somebody")
+    doubts = simplify_plan(p)
+    assert p["tracks"][0]["title"] == "戀愛" and doubts and "恋爱" in doubts[0]
+
+
+def test_traditional_catalog_result_gives_simplified_tags_and_file_name(tmp_path):
+    from bili_album.apply import output_paths
+    from bili_album.bilibili import VideoInfo
+    from bili_album.hints import TitleGuess
+    al = album("七里香", "周杰倫", [("我的地盤", 297.0), ("擱淺", 238.1)], "itunes", "q", "2004-08-03")
+    al.genre = "華語流行樂"
+    t = al.tracks[1]
+    p = planner(providers=[FakeProvider("itunes", tracks=[(t, al)], albums=[al])])
+    p.rec = Recognizer()
+    p.workdir = tmp_path
+    p.guess = TitleGuess(works=["擱淺"], artists=["周杰倫"])
+    vi = VideoInfo("", "x", 0, "周杰倫《擱淺》", "", 0, "", 240.0, "", 0)
+    segs, alb = p._single(vi, tmp_path / "a.m4a", 240.0, p.guess, None)
+    plan = p._assemble(vi, tmp_path / "a.m4a", {"codec": "aac", "bitrate_kbps": 320, "sample_rate": 48000}, [],
+                       "single", segs, alb, 240.0)
+    tr = plan["tracks"][0]
+    assert (tr["title"], tr["artist"], tr["album"], tr["album_artist"], tr["genre"]) == \
+        ("搁浅", "周杰伦", "七里香", "周杰伦", "华语流行乐")
+    folder, files = output_paths(plan, tmp_path / "out")
+    assert files[0].name == "周杰伦 - 搁浅.m4a"
+
+
+def test_a_few_japanese_words_in_chinese_lyrics_do_not_block_conversion():
+    from bili_album.plan import simplify_plan
+    p = _tag_plan([("忍者", "周杰倫", "一騎當千 日本刀 さようなら 江湖人稱 忍者"), ("愛在西元前", "周杰倫", "")],
+                  "范特西", "周杰倫", "華語流行樂")
+    assert simplify_plan(p) == []
+    assert p["album"]["genre"] == "华语流行乐" and p["tracks"][1]["title"] == "爱在西元前"

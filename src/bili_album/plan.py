@@ -32,7 +32,7 @@ from .hints import (HintEntry, HintList, TitleGuess, derivative_cues, fmt_ts, gu
 from .media import audio_info, image_kind, prepare_offline_audio, square_cover
 from .net import Http
 from .recognize import NullRecognizer, Recognition, Recognizer, ShazamRecognizer
-from .textnorm import norm, similarity, strip_decorations, strip_translation
+from .textnorm import has_han, has_kana, norm, similarity, strip_decorations, strip_translation, to_simplified
 
 log = logging.getLogger(__name__)
 
@@ -99,6 +99,85 @@ def pick_original(same: list[tuple[CatTrack, CatAlbum]], family: list[tuple[CatT
         return [x] + [y for y in dated if y is not x], (f"earliest same-titled release that other artists' "
                                                         f"versions followed ({followers(x)} within a year)")
     return dated, f"earliest of {len(dated)} same-titled catalog songs (none drew versions within a year)"
+
+
+TAG_FIELDS = ("title", "artist", "album", "album_artist", "genre", "composer", "lyrics")
+_ZH_GENRE = re.compile(r"华语|華語|国语|國語|粤语|粵語|台语|台語|闽南|閩南|mandopop|cantopop|c-?pop|chinese", re.I)
+_JA_GENRE = re.compile(r"j-?pop|j-?rock|anime|アニメ|演歌|enka|japan|日本|邦楽", re.I)
+# Function words that Chinese uses and Japanese does not (either script).
+_ZH_MARKERS = re.compile(r"[你妳们們这這说說吗嗎呢吧么麼没沒谁誰咱哪啊呀]")
+_NO_CONVERT_KEYS = {"url", "id", "bvid", "audio_path", "cover_path", "part_paths", "provider", "kind"}
+
+
+def simplify_plan(plan: dict) -> list[str]:
+    """Write every Chinese string of a plan in Simplified script (owner rule: no Traditional
+    characters in the output, whatever the official release uses). One choke point, applied
+    where tags are final, so catalog, recognition, uploader text, --tracklist and
+    --album-hint values all pass through it; ``review`` calls it again before writing.
+
+    Japanese must not be converted. Strings with kana never are (``to_simplified``). For
+    kanji-only strings the album decides: Japanese when a title / artist / album name has kana,
+    the genre is Japanese, or kana are more than 15% of the lyrics' Han + kana characters;
+    Chinese when the genre is Chinese (this wins), a tag string uses Chinese-only function
+    words (你 / 們 / 这 / 說 / 吗 / 没 ...), or the lyrics are Han-dominant.
+    When neither is clear a string is converted only if that changes nothing; otherwise it is
+    left as written and the doubt is returned as review reasons. ``source`` (the raw input
+    record), paths, URLs and ids are not touched; everything else (tags, evidence, reasons)
+    follows the same decision. Returns review reasons for undecided tag strings."""
+    tracks = plan.get("tracks") or []
+    album = plan.get("album") or {}
+    tags = [album.get(k) or "" for k in ("title", "artist", "genre")]
+    tags += [t.get(k) or "" for t in tracks for k in TAG_FIELDS]
+    genre = " ".join([album.get("genre") or ""] + [t.get("genre") or "" for t in tracks])
+    lyrics = [t.get("lyrics") or "" for t in tracks]
+    names = [x for x in tags if x not in lyrics]
+    kana_n = sum(len(re.findall(r"[぀-ヿ]", x)) for x in lyrics)
+    han_n = sum(len(re.findall(r"[㐀-鿿]", x)) for x in lyrics)
+    # A few Japanese words inside Chinese lyrics do not make a Japanese album.
+    ja_lyrics = kana_n > 0.15 * max(1, kana_n + han_n)
+    zh_genre = bool(_ZH_GENRE.search(genre))
+    ja = not zh_genre and (any(has_kana(x) for x in names) or bool(_JA_GENRE.search(genre)) or ja_lyrics)
+    zh = zh_genre or any(_ZH_MARKERS.search(x) for x in tags) or (han_n > 0 and not ja_lyrics)
+    doubts: list[str] = []
+
+    def conv(x: str, where: str | None) -> str:
+        if not isinstance(x, str) or not x:
+            return x
+        out = to_simplified(x)
+        if out == x:
+            return x
+        if ja and not _ZH_MARKERS.search(x):
+            return x                      # kanji of a Japanese release
+        if zh or _ZH_MARKERS.search(x):
+            return out
+        if where:
+            doubts.append(f"script: cannot tell whether {where} {x!r} is Chinese or Japanese; left as written "
+                          f"(Simplified would be {out!r})")
+        return x
+
+    for k in ("title", "artist", "genre"):
+        album[k] = conv(album.get(k, ""), f"album {k}")
+    for t in tracks:
+        for k in TAG_FIELDS:
+            if k in t:
+                t[k] = conv(t[k], f"track {t.get('index')} {k}" if k != "lyrics" else f"track {t.get('index')} lyrics")
+
+    def walk(o):
+        # In place: callers (review) keep references to the track dicts.
+        if isinstance(o, dict):
+            for k, v in o.items():
+                if k in _NO_CONVERT_KEYS or k.endswith("_path"):
+                    continue
+                o[k] = conv(v, None) if isinstance(v, str) else (walk(v) or v)
+        elif isinstance(o, list):
+            for i, v in enumerate(o):
+                o[i] = conv(v, None) if isinstance(v, str) else (walk(v) or v)
+        return None
+    for k in list(plan):
+        if k != "source":
+            v = plan[k]
+            plan[k] = conv(v, None) if isinstance(v, str) else (walk(v) or v)
+    return doubts
 
 
 def sample_indices(n: int, k: int = 3) -> list[int]:
@@ -179,6 +258,7 @@ class Timer:
 class TimedRecognizer(Recognizer):
     def __init__(self, inner: Recognizer, timer: Timer):
         self.inner, self.timer = inner, timer
+        self.log: list[dict] = []
 
     @property
     def available(self):  # type: ignore[override]
@@ -193,7 +273,9 @@ class TimedRecognizer(Recognizer):
         return getattr(self.inner, "exhausted", False)
 
     def recognize(self, audio, start, length=12.0):
-        return self.timer.run("recognize", self.inner.recognize, audio, start, length)
+        r = self.timer.run("recognize", self.inner.recognize, audio, start, length)
+        self.log.append({"audio": Path(audio).name, **r.to_dict(), "implied_start": r.implied_start})
+        return r
 
 
 @dataclass
@@ -286,6 +368,13 @@ class Planner:
                                     by_uploader=c.by_uploader, pinned=c.pinned))
         return out
 
+    def _record_candidates(self, matches: list[AlbumMatch]) -> None:
+        self.album_candidates = [
+            {"score": round(m.score, 3), "reason": m.reason, "provider": m.album.provider, "id": m.album.id,
+             "title": m.album.title, "artist": m.album.artist, "release_date": m.album.release_date,
+             "tracks": [{"number": t.number, "title": t.title, "artist": t.artist, "duration": t.duration}
+                        for t in m.album.tracks]} for m in matches[:10]]
+
     def _guess(self, vi: VideoInfo) -> TitleGuess:
         g = guess_from_title(vi.title)
         if self.o.album_hint:
@@ -310,7 +399,22 @@ class Planner:
                 rec.close()
         path = self.workdir / "plan.json"
         path.write_text(json.dumps(plan, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        self._write_side_files()
         return path
+
+    def _write_side_files(self) -> None:
+        """Plain JSON records of the inputs the plan used, for reviewers and tools:
+        recognitions.json (every recognition answer, cached or not), album_candidates.json
+        (catalog albums or releases considered, best first), text_hints.json (parsed hints)."""
+        def dump(name, obj):
+            (self.workdir / name).write_text(json.dumps(obj, ensure_ascii=False, indent=1) + "\n",
+                                             encoding="utf-8")
+        try:
+            dump("recognitions.json", self.rec.log)
+            dump("album_candidates.json", getattr(self, "album_candidates", []))
+            dump("text_hints.json", getattr(self, "text_hints", []))
+        except Exception as e:  # never fail a plan over side files
+            log.warning("side files not written: %s", e)
 
     def _plan(self, vi: VideoInfo, audio: Path, part_files: list[Path]) -> dict:
         ainfo = audio_info(audio)
@@ -321,6 +425,11 @@ class Planner:
         hint_lists = self._hint_lists(vi, duration)
         user_list = parse_tracklist_file(Path(self.o.tracklist).read_text(encoding="utf-8")) \
             if self.o.tracklist else []
+        self.text_hints = [{"source": h.source, "detail": h.detail, "by_uploader": h.by_uploader,
+                            "pinned": h.pinned, "entries": [e.__dict__ for e in h.entries]} for h in hint_lists]
+        if user_list:
+            self.text_hints.insert(0, {"source": "tracklist", "detail": "--tracklist file", "by_uploader": True,
+                                       "pinned": False, "entries": [e.__dict__ for e in user_list]})
 
         if part_files:
             kind = "multipart"
@@ -409,6 +518,10 @@ class Planner:
                 hits += self.timer.run("catalog", self.catalog.find_track, title_guess, "", duration)
             cands += [(sc, t, al, "title") for sc, t, al in hits]
         pool = [(t, al) for _, t, al, _ in cands]
+        self.album_candidates = [
+            {"score": round(sc, 3), "source": src, "provider": t.provider, "track_title": t.title,
+             "track_artist": t.artist, "duration": t.duration, "album": al.title, "album_artist": al.artist,
+             "release_date": al.release_date, "id": al.id} for sc, t, al, src in cands[:30]]
         if cues and (title_guess or (r and r.ok)):
             return self._single_derivative(seg, title_guess or r.title, artist_guess, cues, pool, r, duration)
         best = None
@@ -592,6 +705,7 @@ class Planner:
         if matches is None or titles:
             matches = self.timer.run("catalog", self.catalog.find_album, guess.queries(), duration=duration,
                                      artists=guess.artists, works=guess.works, titles=titles, n_tracks=n_hint)
+        self._record_candidates(matches)
         best: AlbumMatch | None = matches[0] if matches else None
         album = None
         if best and best.score >= 0.55 and (best.list_score is None or best.list_score >= 0.3 or not primary):
@@ -1122,6 +1236,7 @@ class Planner:
             titles = []
         matches = self.timer.run("catalog", self.catalog.find_album, guess.queries(), duration=sum(durs),
                                  artists=guess.artists, works=guess.works, titles=titles, n_tracks=len(files))
+        self._record_candidates(matches)
         best = matches[0] if matches else None
         album = best.album if best and best.score >= 0.55 else None
         if album:
@@ -1368,6 +1483,10 @@ class Planner:
             plan["album"]["title_notes"] = self.title_notes
         if part_files:
             plan["source"]["part_paths"] = [str(p) for p in part_files]
+        doubts = simplify_plan(plan)
+        if doubts:
+            plan["needs_review"] = True
+            plan["review_reasons"] = _dedupe(plan["review_reasons"] + doubts)
         return plan
 
 

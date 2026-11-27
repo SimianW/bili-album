@@ -1403,6 +1403,9 @@ def review_plan(plan_path: Path | str, *, out: Path | str | None = None, dry_run
     open_reasons += hard
     if hard:
         review["hard_problems"] = hard
+    # Values the review wrote pass through the same Simplified-Chinese choke point as plan.
+    from .plan import simplify_plan
+    open_reasons += simplify_plan(plan)
     earlier = plan.get("review_reasons") or []
     if open_reasons:
         plan["needs_review"] = True

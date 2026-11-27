@@ -94,3 +94,27 @@ def strip_translation(title: str) -> str:
     if not m or not _NON_LATIN.search(m.group("main")) or _VERSION_WORD.search(m.group("par")):
         return title
     return m.group("main").strip()
+
+
+_KANA = re.compile(r"[぀-ヿㇰ-ㇿｦ-ﾟ]")
+_HAN_ANY = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
+
+
+def has_kana(s: str) -> bool:
+    return bool(_KANA.search(s or ""))
+
+
+def has_han(s: str) -> bool:
+    return bool(_HAN_ANY.search(s or ""))
+
+
+def to_simplified(s: str) -> str:
+    """Simplified Chinese for output: Traditional characters converted with OpenCC ``t2s``.
+
+    A string containing kana is Japanese and is returned unchanged (kanji must not be
+    "simplified"); strings without Han characters (Korean, Latin ...) are unchanged too.
+    No width or punctuation folding: only the Chinese characters change. Whether a
+    kanji-only string is Chinese at all is the caller's decision (see ``plan.simplify_plan``)."""
+    if not s or _T2S is None or not _HAN_ANY.search(s) or _KANA.search(s):
+        return s
+    return _T2S.convert(s)
