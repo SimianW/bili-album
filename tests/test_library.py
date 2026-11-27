@@ -75,7 +75,7 @@ def cfg(tmp_path: Path) -> Config:
 def test_import_album_and_confirm(tmp_path, album_dir):
     c = cfg(tmp_path)
     jf = FakeJellyfin(appear_after=2)
-    res = import_album(album_dir, config=c, jellyfin=jf, poll_interval=0.01)
+    res = import_album(album_dir, config=c, jellyfin=jf, poll_interval=0.01, settle_timeout=0)
     dest = c.library_dir / "周杰伦" / "范特西"
     assert res.status == "imported", res.reason
     assert res.dest == str(dest) and res.container_path == "/media/music/周杰伦/范特西"
@@ -90,13 +90,13 @@ def test_import_album_and_confirm(tmp_path, album_dir):
 
 def test_duplicate_then_replace(tmp_path, album_dir):
     c = cfg(tmp_path)
-    import_album(album_dir, config=c, jellyfin=FakeJellyfin(), poll_interval=0.01)
+    import_album(album_dir, config=c, jellyfin=FakeJellyfin(), poll_interval=0.01, settle_timeout=0)
     dest = c.library_dir / "周杰伦" / "范特西"
     (dest / "extra.m4a").write_bytes(b"x")
-    dup = import_album(album_dir, config=c, jellyfin=FakeJellyfin(), poll_interval=0.01)
+    dup = import_album(album_dir, config=c, jellyfin=FakeJellyfin(), poll_interval=0.01, settle_timeout=0)
     assert dup.status == "duplicate" and "extra.m4a" in dup.existing
     assert (dest / "extra.m4a").exists()
-    rep = import_album(album_dir, config=c, jellyfin=FakeJellyfin(), poll_interval=0.01, replace=True)
+    rep = import_album(album_dir, config=c, jellyfin=FakeJellyfin(), poll_interval=0.01, settle_timeout=0, replace=True)
     assert rep.status == "imported" and rep.replaced
     assert not (dest / "extra.m4a").exists() and len(list(dest.iterdir())) == 3
 
@@ -110,7 +110,7 @@ def test_dry_run_copies_nothing(tmp_path, album_dir):
 
 def test_unconfirmed_when_jellyfin_down_or_slow(tmp_path, album_dir):
     c = cfg(tmp_path)
-    down = import_album(album_dir, config=c, jellyfin=FakeJellyfin(down=True))
+    down = import_album(album_dir, config=c, jellyfin=FakeJellyfin(down=True), settle_timeout=0)
     assert down.status == "imported_unconfirmed" and "unreachable" in down.reason
     assert (c.library_dir / "周杰伦" / "范特西" / "cover.jpg").exists()      # files stay
     shutil.rmtree(c.library_dir / "周杰伦")
@@ -130,7 +130,7 @@ def test_single_goes_to_artist_album_folder(tmp_path):
     from PIL import Image
     cover = tmp_path / "c.png"
     Image.new("RGB", (16, 16)).save(cover, "PNG")
-    res = import_album(f, config=c, jellyfin=FakeJellyfin(tracks=1), poll_interval=0.01, cover=cover)
+    res = import_album(f, config=c, jellyfin=FakeJellyfin(tracks=1), poll_interval=0.01, settle_timeout=0, cover=cover)
     assert res.status == "imported"
     assert sorted(p.name for p in (c.library_dir / "Coldplay" / "Parachutes").iterdir()) == \
         ["01-Yellow.m4a", "cover.png"]
@@ -138,7 +138,7 @@ def test_single_goes_to_artist_album_folder(tmp_path):
 
 def test_remove_album_guard(tmp_path, album_dir):
     c = cfg(tmp_path)
-    res = import_album(album_dir, config=c, jellyfin=FakeJellyfin(), poll_interval=0.01)
+    res = import_album(album_dir, config=c, jellyfin=FakeJellyfin(), poll_interval=0.01, settle_timeout=0)
     with pytest.raises(ValueError):
         remove_album(c.library_dir / "周杰伦", library_dir=c.library_dir)
     removed = remove_album(res.dest, library_dir=c.library_dir)
@@ -192,44 +192,96 @@ class StoreJellyfin(FakeJellyfin):
             self.items["item1"]["AlbumArtists"].append({"Name": "周杰倫", "Id": "a-周杰倫"})
 
 
-def test_normalizes_traditional_duplicate_and_locks(tmp_path, album_dir):
+def test_normalizes_traditional_duplicate_and_locks_first(tmp_path, album_dir):
     c = cfg(tmp_path)
     jf = StoreJellyfin()
-    res = import_album(album_dir, config=c, jellyfin=jf, poll_interval=0.01)
-    assert res.status == "imported"
+    res = import_album(album_dir, config=c, jellyfin=jf, poll_interval=0.01, settle_timeout=0)
+    assert res.status == "imported" and res.track_count == 2 == res.jellyfin_track_count
+    # Lock first (nothing else changed in that update), then the correction.
+    assert jf.updates[0]["LockData"] is True and len(jf.updates[0]["AlbumArtists"]) == 2
     assert [a["Name"] for a in jf.items["item1"]["AlbumArtists"]] == ["周杰伦"]
     assert jf.items["item1"]["LockData"] is True and jf.items["item1"]["AlbumArtist"] == "周杰伦"
     assert res.normalized == [{"item": "item1", "type": "MusicAlbum", "name": "范特西", "field": "AlbumArtists",
                                "from": ["周杰伦", "周杰倫"], "to": ["周杰伦"]}]
     assert res.normalize_locked == ["item1"] and res.normalize_verified is True
     assert res.leftover_artists == [] and not res.warnings
-    assert len(jf.updates) == 1                       # tracks were already right: untouched, not locked
+    assert len(jf.updates) == 2                       # tracks were already right: untouched
+
+
+class LateJellyfin(StoreJellyfin):
+    """The Traditional artist lands only after the first few reads (as in the 2026-11-27 web import)."""
+
+    def __init__(self, after_reads: int):
+        super().__init__(album_artists=("周杰伦",))
+        self.reads = 0
+        self.after = after_reads
+
+    def get_item(self, item_id):
+        if item_id == "item1":
+            self.reads += 1
+            if self.reads == self.after and not self.items["item1"].get("_landed"):
+                self.items["item1"]["AlbumArtists"].append({"Name": "周杰倫", "Id": "a-周杰倫"})
+                self.items["item1"]["_landed"] = True
+        return super().get_item(item_id)
+
+
+def test_late_traditional_artist_is_caught_in_the_watch_window(tmp_path, album_dir):
+    jf = LateJellyfin(after_reads=4)
+    res = import_album(album_dir, config=cfg(tmp_path), jellyfin=jf, poll_interval=0.01, settle_timeout=0.2)
+    assert [a["Name"] for a in jf.items["item1"]["AlbumArtists"]] == ["周杰伦"]
+    assert [n["from"] for n in res.normalized] == [["周杰伦", "周杰倫"]] and res.normalize_verified is True
+
+
+def test_late_traditional_artist_after_the_window_is_caught_by_the_final_scan_check(tmp_path, album_dir):
+    jf = LateJellyfin(after_reads=10_000)
+    jf_refresh = jf.refresh_library
+
+    def refresh():
+        jf_refresh()
+        jf.items["item1"]["AlbumArtists"].append({"Name": "周杰倫", "Id": "a-周杰倫"})   # lands during the scan
+    jf.refresh_library = refresh
+    res = import_album(album_dir, config=cfg(tmp_path), jellyfin=jf, poll_interval=0.01, settle_timeout=0)
+    assert [a["Name"] for a in jf.items["item1"]["AlbumArtists"]] == ["周杰伦"]   # corrected again
+    assert res.normalize_verified is False and res.warnings
 
 
 def test_normalizes_traditional_track_name_but_not_other_scripts(tmp_path, album_dir):
     c = cfg(tmp_path)
     jf = StoreJellyfin(album_artists=("周杰伦",), track_names=["愛在西元前", "爸，我回来了"])
     jf.items["item1"]["AlbumArtists"].append({"Name": "宇多田ヒカル", "Id": "a-u"})   # not a variant: kept
-    res = import_album(album_dir, config=c, jellyfin=jf, poll_interval=0.01)
+    res = import_album(album_dir, config=c, jellyfin=jf, poll_interval=0.01, settle_timeout=0)
     assert jf.items["t1"]["Name"] == "爱在西元前" and jf.items["t1"]["LockData"] is True
     assert [a["Name"] for a in jf.items["item1"]["AlbumArtists"]] == ["周杰伦", "宇多田ヒカル"]
-    assert "LockData" not in jf.items["item1"]
-    assert [n["field"] for n in res.normalized] == ["Name"]
+    assert [n["field"] for n in res.normalized] == ["Name"] and res.normalize_locked == ["item1", "t1"]
 
 
-def test_nothing_to_fix_means_no_update(tmp_path, album_dir):
+def test_chinese_album_is_locked_even_with_nothing_to_fix(tmp_path, album_dir):
     jf = StoreJellyfin(album_artists=("周杰伦",))
-    res = import_album(album_dir, config=cfg(tmp_path), jellyfin=jf, poll_interval=0.01)
-    assert res.normalized == [] and res.normalize_verified is None and jf.updates == []
-    assert "refresh" not in jf.calls                  # no extra scan when nothing was corrected
+    res = import_album(album_dir, config=cfg(tmp_path), jellyfin=jf, poll_interval=0.01, settle_timeout=0)
+    assert res.normalized == [] and res.normalize_locked == ["item1"] and res.normalize_verified is True
+    assert len(jf.updates) == 1 and jf.updates[0]["LockData"] is True
+
+
+def test_non_chinese_album_is_left_alone(tmp_path):
+    c = cfg(tmp_path)
+    d = tmp_path / "out" / "Starboy"
+    d.mkdir(parents=True)
+    tone(d / "01-Starboy.m4a", {"title": "Starboy", "artist": "The Weeknd", "album": "Starboy",
+                                "album_artist": "The Weeknd", "track": 1})
+    jf = StoreJellyfin()
+    res = import_album(d, config=c, jellyfin=FakeJellyfin(tracks=1), poll_interval=0.01, settle_timeout=0)
+    assert res.status == "imported" and res.normalize_locked == [] and res.normalize_verified is None
+    from bili_album.library import is_chinese_album
+    assert not is_chinese_album({"a": {"title": "君のこと", "artist": "宇多田ヒカル"}})
+    assert is_chinese_album({"a": {"title": "搁浅", "artist": "周杰伦"}})
 
 
 def test_relapse_after_scan_and_failed_update_are_warnings(tmp_path, album_dir):
     c = cfg(tmp_path)
-    res = import_album(album_dir, config=c, jellyfin=StoreJellyfin(relapse=True), poll_interval=0.01)
+    res = import_album(album_dir, config=c, jellyfin=StoreJellyfin(relapse=True), poll_interval=0.01, settle_timeout=0)
     assert res.status == "imported" and res.normalize_verified is False and res.warnings
     shutil.rmtree(c.library_dir / "周杰伦")
-    res = import_album(album_dir, config=c, jellyfin=StoreJellyfin(fail_update=True), poll_interval=0.01)
+    res = import_album(album_dir, config=c, jellyfin=StoreJellyfin(fail_update=True), poll_interval=0.01, settle_timeout=0)
     assert res.status == "imported" and "HTTP 500" in res.normalize_error and res.warnings
 
 
@@ -245,9 +297,71 @@ def test_t2s_helpers():
 def test_remove_album_deletes_its_jellyfin_record(tmp_path, album_dir):
     c = cfg(tmp_path)
     jf = StoreJellyfin()
-    res = import_album(album_dir, config=c, jellyfin=jf, poll_interval=0.01)
+    res = import_album(album_dir, config=c, jellyfin=jf, poll_interval=0.01, settle_timeout=0)
     deleted = []
     jf.delete_item = deleted.append
     removed = remove_album(res.dest, library_dir=c.library_dir, jellyfin=jf, config=c)
     assert deleted == ["item1"] and removed[-1] == "jellyfin:item1" and jf.calls[-1] == "refresh"
     assert not (c.library_dir / "周杰伦").exists()
+
+
+# ----------------------------------------------------------------------------- fix-library
+
+def _lib_album(lib: Path, artist_dir: str, album_dir: str, *, album_artist: str, album: str, tool: bool) -> Path:
+    d = lib / artist_dir / album_dir
+    d.mkdir(parents=True)
+    tone(d / "01-x.m4a", {"title": "x", "artist": album_artist, "album": album, "album_artist": album_artist,
+                          "track": 1, "comment": "https://www.bilibili.com/video/BV1xx411c7XX 0:00-0:01" if tool
+                          else "ripped from my CD"})
+    return d
+
+
+def test_fix_library_selection_and_dry_run(tmp_path):
+    from bili_album.library import fix_library
+    c = cfg(tmp_path)
+    lib = c.library_dir
+    _lib_album(lib, "周杰伦", "范特西", album_artist="周杰伦", album="范特西", tool=True)
+    _lib_album(lib, "蛋堡", "月光", album_artist="蛋堡", album="月光", tool=False)            # hand-added
+    _lib_album(lib, "soldier", "5_20AM", album_artist="69岁牢二次元", album="5:20AM", tool=True)
+    jf = StoreJellyfin()
+    res = fix_library(all_albums=True, dry_run=True, config=c, jellyfin=jf)
+    assert sorted(Path(r.folder).parent.name for r in res) == ["soldier", "周杰伦"]     # hand-added never selected
+    by = {Path(r.folder).parent.name: r for r in res}
+    assert by["soldier"].status == "would_fix" and by["soldier"].move == {
+        "from": str(lib / "soldier" / "5_20AM"), "to": str(lib / "69岁牢二次元" / "5_20AM")}
+    assert by["周杰伦"].status == "would_fix" and by["周杰伦"].normalized[0]["to"] == ["周杰伦"]
+    assert jf.updates == [] and (lib / "soldier" / "5_20AM").is_dir()                  # dry run changes nothing
+    # Explicit folders are taken as given (relative to the library), even without the tool's tag.
+    res = fix_library(["蛋堡/月光"], dry_run=True, config=c, jellyfin=jf)
+    assert len(res) == 1 and res[0].status in ("unchanged", "would_fix")
+    res = fix_library([tmp_path], dry_run=True, config=c, jellyfin=jf)
+    assert res[0].status == "skipped"
+
+
+def test_fix_library_moves_folder_and_deletes_old_record(tmp_path):
+    from bili_album.library import fix_library
+    c = cfg(tmp_path)
+    lib = c.library_dir
+    _lib_album(lib, "soldier", "5_20AM", album_artist="69岁牢二次元", album="5:20AM", tool=True)
+    jf = StoreJellyfin(album_artists=("69岁牢二次元",))
+    jf.tracks = 1
+    deleted = []
+    jf.delete_item = deleted.append
+    res = fix_library(["soldier/5_20AM"], config=c, jellyfin=jf, poll_interval=0.01, settle_timeout=0)
+    r = res[0]
+    assert r.status == "fixed", r.reason
+    assert (lib / "69岁牢二次元" / "5_20AM" / "01-x.m4a").exists() and not (lib / "soldier").exists()
+    assert stat.S_IMODE((lib / "69岁牢二次元").stat().st_mode) == 0o755
+    assert deleted == ["item1"]                          # the old record, after its path was gone
+    assert any(cal.startswith("notify /media/music/69岁牢二次元/5_20AM") for cal in jf.calls)
+    assert r.normalize_locked == ["item1"]
+
+
+def test_fix_library_never_moves_onto_a_non_empty_folder(tmp_path):
+    from bili_album.library import fix_library
+    c = cfg(tmp_path)
+    lib = c.library_dir
+    _lib_album(lib, "soldier", "5_20AM", album_artist="69岁牢二次元", album="5:20AM", tool=True)
+    _lib_album(lib, "69岁牢二次元", "5_20AM", album_artist="69岁牢二次元", album="5:20AM", tool=True)
+    r = fix_library(["soldier/5_20AM"], config=c, jellyfin=StoreJellyfin(), poll_interval=0.01, settle_timeout=0)[0]
+    assert r.status == "error" and "not empty" in r.reason and (lib / "soldier" / "5_20AM").is_dir()

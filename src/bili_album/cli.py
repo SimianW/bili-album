@@ -143,6 +143,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--no-text-hints", action="store_true", help="plan without uploader text")
     p.add_argument("--json", action="store_true", help="print the final job state as JSON")
 
+    p = sub.add_parser("fix-library", help="repair albums already in the Jellyfin library: move folders to "
+                                           "<Album Artist>/<Album>/ per their tags, keep names in Simplified Chinese")
+    p.add_argument("folders", nargs="*", type=Path, help="album folders (absolute or relative to the library)")
+    p.add_argument("--all", action="store_true",
+                   help="every album whose files carry the tool's Bilibili source comment (hand-added albums skipped)")
+    p.add_argument("--dry-run", action="store_true", help="list what would change, change nothing")
+
     p = sub.add_parser("serve", help="web page: paste a link, the album lands in Jellyfin")
     from .web.cli import add_serve_args
     add_serve_args(p)
@@ -192,6 +199,14 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_import(a)
     if a.cmd == "ingest":
         return _cmd_ingest(a)
+    if a.cmd == "fix-library":
+        if not a.folders and not a.all:
+            ap.error("give album folders or --all")
+        from .library import fix_library
+        res = fix_library(a.folders, all_albums=a.all, dry_run=a.dry_run,
+                          on_progress=lambda m: print(m, file=sys.stderr))
+        print(json.dumps([r.to_dict() for r in res], ensure_ascii=False, indent=2))
+        return 1 if any(r.status == "error" for r in res) else 0
     if a.cmd == "serve":
         return _cmd_serve(a, ap)
     return 1

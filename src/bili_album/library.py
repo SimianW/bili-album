@@ -48,7 +48,7 @@ POLL_INTERVAL = 3.0
 # Jellyfin 12.2 accepted the path-scoped notice (POST /Library/Media/Updated) but did not act on it within
 # 60 s in the live test; the full scan (POST /Library/Refresh) did. Both are sent, the full scan after this.
 NARROW_GRACE = 10.0
-SETTLE_TIMEOUT = 45.0     # seconds to wait for Jellyfin's online metadata fetch before comparing
+SETTLE_TIMEOUT = 45.0     # seconds to keep correcting after the lock (the online fetch ran ~10 s after listing)
 SCAN_TIMEOUT = 120.0
 
 
@@ -65,6 +65,7 @@ class ImportResult:
     created_artist_dir: bool = False
     item_id: str = ""
     jellyfin_track_count: int | None = None
+    track_count: int | None = None   # same as jellyfin_track_count (alias the web page reads)
     jellyfin_album_artist: str = ""
     web_url: str = ""
     refresh: str = ""                # how the scan was triggered
@@ -319,7 +320,7 @@ def import_album(source: Path | str, *, config: Config | None = None, replace: b
                  dry_run: bool = False, wait_timeout: float = WAIT_TIMEOUT, poll_interval: float = POLL_INTERVAL,
                  jellyfin: Jellyfin | None = None, on_progress: Callable[[str], None] | None = None,
                  staging_root: Path | None = None, cover: Path | None = None,
-                 settle_timeout: float = SETTLE_TIMEOUT) -> ImportResult:
+                 settle_timeout: float = SETTLE_TIMEOUT, dest_dir: str | None = None) -> ImportResult:
     """Copy an album (folder, single file or plan.json) into the library and wait for Jellyfin.
 
     Never raises for Jellyfin trouble: files stay in place and the status is
@@ -333,6 +334,12 @@ def import_album(source: Path | str, *, config: Config | None = None, replace: b
     tags = {name: read_tags(src) for src, name in st.files if Path(name).suffix.lower() == ".m4a"}
     try:
         dest, cpath = destination(cfg, st.album_artist, st.album)
+        if dest_dir:   # tests / throwaway copies: "<artist folder>/<album folder>" under the library
+            rel = Path(*[sanitize(x) for x in Path(dest_dir).parts])
+            if len(rel.parts) != 2:
+                raise ValueError("dest_dir must be '<artist folder>/<album folder>'")
+            dest = Path(cfg.library_dir) / rel
+            cpath = f"{cfg.jellyfin_library_path.rstrip('/')}/{rel.as_posix()}"
         res = ImportResult("dry_run" if dry_run else "imported", album=st.album, album_artist=st.album_artist,
                            dest=str(dest), container_path=cpath, files=[n for _, n in st.files])
         if dest.exists() and any(dest.iterdir()) and not replace:
@@ -391,7 +398,7 @@ def _confirm(res: ImportResult, cfg: Config, jf: Jellyfin | None, n_audio: int, 
             if item:
                 res.item_id = item["Id"]
                 res.jellyfin_album_artist = item.get("AlbumArtist", "")
-                res.jellyfin_track_count = jf.track_count(item["Id"])
+                res.jellyfin_track_count = res.track_count = jf.track_count(item["Id"])
                 if res.jellyfin_track_count >= n_audio and res.jellyfin_album_artist:
                     break
             if not full_scan and time.monotonic() - t0 > NARROW_GRACE:
@@ -531,55 +538,96 @@ def _scan_fixes(jf: Jellyfin, album_id: str, tags: dict[str, dict]) -> list[tupl
     return out
 
 
+_HAN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
+_KANA = re.compile(r"[\u3040-\u30ff\u31f0-\u31ff\uff66-\uff9f]")
+
+
+def is_chinese_album(tags: dict[str, dict]) -> bool:
+    """Tags carry Chinese text: Han characters and no kana anywhere (kana means Japanese)."""
+    vals = [str(t.get(k) or "") for t in tags.values() for k in ("title", "artist", "album", "album_artist")]
+    return any(_HAN.search(v) for v in vals) and not any(_KANA.search(v) for v in vals)
+
+
+def lock_item(jf: Jellyfin, item_id: str) -> bool:
+    """Set ``LockData`` (Jellyfin passes it on to an album's tracks). False when already locked."""
+    dto = jf.get_item(item_id)
+    if dto.get("LockData"):
+        return False
+    dto["LockData"] = True
+    jf.update_item(item_id, dto)
+    return True
+
+
 def normalize_script(res: ImportResult, jf: Jellyfin, tags: dict[str, dict], *, settle_timeout: float = SETTLE_TIMEOUT,
-                     poll: float = POLL_INTERVAL, scan_timeout: float = SCAN_TIMEOUT) -> None:
-    """Undo Jellyfin's Traditional-script names on the album just imported (see module docstring).
-    Never raises: problems become ``normalize_error`` and a warning; the import stays imported."""
-    if not tags:
-        return
+                     poll: float = POLL_INTERVAL, scan_timeout: float = SCAN_TIMEOUT, scan: bool = True,
+                     apply: bool = True) -> list[tuple[dict, list]]:
+    """Keep the album just imported (``res.item_id``) and its tracks in the tool's Simplified Chinese.
+
+    Only for albums whose tags contain Chinese. Jellyfin's online fetch (MusicBrainz) runs about
+    10 s after the scan lists a new album and, inside one refresh, sets the provider ids before it
+    merges extra album artists, so a single check can come too early (the 2026-11-27 web import).
+    So: lock the album first (``LockData``; later refreshes skip the online providers), keep
+    correcting for ``settle_timeout`` seconds in case a fetch was already running, then run a full
+    library scan and check once more. ``apply=False`` only reports what would change. Never raises:
+    problems become ``normalize_error`` and a warning; the import stays imported."""
+    if not tags or not is_chinese_album(tags):
+        return []
+    planned: list[tuple[dict, list]] = []
     try:
-        # Jellyfin fetches online metadata a little after the scan lists the album; wait for it
-        # (a MusicBrainz id on the album) so a late fetch cannot undo the check.
-        t0 = time.monotonic()
-        while time.monotonic() - t0 < settle_timeout:
+        if not apply:
             dto = jf.get_item(res.item_id)
-            if any(k.startswith("MusicBrainz") for k in (dto.get("ProviderIds") or {})):
+            planned = _scan_fixes(jf, res.item_id, tags)
+            if not dto.get("LockData"):
+                res.normalize_locked.append(res.item_id)       # would lock
+            return planned
+        if lock_item(jf, res.item_id):
+            res.normalize_locked.append(res.item_id)
+        artist_ids: dict[str, str] = {}
+        t0 = time.monotonic()
+        while True:
+            _fix_round(res, jf, tags, artist_ids)
+            if time.monotonic() - t0 >= settle_timeout:
                 break
             time.sleep(poll)
         res.timings["settle_s"] = round(time.monotonic() - t0, 2)
-        fixes = _scan_fixes(jf, res.item_id, tags)
-        if not fixes:
-            return
-        artist_ids: dict[str, str] = {}
-        for dto, fx in fixes:
-            for fld, old, new, removed in fx:
-                if fld in ("ArtistItems", "AlbumArtists"):
-                    for p in dto.get(fld) or []:
-                        if p.get("Name") in removed and p.get("Id"):
-                            artist_ids[p["Name"]] = p["Id"]
-            _apply_fixes(jf, dto, fx)
-            res.normalize_locked.append(dto["Id"])
-            for fld, old, new, removed in fx:
-                res.normalized.append({"item": dto["Id"], "type": dto.get("Type", ""), "name": dto.get("Name", ""),
-                                       "field": fld, "from": old, "to": new})
-        # Make sure it sticks: a full library scan, then compare again.
-        jf.refresh_library()
-        res.refresh = (res.refresh + "+" if res.refresh else "") + "normalize_scan"
-        t1 = time.monotonic()
-        time.sleep(min(3.0, poll))
-        while time.monotonic() - t1 < scan_timeout and jf.library_scan_running():
-            time.sleep(poll)
-        again = _scan_fixes(jf, res.item_id, tags)
-        res.normalize_verified = not again
-        if again:
-            res.warnings.append("Jellyfin shows Traditional-script names again after a library scan: " +
-                                "; ".join(f"{d.get('Name')}: {f[0]}" for d, fx in again for f in fx))
-        # The scan deletes artist entries nothing points at; report any that stayed (never deleted here).
-        res.leftover_artists = [n for n, i in artist_ids.items() if jf.item_exists(i)]
+        if scan:
+            # Make sure it sticks: a full library scan, then compare again (and fix again if needed).
+            jf.refresh_library()
+            res.refresh = (res.refresh + "+" if res.refresh else "") + "normalize_scan"
+            t1 = time.monotonic()
+            time.sleep(min(3.0, poll))
+            while time.monotonic() - t1 < scan_timeout and jf.library_scan_running():
+                time.sleep(poll)
+            again = _fix_round(res, jf, tags, artist_ids)
+            res.normalize_verified = not again
+            if again:
+                res.warnings.append("Jellyfin showed Traditional-script names again after a library scan "
+                                    "(corrected again): " + "; ".join(f"{d.get('Name')}: {f[0]}" for d, fx in again
+                                                                      for f in fx))
+            # The scan deletes artist entries nothing points at; report any that stayed (never deleted here).
+            res.leftover_artists = [n for n, i in artist_ids.items() if jf.item_exists(i)]
     except Exception as e:  # the import itself succeeded; this is a cosmetic correction
         res.normalize_error = f"{type(e).__name__}: {e}"[:300]
         res.warnings.append(f"could not correct Traditional-script names in Jellyfin: {res.normalize_error}")
         log.warning("normalize: %s", res.normalize_error)
+    return planned
+
+
+def _fix_round(res: ImportResult, jf: Jellyfin, tags: dict[str, dict], artist_ids: dict[str, str]) -> list:
+    fixes = _scan_fixes(jf, res.item_id, tags)
+    for dto, fx in fixes:
+        for fld, _old, _new, removed in fx:
+            if fld in ("ArtistItems", "AlbumArtists"):
+                for pr in dto.get(fld) or []:
+                    if pr.get("Name") in removed and pr.get("Id"):
+                        artist_ids[pr["Name"]] = pr["Id"]
+        _apply_fixes(jf, dto, fx)
+        if dto["Id"] not in res.normalize_locked:
+            res.normalize_locked.append(dto["Id"])
+        for fld, old, new, _rm in fx:
+            res.normalized.append({"item": dto["Id"], "type": dto.get("Type", ""), "name": dto.get("Name", ""),
+                                   "field": fld, "from": old, "to": new})
+    return fixes
 
 
 def remove_album(dest: Path | str, *, library_dir: Path | str, remove_empty_artist: bool = True,
@@ -612,3 +660,160 @@ def remove_album(dest: Path | str, *, library_dir: Path | str, remove_empty_arti
         jellyfin.refresh_library()
     return removed
 
+
+
+# ----------------------------------------------------------------------------- repair albums already in the library
+
+TOOL_COMMENT = re.compile(r"bilibili\.com/video/|b23\.tv/", re.I)
+
+
+@dataclass
+class FixResult:
+    folder: str
+    status: str = "unchanged"        # fixed | unchanged | would_fix | skipped | error
+    reason: str = ""
+    move: dict | None = None         # {"from": host folder, "to": host folder}
+    item_id_before: str = ""
+    item_id: str = ""
+    album: str = ""
+    album_artist: str = ""
+    jellyfin_track_count: int | None = None
+    normalized: list[dict] = field(default_factory=list)          # applied (or, dry run, planned) corrections
+    normalize_locked: list[str] = field(default_factory=list)
+    normalize_verified: bool | None = None
+    leftover_artists: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+def album_tags(folder: Path) -> dict[str, dict]:
+    return {p.name: read_tags(p) for p in _album_files(folder) if p.suffix.lower() == ".m4a"}
+
+
+def is_tool_album(tags: dict[str, dict]) -> bool:
+    """Files carry the tool's source comment (the Bilibili link apply writes into ``©cmt``)."""
+    return bool(tags) and all(TOOL_COMMENT.search(t.get("comment") or "") for t in tags.values())
+
+
+def library_album_dirs(library_dir: Path) -> list[Path]:
+    lib = Path(library_dir)
+    return sorted(a for artist in lib.iterdir() if artist.is_dir() and not artist.name.startswith(".")
+                  for a in artist.iterdir() if a.is_dir() and not a.name.startswith("."))
+
+
+def fix_library(folders: list[Path | str] | None = None, *, all_albums: bool = False, dry_run: bool = False,
+                config: Config | None = None, jellyfin: Jellyfin | None = None,
+                wait_timeout: float = WAIT_TIMEOUT, poll_interval: float = POLL_INTERVAL,
+                settle_timeout: float = SETTLE_TIMEOUT, on_progress: Callable[[str], None] | None = None
+                ) -> list[FixResult]:
+    """Repair albums already in the library: put each folder where its tags say
+    (``<Album Artist>/<Album>/``) and run the tag-driven Simplified-Chinese correction (and lock).
+
+    ``folders``: album folders (absolute, or relative to the library). ``all_albums``: every album
+    whose files all carry the tool's source comment; albums added by hand are never selected.
+    ``dry_run`` reports the planned move and corrections and changes nothing."""
+    cfg = config or load_config()
+    if cfg.library_dir is None:
+        raise JellyfinError("BILI_ALBUM_LIBRARY_DIR is not configured")
+    lib = Path(cfg.library_dir).resolve()
+    say = on_progress or (lambda m: None)
+    jf = jellyfin or (Jellyfin(cfg.jellyfin_url, cfg.jellyfin_api_key) if cfg.jellyfin_ready else None)
+    targets: list[Path] = []
+    for f in folders or []:
+        p = Path(f)
+        targets.append((p if p.is_absolute() else lib / p).resolve())
+    if all_albums:
+        targets += [d.resolve() for d in library_album_dirs(lib) if is_tool_album(album_tags(d))]
+    out: list[FixResult] = []
+    for folder in dict.fromkeys(targets):
+        r = FixResult(str(folder))
+        out.append(r)
+        try:
+            _fix_one(r, folder, lib, cfg, jf, dry_run, wait_timeout, poll_interval, settle_timeout, say)
+        except Exception as e:
+            r.status, r.reason = "error", f"{type(e).__name__}: {e}"[:300]
+    return out
+
+
+def _cpath(cfg: Config, lib: Path, folder: Path) -> str:
+    return f"{cfg.jellyfin_library_path.rstrip('/')}/{folder.relative_to(lib).as_posix()}"
+
+
+def _fix_one(r: FixResult, folder: Path, lib: Path, cfg: Config, jf: Jellyfin | None, dry_run: bool,
+             wait_timeout: float, poll: float, settle: float, say) -> None:
+    if folder.parent.parent != lib or not folder.is_dir():
+        r.status, r.reason = "skipped", "not an album folder directly under <library>/<artist>/"
+        return
+    tags = album_tags(folder)
+    if not tags:
+        r.status, r.reason = "skipped", "no .m4a files"
+        return
+    vals = list(tags.values())
+    r.album = next((t["album"] for t in vals if t.get("album")), "") or folder.name
+    r.album_artist = next((t.get("album_artist") or t.get("artist") for t in vals
+                           if t.get("album_artist") or t.get("artist")), "") or folder.parent.name
+    want, want_cpath = destination(cfg, r.album_artist, r.album)
+    old_cpath = _cpath(cfg, lib, folder)
+    move = want.resolve() != folder
+    if move:
+        r.move = {"from": str(folder), "to": str(want)}
+        if want.exists() and any(want.iterdir()):
+            r.status, r.reason = "error", f"cannot move: {want} already exists and is not empty"
+            return
+    item = jf.album_by_path(old_cpath) if jf else None
+    r.item_id_before = item["Id"] if item else ""
+    if dry_run:
+        r.status = "would_fix" if move else "unchanged"
+        if item and not move:
+            probe = ImportResult("imported", item_id=item["Id"])
+            planned = normalize_script(probe, jf, tags, apply=False)
+            r.normalized = [{"item": d["Id"], "type": d.get("Type", ""), "name": d.get("Name", ""), "field": f[0],
+                             "from": f[1], "to": f[2]} for d, fx in planned for f in fx]
+            r.normalize_locked = probe.normalize_locked
+            if r.normalized or r.normalize_locked:
+                r.status = "would_fix"
+        elif move and is_chinese_album(tags):
+            r.reason = "after the move: lock the album and correct Traditional-script names"
+        return
+    if jf is None:
+        r.status, r.reason = "error", "Jellyfin is not configured"
+        return
+    res = ImportResult("imported", album=r.album, album_artist=r.album_artist, dest=str(folder),
+                       container_path=old_cpath, files=sorted(tags))
+    if move:
+        say(f"moving {folder} -> {want}")
+        artist_dir = want.parent
+        if not artist_dir.exists():
+            artist_dir.mkdir(parents=True)
+            os.chmod(artist_dir, DIR_MODE)
+        if want.exists():
+            want.rmdir()                     # empty (checked above)
+        os.rename(folder, want)              # same filesystem: atomic
+        os.chmod(want, DIR_MODE)
+        if not any(folder.parent.iterdir()):
+            folder.parent.rmdir()
+        # The moved album gets a new path, hence a new Jellyfin item; the old record would stay as
+        # an orphan (as after a folder delete). Delete it now that its path no longer exists.
+        if r.item_id_before and not folder.exists():
+            jf.delete_item(r.item_id_before)
+        res.dest, res.container_path = str(want), want_cpath
+        n_audio = len(_album_files(want))
+        _confirm(res, cfg, jf, n_audio, wait_timeout, poll, say)
+        if res.status != "imported" or not res.item_id:
+            r.status, r.reason = "error", f"moved, but Jellyfin has not listed the album yet: {res.reason}"
+            r.warnings += res.warnings
+            return
+    else:
+        if not item:
+            r.status, r.reason = "error", "Jellyfin does not list this album"
+            return
+        res.item_id = item["Id"]
+    normalize_script(res, jf, tags, settle_timeout=settle if move else 0.0, poll=poll)
+    r.item_id = res.item_id
+    r.jellyfin_track_count = res.jellyfin_track_count if move else jf.track_count(res.item_id)
+    r.normalized, r.normalize_locked = res.normalized, res.normalize_locked
+    r.normalize_verified, r.leftover_artists = res.normalize_verified, res.leftover_artists
+    r.warnings += res.warnings
+    r.status = "fixed" if (move or r.normalized or r.normalize_locked) else "unchanged"
