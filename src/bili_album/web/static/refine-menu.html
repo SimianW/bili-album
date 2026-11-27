@@ -33,7 +33,7 @@
   .bp .top { position: relative; }
   .bp .who b { display: none; }
   .bp .refm { position: static; }
-  .bp .refm .lbl { display: none; }
+  .bp .refm .lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .bp .refm .trig { padding: 0 8px; }
   .bp .refm .pop { left: 0; right: 0; width: auto; }
 }
@@ -120,9 +120,10 @@ const BiliRefine = (function () {
     for (const f of FIELDS) {
       const i = inputs[f.name];
       i.disabled = !on;
-      i.classList.toggle("chg", on && differs(f));
-      i.classList.toggle("bad", !!bad && bad.name === f.name);
-      i.setAttribute("aria-invalid", String(!!bad && bad.name === f.name));
+      const wrong = !!bad && bad.name === f.name;
+      i.classList.toggle("chg", on && !wrong && differs(f));
+      i.classList.toggle("bad", wrong);
+      i.setAttribute("aria-invalid", String(wrong));
     }
     err.textContent = bad ? bad.msg : "";
     err.hidden = !bad;
