@@ -2,6 +2,8 @@ name: PR body
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
 jobs:
   pr-body:
     name: ${{ github.event.pull_request.draft && 'pr-body (draft, runs when ready)' || 'pr-body' }}
