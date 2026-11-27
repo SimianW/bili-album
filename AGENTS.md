@@ -54,7 +54,7 @@ Single-context (`GLOSSARY.md` + `docs/adr/` at repo root). See `docs/agents/doma
 
 - PRs & size: every change reaches `main` through a PR. Before opening, updating, or merging a PR, read [docs/agents/workflow.md](docs/agents/workflow.md).
 - File length: keep code files at or under 500 lines (split along a seam before raising a cap); see [docs/agents/workflow.md](docs/agents/workflow.md) for cap-ratchet rules and `python3 scripts/file-length.py`.
-- Reviews: every gate review before merge (and any branch/PR review request) runs `review-loop` using `python3 scripts/check-pr-body.py tier`; only `implement` / `implement-spec` runs `code-review` before it.
+- Reviews: every gate review before merge (and any branch/PR review request) runs `review-loop` using `python3 scripts/check-pr-body.py tier`; only `implement` / `implement-spec` runs `code-review` before it. Without that skill, follow "Without the owner's skills or T3 Code" in [docs/agents/workflow.md](docs/agents/workflow.md).
 - Naming: use [GLOSSARY.md](GLOSSARY.md) terms in modules, tests, and docs; add new terms there.
 - Testing & bugs: test at the seams in [docs/agents/seams.md](docs/agents/seams.md); fix bugs via [docs/bugfix.md](docs/bugfix.md).
 - Dev docs: put each module/test role in its header comment; keep setup, commands, and gotchas in [README.md](README.md).
