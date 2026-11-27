@@ -3,7 +3,8 @@
 Routes (everything else is 404):
 
 - ``GET /`` -> the page;
-- ``GET /api/jobs`` -> ``{"now", "jobs": [...]}``;
+- ``GET /api/jobs`` -> ``{"now", "jobs": [...], "library_url"}`` (``library_url`` only when the public
+  Jellyfin address is configured);
 - ``POST /api/jobs`` ``{"url"}`` -> 201 ``{"job"}`` (409 + ``existing_id`` if the video is already queued);
 - ``POST /api/jobs/<id>/confirm`` ``{"tracks": [{"index", "title", "artist"}]}``;
 - ``POST /api/jobs/<id>/{discard,retry,replace,keep}`` ``{}``;
@@ -48,6 +49,7 @@ class Handler(BaseHTTPRequestHandler):
     sys_version = ""
     manager: JobManager
     index: bytes
+    library_url: str = ""
 
     # quiet access log: one debug line per request
     def log_message(self, fmt, *args):  # noqa: D401
@@ -122,7 +124,10 @@ class Handler(BaseHTTPRequestHandler):
             if path in ("/", "/index.html"):
                 self._send(200, self.index, "text/html; charset=utf-8", {"Content-Security-Policy": CSP})
             elif path == "/api/jobs":
-                self._json(200, {"now": time.time(), "jobs": self.manager.list()})
+                body = {"now": time.time(), "jobs": self.manager.list()}
+                if self.library_url:
+                    body["library_url"] = self.library_url
+                self._json(200, body)
             elif (m := JOB_PATH.match(path)) and m.group(2) is None:
                 self._json(200, {"job": self.manager.get(m.group(1))})
             elif m and m.group(2) == "cover":
@@ -190,10 +195,23 @@ class Handler(BaseHTTPRequestHandler):
     do_PATCH = do_PUT
 
 
-def make_server(host: str, port: int, manager: JobManager) -> ThreadingHTTPServer:
+def public_library_url(value: str) -> str:
+    """The Jellyfin address the owner opens (``BILI_ALBUM_JELLYFIN_PUBLIC_URL``), if it is a plain http(s) URL."""
+    try:
+        u = urlsplit(value or "")
+    except ValueError:
+        return ""
+    if u.scheme not in ("http", "https") or not u.hostname or u.username or u.password:
+        return ""
+    return value.rstrip("/") + "/"
+
+
+def make_server(host: str, port: int, manager: JobManager, *, library_url: str = "") -> ThreadingHTTPServer:
+    """``library_url`` is the only configuration value the page ever receives."""
     if host in ("0.0.0.0", "::", ""):
         raise ValueError("refusing to listen on every interface; give a specific address")
-    handler = type("BoundHandler", (Handler,), {"manager": manager, "index": load_index()})
+    handler = type("BoundHandler", (Handler,), {"manager": manager, "index": load_index(),
+                                                 "library_url": public_library_url(library_url)})
     srv = ThreadingHTTPServer((host, port), handler)
     srv.daemon_threads = True
     return srv
@@ -201,14 +219,16 @@ def make_server(host: str, port: int, manager: JobManager) -> ThreadingHTTPServe
 
 def serve(host: str, port: int, data_dir: Path, *, fake: bool = False, fake_speed: float = 1.0,
           fake_hold: dict[str, float] | None = None) -> int:
+    from ..config import load_config
+    config = load_config()
     if fake:
-        from .runner import FakeRunner
-        runner = FakeRunner(speed=fake_speed, hold=fake_hold)
+        from .fake import FakeRunner
+        runner = FakeRunner(speed=fake_speed, hold=fake_hold, config=config)
     else:
         from .runner import PipelineRunner
-        runner = PipelineRunner()
+        runner = PipelineRunner(config=config)
     manager = JobManager(data_dir, runner)
-    srv = make_server(host, port, manager)
+    srv = make_server(host, port, manager, library_url=config.jellyfin_public_url)
     shown = f"[{host}]" if ":" in host else host
     print(f"bili-album web: http://{shown}:{srv.server_address[1]}/ (data: {manager.data_dir}"
           f"{', fake runner' if fake else ''})", flush=True)

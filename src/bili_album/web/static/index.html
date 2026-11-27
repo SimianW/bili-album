@@ -165,6 +165,7 @@ html, body { margin: 0; background: var(--bg); }
   const SVG_NS = "http://www.w3.org/2000/svg";
 
   let jobs = [];
+  let libraryUrl = "";
   let clockOffset = 0;          // server time minus browser time, in seconds
   const expanded = new Set();   // done jobs shown as full cards
   const seenActive = new Set(); // jobs this page saw queued or running (auto-expand when they finish)
@@ -270,6 +271,7 @@ html, body { margin: 0; background: var(--bg); }
       if (r.ok) {
         clockOffset = r.data.now - (t0 + Date.now() / 1000) / 2;
         jobs = r.data.jobs || [];
+        libraryUrl = safeHttp(r.data.library_url || "") || "";
         render();
       }
     } catch (e) { /* server away: keep the last view and try again */ }
@@ -383,7 +385,8 @@ html, body { margin: 0; background: var(--bg); }
   function confirmCard(job) {
     const u = uiOf(job.id);
     const rv = job.review || {};
-    const reasons = [].concat(rv.reasons || [], rv.remaining_concerns || []);
+    // Sol's reasons, its open concerns, then the edits the tool could not check.
+    const reasons = [].concat(rv.reasons || [], rv.remaining_concerns || [], rv.rejected || []);
     const tracks = job.tracks || [];
     let flagged = tracks.filter(t => t.flagged);
     if (!flagged.length) flagged = tracks;
@@ -402,6 +405,7 @@ html, body { margin: 0; background: var(--bg); }
       card.append(d);
     }
     const src = safeHttp(job.url);
+    if (job.confirm_error) card.append(h("div", { class: "box bad" }, job.confirm_error));
     if (u.askDiscard) {
       card.append(h("div", { class: "acts" },
         h("span", { class: "q" }, "放弃这次导入？"),
@@ -466,6 +470,7 @@ html, body { margin: 0; background: var(--bg); }
   function doneTag(job) {
     const res = job.result || {};
     if (job.kept) return h("span", { class: "tag warn" }, "未导入，音乐库里已有");
+    if (res.imported === false) return h("span", { class: "tag warn" }, "已切分，未导入");
     if (!res.confirmed) return h("span", { class: "tag warn long" }, "已放入音乐库，Jellyfin 还没显示");
     return h("span", { class: "tag good" }, icon(ICON_OK, "2"), "已导入");
   }
@@ -492,10 +497,7 @@ html, body { margin: 0; background: var(--bg); }
       if (!edits.length) card.append(h("p", { class: "rvline" }, "Sol 复核通过"));
       else card.append(h("details", { open: !!u.openEdits, ontoggle: e => { u.openEdits = e.target.open; } },
         h("summary", {}, "Sol 复核改了 " + edits.length + " 处"),
-        h("div", { class: "box plain", style: "margin-top:8px" },
-          // Sol's own explanation (Chinese) when it gave one; otherwise each edit's note.
-          (rv.reasons && rv.reasons.length ? rv.reasons : edits.map(e => e.reason || ("第 " + e.index + " 首已修改。")))
-            .map(t => h("p", {}, t)))));
+        h("div", { class: "box plain", style: "margin-top:8px" }, editLines(rv).map(t => h("p", {}, t)))));
     }
     const tracks = job.tracks || [];
     if (tracks.length) {
@@ -506,6 +508,14 @@ html, body { margin: 0; background: var(--bg); }
           h("span", { class: "ro ar" }, t.artist), h("span", { class: "d" }, mmss(t.duration)))))));
     }
     return card;
+  }
+
+  // One Chinese line per applied edit; Sol's own reasons only stand in for edits that lack one.
+  function editLines(rv) {
+    const edits = rv.edits || [];
+    const lines = edits.filter(e => e.reason).map(e => e.reason);
+    if (lines.length < edits.length) lines.push(...(rv.reasons || []));
+    return lines;
   }
 
   function pastRow(job) {
@@ -600,14 +610,9 @@ html, body { margin: 0; background: var(--bg); }
     document.getElementById("empty").hidden = jobs.length > 0;
     const live = new Set(jobs.map(j => j.id));
     for (const k of Array.from(cardCache.keys())) if (!live.has(k.split(":")[0])) cardCache.delete(k);
-    // Library link: the server of the latest confirmed album link.
+    // Library link: the public Jellyfin address from the server (absent when not configured).
     const lib = document.getElementById("lib");
-    const withLink = done.find(j => j.result && j.result.confirmed && safeHttp(j.result.album_url));
-    if (withLink) {
-      const u = new URL(withLink.result.album_url);
-      lib.href = u.origin + u.pathname.replace(/[^/]*$/, "");
-      lib.hidden = false;
-    } else lib.hidden = true;
+    if (libraryUrl) { lib.href = libraryUrl; lib.hidden = false; } else lib.hidden = true;
     tick();
   }
   function fill(id, nodes) {

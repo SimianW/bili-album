@@ -68,6 +68,7 @@ def _new_job(url: str, now: float) -> dict:
         "error": None,
         "kept": False,
         "edited": [],
+        "confirm_error": "",
         "version": 0,
     }
 
@@ -222,6 +223,7 @@ class JobManager:
                     job["edited"].append({"index": e["index"], "title": e["title"], "artist": e["artist"]})
                 t["title"], t["artist"] = e["title"], e["artist"]
             job["pending_edits"] = clean
+            job["confirm_error"] = ""
             self._requeue(job, "confirm", front=True)
             return self.public(job)
 
@@ -408,6 +410,8 @@ class JobManager:
                 job["error"] = {"stage": stage, "message": msg}
                 job["message"] = msg
             elif out.status == "needs_confirmation":
+                # confirm() refused the edited plan: say why above the buttons, keep the edits
+                job["confirm_error"] = out.error
                 if not any(v == "held" for v in job["stages"].values()):
                     stage = next((s for s in STAGES if job["stages"][s] != "done"), "cut")
                     job["stages"][stage] = "held"

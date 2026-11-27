@@ -1,0 +1,355 @@
+{
+ "version": 1,
+ "source": {
+  "url": "https://www.bilibili.com/video/BV14PVVzNE2R",
+  "bvid": "BV14PVVzNE2R",
+  "title": "【经典专辑】周杰伦《范特西》华语乐坛巅峰专辑！祝大家节日快乐",
+  "uploader": "音乐私藏馆",
+  "duration": 2368.341,
+  "audio_path": "/tmp/bili-album-review/jaychou-fantasy/source.m4a",
+  "audio_format": {
+   "codec": "aac",
+   "bitrate_kbps": 208,
+   "sample_rate": 48000
+  },
+  "cover_path": "/tmp/bili-album-review/jaychou-fantasy/bili_cover.jpg",
+  "parts": 1,
+  "trim_head": 0.0,
+  "trim_tail": 0.0,
+  "text_hints": true
+ },
+ "kind": "compilation",
+ "kind_reason": "comment by EAGER-10 lists 10 timestamped tracks",
+ "album": {
+  "title": "范特西",
+  "artist": "周杰伦",
+  "year": "2001-09-14",
+  "genre": "華語流行樂",
+  "track_total": 10,
+  "disc_total": 1,
+  "cover_path": "/tmp/bili-album-review/jaychou-fantasy/cover.jpg",
+  "catalog": {
+   "provider": "netease",
+   "id": "18915",
+   "url": "https://music.163.com/#/album?id=18915"
+  },
+  "match_reason": "netease:周杰伦 - 范特西 (10 tracks, 2373s vs video 2368s; name 1.00, duration 0.95, tracklist 1.00)"
+ },
+ "tracks": [
+  {
+   "index": 1,
+   "start": 0.0,
+   "end": 238.4,
+   "title": "爱在西元前",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 1,
+   "disc_number": 1,
+   "year": "2001-09-14",
+   "genre": "華語流行樂",
+   "composer": "周杰伦",
+   "lyrics": "",
+   "cover_path": "/tmp/bili-album-review/jaychou-fantasy/cover.jpg",
+   "catalog": {
+    "provider": "netease",
+    "id": "186114"
+   },
+   "confidence": 0.8,
+   "evidence": [
+    {
+     "kind": "comment",
+     "detail": "comment by EAGER-10: 0:01.00 爱在西元前"
+    }
+   ]
+  },
+  {
+   "index": 2,
+   "start": 238.4,
+   "end": 467.1,
+   "title": "爸，我回来了",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 2,
+   "disc_number": 1,
+   "year": "2001-09-14",
+   "genre": "華語流行樂",
+   "composer": "周杰伦",
+   "lyrics": "",
+   "cover_path": "/tmp/bili-album-review/jaychou-fantasy/cover.jpg",
+   "catalog": {
+    "provider": "netease",
+    "id": "186116"
+   },
+   "confidence": 0.8,
+   "evidence": [
+    {
+     "kind": "comment",
+     "detail": "comment by EAGER-10: 3:59.00 爸,我回来了"
+    }
+   ]
+  },
+  {
+   "index": 3,
+   "start": 467.1,
+   "end": 731.5,
+   "title": "简单爱",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 3,
+   "disc_number": 1,
+   "year": "2001-09-14",
+   "genre": "華語流行樂",
+   "composer": "周杰伦",
+   "lyrics": "",
+   "cover_path": "/tmp/bili-album-review/jaychou-fantasy/cover.jpg",
+   "catalog": {
+    "provider": "netease",
+    "id": "186119"
+   },
+   "confidence": 0.8,
+   "evidence": [
+    {
+     "kind": "comment",
+     "detail": "comment by EAGER-10: 7:45.00 简单爱"
+    }
+   ]
+  },
+  {
+   "index": 4,
+   "start": 731.5,
+   "end": 890.5,
+   "title": "忍者",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 4,
+   "disc_number": 1,
+   "year": "2001-09-14",
+   "genre": "華語流行樂",
+   "composer": "周杰伦",
+   "lyrics": "",
+   "cover_path": "/tmp/bili-album-review/jaychou-fantasy/cover.jpg",
+   "catalog": {
+    "provider": "netease",
+    "id": "186122"
+   },
+   "confidence": 0.8,
+   "evidence": [
+    {
+     "kind": "comment",
+     "detail": "comment by EAGER-10: 12:11.00 忍者"
+    }
+   ]
+  },
+  {
+   "index": 5,
+   "start": 890.5,
+   "end": 1183.6,
+   "title": "开不了口",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 5,
+   "disc_number": 1,
+   "year": "2001-09-14",
+   "genre": "華語流行樂",
+   "composer": "周杰伦",
+   "lyrics": "",
+   "cover_path": "/tmp/bili-album-review/jaychou-fantasy/cover.jpg",
+   "catalog": {
+    "provider": "netease",
+    "id": "186125"
+   },
+   "confidence": 0.8,
+   "evidence": [
+    {
+     "kind": "comment",
+     "detail": "comment by EAGER-10: 14:53.00 开不了口"
+    }
+   ]
+  },
+  {
+   "index": 6,
+   "start": 1183.6,
+   "end": 1380.5,
+   "title": "上海一九四三",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 6,
+   "disc_number": 1,
+   "year": "2001-09-14",
+   "genre": "華語流行樂",
+   "composer": "周杰伦",
+   "lyrics": "",
+   "cover_path": "/tmp/bili-album-review/jaychou-fantasy/cover.jpg",
+   "catalog": {
+    "provider": "netease",
+    "id": "186128"
+   },
+   "confidence": 1.0,
+   "evidence": [
+    {
+     "kind": "comment",
+     "detail": "comment by EAGER-10: 19:38.00 上海1943"
+    }
+   ]
+  },
+  {
+   "index": 7,
+   "start": 1380.5,
+   "end": 1604.7,
+   "title": "对不起",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 7,
+   "disc_number": 1,
+   "year": "2001-09-14",
+   "genre": "華語流行樂",
+   "composer": "周杰伦",
+   "lyrics": "",
+   "cover_path": "/tmp/bili-album-review/jaychou-fantasy/cover.jpg",
+   "catalog": {
+    "provider": "netease",
+    "id": "186131"
+   },
+   "confidence": 0.8,
+   "evidence": [
+    {
+     "kind": "comment",
+     "detail": "comment by EAGER-10: 23:00.00 对不起"
+    }
+   ]
+  },
+  {
+   "index": 8,
+   "start": 1604.7,
+   "end": 1838.0,
+   "title": "威廉古堡",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 8,
+   "disc_number": 1,
+   "year": "2001-09-14",
+   "genre": "華語流行樂",
+   "composer": "周杰伦",
+   "lyrics": "",
+   "cover_path": "/tmp/bili-album-review/jaychou-fantasy/cover.jpg",
+   "catalog": {
+    "provider": "netease",
+    "id": "186134"
+   },
+   "confidence": 0.8,
+   "evidence": [
+    {
+     "kind": "comment",
+     "detail": "comment by EAGER-10: 26:45.00 威廉古堡"
+    }
+   ]
+  },
+  {
+   "index": 9,
+   "start": 1838.0,
+   "end": 2037.5,
+   "title": "双截棍",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 9,
+   "disc_number": 1,
+   "year": "2001-09-14",
+   "genre": "華語流行樂",
+   "composer": "周杰伦",
+   "lyrics": "",
+   "cover_path": "/tmp/bili-album-review/jaychou-fantasy/cover.jpg",
+   "catalog": {
+    "provider": "netease",
+    "id": "186137"
+   },
+   "confidence": 0.8,
+   "evidence": [
+    {
+     "kind": "comment",
+     "detail": "comment by EAGER-10: 30:37.00 双截棍"
+    }
+   ]
+  },
+  {
+   "index": 10,
+   "start": 2037.5,
+   "end": 2368.341,
+   "title": "安静",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 10,
+   "disc_number": 1,
+   "year": "2001-09-14",
+   "genre": "華語流行樂",
+   "composer": "周杰伦",
+   "lyrics": "",
+   "cover_path": "/tmp/bili-album-review/jaychou-fantasy/cover.jpg",
+   "catalog": {
+    "provider": "netease",
+    "id": "186139"
+   },
+   "confidence": 0.8,
+   "evidence": [
+    {
+     "kind": "comment",
+     "detail": "comment by EAGER-10: 33:59.00 安静"
+    }
+   ]
+  }
+ ],
+ "needs_review": false,
+ "review_reasons": [],
+ "review": {
+  "model": "model-under-test",
+  "verdict": "approved",
+  "confidence": 0.94,
+  "edits_applied": [],
+  "edits_rejected": [],
+  "reasons": [
+   "视频简介和评论列出的十首歌及其顺序均与周杰伦的原专辑《范特西》一致，无需修改标签。",
+   "音频识别将《上海一九四三》的起点定位在1182.36秒，原切点晚了1.24秒，会把这首歌的开头留在上一轨。",
+   "其余切点与评论时间戳及附近的静音或音量低谷大致吻合，没有明确证据表明需要移动。"
+  ],
+  "remaining_concerns": [
+   "只有《上海一九四三》得到了音频识别确认，其余切点主要依据评论时间戳和音频边界检测。"
+  ],
+  "error": null,
+  "model_verdict": "edited",
+  "edits_skipped": [
+   {
+    "edit": {
+     "op": "move_boundary",
+     "boundary": 6,
+     "to": 1182.36
+    },
+    "why": "move of -1.24s is below 1.5s (measurement noise)",
+    "tracks": [
+     5,
+     6
+    ],
+    "reason_zh": "工具未执行“移动切点（第 6 个切点 → 1182.36 秒）”：改动小于 1.5 秒，在测量误差范围内。"
+   }
+  ],
+  "tool_notes": [
+   "工具未执行“移动切点（第 6 个切点 → 1182.36 秒）”：改动小于 1.5 秒，在测量误差范围内。"
+  ],
+  "timing": {
+   "total_s": 11.14,
+   "model_s": 9.65,
+   "calls": 1
+  },
+  "reviewed_at": "2026-11-27T04:57:54+00:00",
+  "resolved": [],
+  "flagged_tracks": []
+ }
+}

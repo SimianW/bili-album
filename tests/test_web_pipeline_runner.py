@@ -43,11 +43,16 @@ def make_steps(*, needs_review=False, import_status="imported", log=None):
         plan = json.loads(plan_path.read_text())
         plan["needs_review"] = needs_review
         if needs_review:
-            plan["review_reasons"] = ["track 2 'T2': low confidence 0.40"]
+            plan["review_reasons"] = ["review: the model asks for a human check"]
         plan["review"] = {"verdict": "needs_human" if needs_review else "edited", "reasons": ["第 3 首按曲库改名。"],
                           "remaining_concerns": ["第 2 首的识曲把握不高。"] if needs_review else [],
+                          "flagged_tracks": [2] if needs_review else [],
+                          "edits_rejected": [{"edit": {"op": "relabel_track", "track": 2}, "why": "not in catalog",
+                                              "tracks": [2], "reason_zh": "工具无法核实第 2 首的新歌名。"}]
+                          if needs_review else [],
                           "edits_applied": [] if needs_review else [{"op": "relabel_track", "track": 3,
-                                                                     "detail": "track 3 relabelled"}]}
+                                                                     "detail": "track 3 relabelled",
+                                                                     "reason_zh": "第 3 首按曲库改名。", "tracks": [3]}]}
         plan_path.write_text(json.dumps(plan))
         return SimpleNamespace(review=plan["review"])
 
@@ -106,8 +111,9 @@ def test_clean_run_maps_everything(tmp_path, monkeypatch):
     assert j["stages"] == {s: "done" for s in ("plan", "review", "cut", "import")}
     assert j["album"] == {"title": "Alb", "artist": "A", "year": "2001", "kind": "album", "uploader": ""}
     assert [t["duration"] for t in j["tracks"]] == [99.0, 99.0, 99.0]
-    assert j["review"]["edits"] == [{"index": 3, "reason": "track 3 relabelled"}]
-    assert j["result"] == {"album_url": "https://jf.example/web/#/details?id=abc", "confirmed": True,
+    assert j["review"]["edits"] == [{"tracks": [3], "reason": "第 3 首按曲库改名。"}]
+    assert j["review"]["rejected"] == []
+    assert j["result"] == {"album_url": "https://jf.example/web/#/details?id=abc", "imported": True, "confirmed": True,
                            "folder": "A / Alb", "file_count": 3, "existing_files": 0}
     assert m.cover_path(jid).name == "cover.jpg"
 
@@ -121,6 +127,7 @@ def test_hold_confirm_writes_edits_into_plan(tmp_path, monkeypatch):
     assert j["status"] == "needs_confirmation"
     assert j["stages"]["cut"] == "held"
     assert [t["index"] for t in j["tracks"] if t["flagged"]] == [2]
+    assert j["review"]["rejected"] == ["工具无法核实第 2 首的新歌名。"]
     m.confirm(jid, [{"index": 2, "title": "Real Two", "artist": "B"}])
     m.run_next()
     assert m.get(jid)["status"] == "done"

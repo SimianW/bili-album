@@ -1,0 +1,102 @@
+{
+ "version": 1,
+ "source": {
+  "url": "https://www.bilibili.com/video/BV1VR4y1Y7QS",
+  "bvid": "BV1VR4y1Y7QS",
+  "title": "百万级装备听《Yellow》- Coldplay【Hi-Res】",
+  "uploader": "JLRS日落fm",
+  "duration": 269.952,
+  "audio_path": "/tmp/bili-album-review/coldplay-yellow-baseline/source.m4a",
+  "audio_format": {
+   "codec": "aac",
+   "bitrate_kbps": 249,
+   "sample_rate": 48000
+  },
+  "cover_path": "/tmp/bili-album-review/coldplay-yellow-baseline/bili_cover.jpg",
+  "parts": 1,
+  "trim_head": 0.0,
+  "trim_tail": 0.0,
+  "text_hints": true
+ },
+ "kind": "single",
+ "kind_reason": "duration 4:29.95 <= 9:00.00 and no tracklist hints",
+ "album": {
+  "title": "Parachutes",
+  "artist": "Coldplay",
+  "year": "2000-07-10",
+  "genre": "Alternative",
+  "track_total": 10,
+  "disc_total": 1,
+  "cover_path": "/tmp/bili-album-review/coldplay-yellow-baseline/cover-review.jpg",
+  "catalog": {
+   "provider": "itunes",
+   "id": "1122782080@US",
+   "url": "https://music.apple.com/us/album/parachutes/1122782080"
+  },
+  "match_reason": "llm review (candidate A4): itunes:Coldplay - Parachutes has 'Yellow' at 269.2s vs audio 270.0s"
+ },
+ "tracks": [
+  {
+   "index": 1,
+   "start": 0.0,
+   "end": 269.952,
+   "title": "Yellow",
+   "artist": "Coldplay",
+   "album": "Parachutes",
+   "album_artist": "Coldplay",
+   "track_number": 5,
+   "disc_number": 1,
+   "year": "2000-07-10",
+   "genre": "Alternative",
+   "composer": "Chris Martin/Guy Berryman/Jonny Buckland/Will Champion",
+   "lyrics": "",
+   "cover_path": "/tmp/bili-album-review/coldplay-yellow-baseline/cover-review.jpg",
+   "catalog": {
+    "provider": "itunes",
+    "id": "1122782283"
+   },
+   "confidence": 0.95,
+   "evidence": [
+    {
+     "kind": "recognition",
+     "detail": "Shazam: Yellow - Coldplay"
+    }
+   ]
+  }
+ ],
+ "needs_review": false,
+ "review_reasons": [],
+ "review": {
+  "model": "model-under-test",
+  "verdict": "edited",
+  "confidence": 0.99,
+  "edits_applied": [
+   {
+    "op": "choose_album",
+    "candidate": "A4",
+    "detail": "album Various Artists - Best 00s Pop Ever -> Coldplay - Parachutes (2000-07-10) via candidate A4",
+    "reason_zh": "专辑由「Various Artists - Best 00s Pop Ever」改为「Coldplay - Parachutes」（2000）：曲库中这张专辑收录了「Yellow」，时长 269 秒与音频相符。",
+    "tracks": [
+     1
+    ]
+   }
+  ],
+  "edits_rejected": [],
+  "reasons": [
+   "音频识别和视频标题均指向 Coldplay 的《Yellow》，现有曲名和艺人标签正确。",
+   "《Yellow》虽先以单曲发行，但应归入原始录音室专辑《Parachutes》，而不是合辑《Best 00s Pop Ever》。",
+   "没有证据表明现有切点截断了歌曲或混入了其他歌曲，因此保留整段音频。"
+  ],
+  "remaining_concerns": [],
+  "error": null,
+  "model_verdict": "edited",
+  "timing": {
+   "total_s": 5.78,
+   "model_s": 4.54,
+   "calls": 1
+  },
+  "reviewed_at": "2026-11-27T04:57:33+00:00",
+  "resolved": [],
+  "flagged_tracks": []
+ }
+}

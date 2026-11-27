@@ -1,0 +1,141 @@
+{
+ "version": 1,
+ "source": {
+  "url": "https://www.bilibili.com/video/BV1vQybzKEhr",
+  "bvid": "BV1vQybzKEhr",
+  "title": "《520AM》司凤版⚡思罢吗乐队激情演奏！小时候这集听哭了😭【AI MV大赛】",
+  "uploader": "69岁牢二次元",
+  "duration": 120.787,
+  "audio_path": "/tmp/bili-album-review/user-520am-derivative/source.m4a",
+  "audio_format": {
+   "codec": "aac",
+   "bitrate_kbps": 192,
+   "sample_rate": 48000
+  },
+  "cover_path": "/tmp/bili-album-review/user-520am-derivative/bili_cover.jpg",
+  "parts": 1,
+  "trim_head": 0.0,
+  "trim_tail": 0.0,
+  "text_hints": true,
+  "derivative": true,
+  "derivative_cues": [
+   "演奏",
+   "AI",
+   "司凤版"
+  ],
+  "derivative_info": {
+   "cues": [
+    "演奏",
+    "AI",
+    "司凤版"
+   ],
+   "title": "520AM",
+   "original_artist": "Abducted By Sharks",
+   "original_title": "520Am",
+   "original_release": "2014-02-08"
+  }
+ },
+ "kind": "single",
+ "kind_reason": "duration 2:00.79 <= 9:00.00 and no tracklist hints",
+ "album": {
+  "title": "5:20AM",
+  "artist": "soldier",
+  "year": "2024",
+  "genre": "",
+  "track_total": 1,
+  "disc_total": 1,
+  "cover_path": "/tmp/bili-album-review/user-520am-derivative/cover-review.jpg",
+  "catalog": {
+   "provider": "",
+   "id": "",
+   "url": ""
+  },
+  "match_reason": "llm review: derivative (ai_remake) of soldier - 5:20AM"
+ },
+ "tracks": [
+  {
+   "index": 1,
+   "start": 0.0,
+   "end": 120.787,
+   "title": "5:20AM",
+   "artist": "soldier",
+   "album": "5:20AM",
+   "album_artist": "soldier",
+   "track_number": 1,
+   "disc_number": 1,
+   "year": "2024",
+   "genre": "",
+   "composer": "",
+   "lyrics": "",
+   "cover_path": "/tmp/bili-album-review/user-520am-derivative/cover-review.jpg",
+   "catalog": {
+    "provider": "netease",
+    "id": "2118204311"
+   },
+   "confidence": 0.45,
+   "evidence": [
+    {
+     "kind": "catalog_duration",
+     "detail": "derivative (演奏, AI, 司凤版): original taken as itunes: Abducted By Sharks - 520Am, earliest release (2014-02-08) among 21 same-titled catalog songs; others by AKA小健, Gundo, Hotel Neon, soldier"
+    }
+   ]
+  }
+ ],
+ "needs_review": true,
+ "review_reasons": [
+  "track 1: the video looks like a derivative version (cue: 演奏, AI, 司凤版); tagged with the original song Abducted By Sharks - 520Am (earliest release, 2014-02-08, among 21 same-titled catalog songs); confirm the original artist",
+  "track 1 '520Am': low confidence 0.45",
+  "review: the model asks for a human check",
+  "derivative version (ai_remake) of soldier - 5:20AM: confirm before importing"
+ ],
+ "derivative": {
+  "version": "ai_remake",
+  "original_title": "5:20AM",
+  "original_artist": "soldier",
+  "original_album": "5:20AM",
+  "original_year": "2024-01-18",
+  "catalog": {
+   "provider": "netease",
+   "id": "2118204311"
+  },
+  "source": "llm_review"
+ },
+ "review": {
+  "model": "model-under-test",
+  "verdict": "needs_human",
+  "confidence": 0.81,
+  "edits_applied": [
+   {
+    "op": "mark_derivative",
+    "version": "ai_remake",
+    "original_title": "5:20AM",
+    "original_artist": "soldier",
+    "detail": "derivative (ai_remake) of soldier - 5:20AM (2024-01-18), confirmed by netease",
+    "reason_zh": "这是AI 翻唱/改编，原曲是 soldier《5:20AM》（2024，曲库已核实），已按原曲填写歌名和艺人。衍生版本一律需要人工确认。",
+    "tracks": [
+     1
+    ]
+   }
+  ],
+  "edits_rejected": [],
+  "reasons": [
+   "标题和简介都将上传内容指向《520AM》的“司凤版”，结合“AI音乐”标签，宜先标为衍生版本。",
+   "现有计划仅凭同名和发行较早就选中 Abducted By Sharks 的《520Am》，没有证据表明它与“司凤版”是同一首歌。",
+   "在更符合上传线索的《5:20AM》候选中，soldier 的发行最早，因此暂列为原曲。"
+  ],
+  "remaining_concerns": [
+   "两段音频均未识别成功，请试听核对原曲是否为 soldier 的《5:20AM》，并确认 AI 是否参与了音频改编，而不只是画面制作。"
+  ],
+  "error": null,
+  "model_verdict": "needs_human",
+  "timing": {
+   "total_s": 10.2,
+   "model_s": 8.93,
+   "calls": 1
+  },
+  "reviewed_at": "2026-11-27T04:57:43+00:00",
+  "flagged_tracks": [
+   1
+  ]
+ }
+}

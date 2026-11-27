@@ -1,0 +1,240 @@
+{
+ "job_id": "7183c883f3bd",
+ "url": "https://www.bilibili.com/video/BV14PVVzNE2R",
+ "workdir": "/tmp/bili-album-review/ingest-fantasy",
+ "status": "done",
+ "stage": "cut",
+ "options": {
+  "on_unsure": "hold",
+  "review": true,
+  "do_import": false,
+  "replace": false,
+  "plan_options": {
+   "text_hints": true
+  }
+ },
+ "plan_path": "/tmp/bili-album-review/ingest-fantasy/plan.json",
+ "kind": "compilation",
+ "album": {
+  "title": "范特西",
+  "artist": "周杰伦",
+  "year": "2001-09-14",
+  "genre": "华语流行乐",
+  "cover_path": "/tmp/bili-album-review/ingest-fantasy/cover.jpg",
+  "track_total": 10
+ },
+ "tracks": [
+  {
+   "index": 1,
+   "start": 0.0,
+   "end": 239.2,
+   "title": "爱在西元前",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 1,
+   "confidence": 0.8
+  },
+  {
+   "index": 2,
+   "start": 239.2,
+   "end": 463.85,
+   "title": "爸，我回来了",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 2,
+   "confidence": 0.65
+  },
+  {
+   "index": 3,
+   "start": 463.85,
+   "end": 731.6,
+   "title": "简单爱",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 3,
+   "confidence": 0.8
+  },
+  {
+   "index": 4,
+   "start": 731.6,
+   "end": 889.7,
+   "title": "忍者",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 4,
+   "confidence": 0.8
+  },
+  {
+   "index": 5,
+   "start": 889.7,
+   "end": 1182.2,
+   "title": "开不了口",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 5,
+   "confidence": 0.8
+  },
+  {
+   "index": 6,
+   "start": 1182.2,
+   "end": 1380.2,
+   "title": "上海一九四三",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 6,
+   "confidence": 1.0
+  },
+  {
+   "index": 7,
+   "start": 1380.2,
+   "end": 1603.9,
+   "title": "对不起",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 7,
+   "confidence": 0.8
+  },
+  {
+   "index": 8,
+   "start": 1603.9,
+   "end": 1837.3,
+   "title": "威廉古堡",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 8,
+   "confidence": 0.8
+  },
+  {
+   "index": 9,
+   "start": 1837.3,
+   "end": 2037.5,
+   "title": "双截棍",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 9,
+   "confidence": 0.8
+  },
+  {
+   "index": 10,
+   "start": 2037.5,
+   "end": 2368.341,
+   "title": "安静",
+   "artist": "周杰伦",
+   "album": "范特西",
+   "album_artist": "周杰伦",
+   "track_number": 10,
+   "confidence": 0.8
+  }
+ ],
+ "needs_review": false,
+ "reasons": [],
+ "review": {
+  "model": "model-under-test",
+  "verdict": "edited",
+  "confidence": 0.95,
+  "reasons": [
+   "视频简介和评论时间轴与周杰伦《范特西》原专辑的十首曲目及顺序一致，无需更改标签。",
+   "第5个切点原定在893.0秒，比889.7秒的明确静音点晚了3.3秒；移到该静音点后，《忍者》长158.1秒，与目录的158.0秒吻合。",
+   "《爸，我回来了》和《上海一九四三》的现有切点均在识别起点前0.16秒的静音内，其余切点也没有明确的错切证据。"
+  ],
+  "remaining_concerns": [
+   "《爸，我回来了》的分轨时长比目录短约10秒，但识别结果支持现有起点，仅凭时长差不足以移动切点。"
+  ],
+  "edits_applied": [
+   {
+    "op": "move_boundary",
+    "boundary": 5,
+    "to": 889.7,
+    "detail": "boundary 5: 893.0 -> 889.7 (silence)"
+   }
+  ],
+  "edits_rejected": [],
+  "error": null,
+  "timing": {
+   "total_s": 9.96,
+   "model_s": 7.46,
+   "calls": 1
+  }
+ },
+ "derivative": null,
+ "forced_import": false,
+ "confirmed": false,
+ "output_dir": "/tmp/bili-album-review/ingest-fantasy/out/范特西",
+ "output_files": [
+  "/tmp/bili-album-review/ingest-fantasy/out/范特西/01-爱在西元前.m4a",
+  "/tmp/bili-album-review/ingest-fantasy/out/范特西/02-爸，我回来了.m4a",
+  "/tmp/bili-album-review/ingest-fantasy/out/范特西/03-简单爱.m4a",
+  "/tmp/bili-album-review/ingest-fantasy/out/范特西/04-忍者.m4a",
+  "/tmp/bili-album-review/ingest-fantasy/out/范特西/05-开不了口.m4a",
+  "/tmp/bili-album-review/ingest-fantasy/out/范特西/06-上海一九四三.m4a",
+  "/tmp/bili-album-review/ingest-fantasy/out/范特西/07-对不起.m4a",
+  "/tmp/bili-album-review/ingest-fantasy/out/范特西/08-威廉古堡.m4a",
+  "/tmp/bili-album-review/ingest-fantasy/out/范特西/09-双截棍.m4a",
+  "/tmp/bili-album-review/ingest-fantasy/out/范特西/10-安静.m4a"
+ ],
+ "warnings": [],
+ "import_result": null,
+ "error": "",
+ "message": "已完成切分（未导入）：/tmp/bili-album-review/ingest-fantasy/out/范特西",
+ "events": [
+  {
+   "job_id": "7183c883f3bd",
+   "stage": "plan",
+   "status": "started",
+   "message": "正在下载并分析视频",
+   "elapsed_s": null,
+   "at": "2026-11-27T04:53:51+00:00"
+  },
+  {
+   "job_id": "7183c883f3bd",
+   "stage": "plan",
+   "status": "finished",
+   "message": "分析完成：整张专辑《范特西》，共 10 首",
+   "elapsed_s": 7.94,
+   "at": "2026-11-27T04:53:59+00:00"
+  },
+  {
+   "job_id": "7183c883f3bd",
+   "stage": "review",
+   "status": "started",
+   "message": "正在由模型复核方案",
+   "elapsed_s": null,
+   "at": "2026-11-27T04:53:59+00:00"
+  },
+  {
+   "job_id": "7183c883f3bd",
+   "stage": "review",
+   "status": "finished",
+   "message": "复核完成，已修正 1 处",
+   "elapsed_s": 9.97,
+   "at": "2026-11-27T04:54:09+00:00"
+  },
+  {
+   "job_id": "7183c883f3bd",
+   "stage": "cut",
+   "status": "started",
+   "message": "正在切分音频并写入标签",
+   "elapsed_s": null,
+   "at": "2026-11-27T04:54:09+00:00"
+  },
+  {
+   "job_id": "7183c883f3bd",
+   "stage": "cut",
+   "status": "finished",
+   "message": "已生成 10 个文件",
+   "elapsed_s": 1.97,
+   "at": "2026-11-27T04:54:11+00:00"
+  }
+ ],
+ "created_at": "2026-11-27T04:53:51+00:00",
+ "updated_at": "2026-11-27T04:54:11+00:00"
+}

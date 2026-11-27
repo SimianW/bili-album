@@ -5,7 +5,8 @@ import json
 import pytest
 
 from bili_album.web.jobs import RESTART_MESSAGE, JobError, JobManager
-from bili_album.web.runner import FakeRunner, Outcome
+from bili_album.web.fake import FakeRunner
+from bili_album.web.runner import Outcome
 
 CLEAN = "https://www.bilibili.com/video/BV14PVVzNE2R"
 EDITED = "https://www.bilibili.com/video/BV1sT421k7Ps"
@@ -40,8 +41,11 @@ def test_queue_runs_in_submission_order(mgr):
     done = mgr.get(b["id"])
     assert done["stages"] == {"plan": "done", "review": "done", "cut": "done", "import": "done"}
     assert done["album"]["title"] == "Starboy" and len(done["tracks"]) == 18
-    assert done["review"]["edits"][0]["index"] == 16
-    assert done["result"]["confirmed"] and done["result"]["album_url"].startswith("https://")
+    assert done["review"]["edits"] == [
+        {"tracks": [16], "reason": "第 16 首歌名「All I Konw」是评论区的笔误，已按曲库改为「All I Know」。"}]
+    assert done["tracks"][15]["title"] == "All I Know"
+    assert done["result"]["confirmed"] and done["result"]["imported"]
+    assert done["result"]["album_url"].startswith("https://jellyfin.example/")
     assert mgr.get(c["id"])["result"]["confirmed"] is False
 
 
@@ -92,8 +96,11 @@ def test_hold_confirm_with_edits(mgr, tmp_path):
     mgr.run_next()
     done = mgr.get(j["id"])
     assert done["status"] == "done" and done["stages"]["import"] == "done"
-    sent = json.loads((tmp_path / "web" / j["id"] / "work" / "edits.json").read_text())
-    assert sent[0] == {"index": 5, "title": "watch", "artist": "Billie Eilish"}
+    plan = json.loads((tmp_path / "web" / j["id"] / "work" / "plan.json").read_text())
+    assert [(t["title"], t["artist"]) for t in plan["tracks"][4:6]] == [("watch", "Billie Eilish"),
+                                                                         ("party favor", "B. Eilish")]
+    state = json.loads((tmp_path / "web" / j["id"] / "work" / "job.json").read_text())
+    assert state["status"] == "imported" and state["confirmed"] is True
     assert done["edited"] == [{"index": 6, "title": "party favor", "artist": "B. Eilish"}]
     with pytest.raises(JobError) as e:
         mgr.confirm(j["id"], [])
@@ -126,7 +133,8 @@ def test_failure_and_retry_reuses_workdir(mgr, tmp_path):
     mgr.run_next()
     f = mgr.get(j["id"])
     assert f["status"] == "failed"
-    assert f["error"] == {"stage": "plan", "message": "B 站说这个视频不存在，或者在当前地区看不了。检查链接是否完整，或换一个视频。"}
+    assert f["error"] == {"stage": "plan", "message": "分析失败：BilibiliError: "
+                          "https://api.bilibili.com/x/web-interface/view: code -404 啥都木有"}
     assert f["stages"]["plan"] == "failed"
     marker = tmp_path / "web" / j["id"] / "work" / "fake.json"
     assert marker.is_file()
@@ -228,7 +236,7 @@ def test_public_view_hides_internal_fields(mgr):
     pub = mgr.get(j["id"])
     assert "cover" not in pub and "key" not in pub and "action" not in pub
     assert pub["has_cover"] is True
-    assert mgr.cover_path(j["id"]).name == "cover.svg"
+    assert mgr.cover_path(j["id"]).name == "cover.jpg"
 
 
 def test_secrets_are_scrubbed_everywhere(tmp_path):
@@ -247,3 +255,35 @@ def test_secrets_are_scrubbed_everywhere(tmp_path):
     blob = json.dumps(m.list(), ensure_ascii=False) + (tmp_path / "web" / j["id"] / "job.json").read_text()
     assert secret not in blob and base not in blob
     assert "***" in m.get(j["id"])["error"]["message"]
+
+
+def test_held_single_shows_derivative_and_flags(mgr):
+    j = mgr.submit(SINGLE)
+    mgr.run_next()
+    h = mgr.get(j["id"])
+    assert h["status"] == "needs_confirmation"
+    assert h["album"] == {"title": "5:20AM", "artist": "soldier", "year": "2024", "kind": "single",
+                          "uploader": "69岁牢二次元"}
+    assert [t["flagged"] for t in h["tracks"]] == [True]
+    assert h["review"]["edits"][0]["reason"].startswith("这是乐队演奏版")
+    assert h["confirm_error"] == ""
+
+
+def test_confirm_refused_keeps_edits_and_says_why(mgr, tmp_path):
+    j = mgr.submit("https://www.bilibili.com/video/BV1Kq4y1M7Vd")
+    mgr.run_next()
+    h = mgr.get(j["id"])
+    assert h["status"] == "needs_confirmation"
+    assert [t["index"] for t in h["tracks"] if t["flagged"]] == [3, 4]
+    assert h["review"]["rejected"] == ["工具无法核实“移动切点（第 3 个切点 → 689.0 秒）”，未采纳，需要人工确认"
+                                       "（689.0 is not one of the measured options for boundary 3）。"]
+    mgr.confirm(j["id"], [{"index": 3, "title": "借口（改）", "artist": "周杰伦"}])
+    mgr.run_next()
+    r = mgr.get(j["id"])
+    assert r["status"] == "needs_confirmation"
+    assert r["confirm_error"].startswith("方案仍有硬性问题，无法导入：") and "overlap" in r["confirm_error"]
+    assert r["tracks"][2]["title"] == "借口（改）"
+    assert r["stages"]["cut"] == "held" and r["error"] is None
+    # a later successful hold clears it again
+    mgr.confirm(j["id"], [])
+    assert mgr.get(j["id"])["confirm_error"] == ""

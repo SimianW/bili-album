@@ -8,7 +8,8 @@ import time
 import pytest
 
 from bili_album.web.jobs import JobManager
-from bili_album.web.runner import FakeRunner, Outcome
+from bili_album.web.fake import FakeRunner
+from bili_album.web.runner import Outcome, PipelineRunner
 from bili_album.web.server import make_server
 
 CLEAN = "https://www.bilibili.com/video/BV14PVVzNE2R"
@@ -147,7 +148,7 @@ def test_cover_only_from_inside_job_folder(site, tmp_path):
     jid = call(srv, "POST", "/api/jobs", {"url": "https://www.bilibili.com/video/BV1Ns411D7pE"})[1]["job"]["id"]
     mgr.run_next()
     code, body, r = call(srv, "GET", f"/api/jobs/{jid}/cover")
-    assert code == 200 and r.getheader("Content-Type") == "image/svg+xml" and body.startswith(b"<svg")
+    assert code == 200 and r.getheader("Content-Type") == "image/jpeg" and body.startswith(b"\xff\xd8")
     secret = tmp_path / "secret.jpg"
     secret.write_bytes(b"\xff\xd8 not for you")
     other = call(srv, "POST", "/api/jobs", {"url": SINGLE})[1]["job"]["id"]
@@ -172,18 +173,16 @@ def test_no_config_value_in_any_response(tmp_path, monkeypatch):
         "BILI_ALBUM_LLM_API_KEY": "sk-llm-key-0123456789",
         "BILI_ALBUM_JELLYFIN_URL": "http://127.0.0.1:8096",
         "BILI_ALBUM_JELLYFIN_API_KEY": "jf-key-abcdef987654",
+        "BILI_ALBUM_LIBRARY_DIR": "/srv/private-library-dir",
     }
+    public = "https://music.example.org"
     env = tmp_path / "env"
-    env.write_text("".join(f"{k}={v}\n" for k, v in values.items()))
+    env.write_text("".join(f"{k}={v}\n" for k, v in values.items()) + f"BILI_ALBUM_JELLYFIN_PUBLIC_URL={public}\n")
     load_config = pytest.importorskip("bili_album.config").load_config
     cfg = load_config(env, environ={})
 
-    class LeakyPipeline(FakeRunner):
-        """A pipeline that leaks every config value into its messages and results."""
-
-        def secrets(self):
-            from bili_album.web.runner import PipelineRunner
-            return PipelineRunner(config=cfg).secrets()
+    class LeakyPipeline(PipelineRunner):
+        """A pipeline that leaks every secret config value into its messages and results."""
 
         def start(self, url, workdir, emit):
             leak = " ".join(values.values())
@@ -191,23 +190,29 @@ def test_no_config_value_in_any_response(tmp_path, monkeypatch):
             emit(stage="plan", state="done", album={"title": leak, "artist": leak, "year": "", "kind": "album",
                                                       "uploader": leak},
                  tracks=[{"index": 1, "title": leak, "artist": leak, "duration": 1}],
-                 review={"reasons": [leak], "remaining_concerns": [leak], "edits": [{"index": 1, "reason": leak}]})
+                 review={"reasons": [leak], "remaining_concerns": [leak], "edits": [{"tracks": [1], "reason": leak}],
+                         "rejected": [leak]})
             return Outcome("failed", leak)
 
-    mgr = JobManager(tmp_path / "web", LeakyPipeline(), start_worker=False)
-    srv = make_server("127.0.0.1", 0, mgr)
+    mgr = JobManager(tmp_path / "web", LeakyPipeline(config=cfg), start_worker=False)
+    srv = make_server("127.0.0.1", 0, mgr, library_url=cfg.jellyfin_public_url)
     t = threading.Thread(target=srv.serve_forever, daemon=True)
     t.start()
     try:
         jid = call(srv, "POST", "/api/jobs", {"url": CLEAN})[1]["job"]["id"]
         mgr.run_next()
-        blobs = [json.dumps(call(srv, "GET", p)[1], ensure_ascii=False)
-                 for p in ("/api/jobs", f"/api/jobs/{jid}")]
-        blobs.append(call(srv, "GET", "/")[1].decode())
-        blobs.append((tmp_path / "web" / jid / "job.json").read_text())
+        listing = call(srv, "GET", "/api/jobs")[1]
+        assert listing["library_url"] == public + "/"
+        listing.pop("library_url")
+        blobs = [json.dumps(listing, ensure_ascii=False),
+                 json.dumps(call(srv, "GET", f"/api/jobs/{jid}")[1], ensure_ascii=False),
+                 call(srv, "GET", "/")[1].decode(),
+                 (tmp_path / "web" / jid / "job.json").read_text()]
+        # library_url is the only value from the configuration that reaches the browser
         for b in blobs:
-            for v in values.values():
-                assert v not in b
+            for v in list(values.values()) + [public, "music.example.org"]:
+                assert v not in b, v
+        assert "***" in blobs[0]  # the leaked values were scrubbed, not dropped silently
     finally:
         srv.shutdown()
         srv.server_close()
@@ -231,3 +236,15 @@ def test_worker_thread_runs_queue(tmp_path):
         assert mgr.get(a)["status"] == "done" and mgr.get(b)["status"] == "needs_confirmation"
     finally:
         mgr.stop()
+
+
+def test_library_url_omitted_when_not_configured(site):
+    srv, _ = site
+    assert "library_url" not in call(srv, "GET", "/api/jobs")[1]
+
+
+def test_library_url_must_be_http(tmp_path):
+    from bili_album.web.server import public_library_url
+    assert public_library_url("https://music.example.org") == "https://music.example.org/"
+    for bad in ("", "javascript:alert(1)", "ftp://x", "https://user:pw@x.example", "music.example.org"):
+        assert public_library_url(bad) == ""
