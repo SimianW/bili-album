@@ -412,7 +412,10 @@ class Catalog:
                 continue
             for a in self._try(p.search_albums, f"{best.artist} {best.title}") or []:
                 if similarity(a.title, best.title) > 0.85 and similarity(a.artist, best.artist) > 0.6:
-                    best.genre = best.genre or a.genre
+                    genre = a.genre
+                    if genre and is_cjk(genre) and best.provider == "netease":
+                        genre = fold(genre)  # 華語流行樂 -> 华语流行乐, matching NetEase's script
+                    best.genre = best.genre or genre
                     best.release_date = best.release_date or a.release_date
                     best.year = best.year or a.year
                     if not best.cover_url:
