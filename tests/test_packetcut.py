@@ -252,3 +252,60 @@ def test_long_alac_packets_do_not_trip_the_duration_check(tmp_path):
     res = apply_plan(p, tmp_path / "out")
     assert [r["cut"] for r in res.rows] == ["packets", "packets"]
     assert not res.warnings, res.warnings
+
+
+def test_float_rounding_does_not_turn_a_valid_overlap_into_an_error():
+    from fractions import Fraction
+    from bili_album.packetcut import packet_ranges
+    pos = [Fraction(1024 * i) for i in range(100)]
+    # 0.999 - 0.998 is a hair over 0.001 in floats; apply.validate accepts this overlap.
+    got = packet_ranges([(0.0, 0.999), (0.998, 1.5)], 44100, 102400, pos)
+    assert got[0][1] == got[1][0]
+
+
+def test_long_titles_still_fit_while_staged(aac, tmp_path, monkeypatch):
+    # Linux filesystems allow 255 bytes per name; the staged file (and packetcut's ".part" next to it)
+    # must not be longer than the output name, whatever the title. (macOS counts characters, so the
+    # limit itself does not reproduce here: check the names the cut is given.)
+    import json
+    from bili_album import apply as apply_mod
+    title = "长" * 80
+    p = _apply_plan_file(tmp_path, [(aac, 0.0, 5.0), (aac, 5.0, 10.0)], kind="compilation")
+    plan = json.loads(p.read_text())
+    plan["tracks"][0]["title"] = title
+    p.write_text(json.dumps(plan, ensure_ascii=False))
+    seen = []
+    real = apply_mod.cut_tracks
+
+    def spy(src, ranges, dsts, **k):
+        seen.extend(dsts)
+        return real(src, ranges, dsts, **k)
+    monkeypatch.setattr(apply_mod, "cut_tracks", spy)
+    res = apply_mod.apply_plan(p, tmp_path / "out")
+    assert res.files[0].name == f"01-{title}.m4a" and res.files[0].exists()
+    assert all(len(("." + d.stem + ".part.m4a").encode()) <= 64 for d in seen)
+
+
+def test_tracks_of_one_part_listed_out_of_order_are_cut(aac, tmp_path):
+    from bili_album.apply import apply_plan
+    p = _apply_plan_file(tmp_path, [(aac, 5.0, 6.0), (aac, 1.0, 2.0)])
+    res = apply_plan(p, tmp_path / "out")
+    assert [round(r["cut_start"]) for r in res.rows] == [5, 1]
+
+
+def test_encode_failure_keeps_an_existing_file_it_did_not_replace(tmp_path, monkeypatch):
+    flac = gen(tmp_path / "src.flac", ["-c:a", "flac"])
+    d = tmp_path / "a.m4a"
+    d.write_bytes(b"old")
+    real = subprocess.run
+
+    def dies(args, *a, **k):
+        if args[0] != "ffmpeg":
+            return real(args, *a, **k)
+        Path(args[-1]).write_bytes(b"half")
+        raise subprocess.CalledProcessError(1, args)
+    from bili_album import media
+    monkeypatch.setattr(media.subprocess, "run", dies)
+    with pytest.raises(PacketCutError):
+        cut_tracks(flac, [(0.0, 4.0)], [d], overwrite=True)
+    assert d.read_bytes() == b"old" and not list(tmp_path.glob(".*part*"))

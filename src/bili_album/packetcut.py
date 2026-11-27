@@ -119,7 +119,8 @@ def packet_ranges(ranges: list[tuple[float, float]], rate: int, samples: int,
     for i in range(len(out) - 1):
         (a0, a1), (b0, b1) = out[i], out[i + 1]
         if b0 < a1:
-            if ranges[i][1] - ranges[i + 1][0] > OVERLAP or b0 <= a0:
+            # Same tolerance as apply.validate, with room for float rounding (0.999 - 0.998 > 0.001).
+            if ranges[i][1] - ranges[i + 1][0] > OVERLAP + 1e-9 or b0 <= a0:
                 raise RangeError("ranges overlap once moved to packet boundaries")
             out[i] = (a0, b0)
     return out
@@ -158,12 +159,14 @@ def cut_tracks(src: Path, ranges: list[tuple[float, float]], dsts: list[Path], *
         written: list[Path] = []
         try:
             for (s, e), d in zip(ranges, dsts):
+                try:
+                    cut(src, d, s, e, overwrite=overwrite)
+                finally:
+                    d.with_name("." + d.stem + ".part.m4a").unlink(missing_ok=True)
                 written.append(d)
-                cut(src, d, s, e, overwrite=overwrite)
         except BaseException as err:
             for d in written:
                 d.unlink(missing_ok=True)
-                d.with_name("." + d.stem + ".part.m4a").unlink(missing_ok=True)
             if isinstance(err, subprocess.CalledProcessError):
                 raise PacketCutError(f"ffmpeg could not encode {src.name}: exit {err.returncode}") from err
             raise

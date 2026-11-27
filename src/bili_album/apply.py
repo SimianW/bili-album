@@ -146,9 +146,12 @@ def apply_plan(plan_path: Path, outdir: Path, *, force: bool = False, make_zip: 
     by_source: dict[Path, list[int]] = {}
     for i, t in enumerate(tracks):
         by_source.setdefault(track_source(plan, t), []).append(i)
+    for idx in by_source.values():
+        idx.sort(key=lambda i: float(tracks[i]["start"]))   # a hand-edited plan may list a part out of order
     # Every source is cut into hidden staging files first; only when all succeed do they replace
     # the outputs, so a failure leaves no new file and (with --force) keeps the old ones.
-    staged = [f.with_name("." + f.stem + ".cut.m4a") for f in files]
+    # Short names, so a long title that fits the filesystem's name limit still fits while staged.
+    staged = [f.with_name(f".bili-album-cut-{i:03d}.m4a") for i, f in enumerate(files)]
     cuts: dict[int, Cut] = {}
     try:
         for src, idx in by_source.items():

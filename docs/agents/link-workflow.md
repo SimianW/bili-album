@@ -60,7 +60,7 @@ After edits run `apply` on the edited plan. `apply` validates first (increasing 
 
 ## Confirm the result
 
-`apply` cuts each source in one pass at audio packet boundaries (a boundary moves to the next packet start: under 25 ms for AAC, about 93 ms for ALAC at 44.1 kHz), checks every file's packets against the source and stops with an error if one differs. It prints index, title, start, end, planned vs actual duration and the file name, lists optional tags left empty, and warns if a file's duration is more than 0.1 s off its plan or a required tag is missing. Then run `uv run bili-album inspect <dir>` (add `--json` for machine output) and check: one file per planned track, titles and track numbers in order, artist/album/album artist/year/cover present. Tell the owner to listen to the first and last seconds of a few tracks.
+`apply` cuts each source in one pass at audio packet boundaries (a boundary moves to the next packet start: under 25 ms for AAC, about 93 ms for ALAC at 44.1 kHz), checks every file's packets against the source and stops with an error if one differs. It prints index, title, start, end, planned vs actual duration and the file name, lists optional tags left empty, and warns if a file's duration is more than 0.1 s off the range actually cut or a required tag is missing. Then run `uv run bili-album inspect <dir>` (add `--json` for machine output) and check: one file per planned track, titles and track numbers in order, artist/album/album artist/year/cover present. Tell the owner to listen to the first and last seconds of a few tracks.
 
 ## Flags worth knowing
 
