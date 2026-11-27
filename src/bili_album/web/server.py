@@ -39,6 +39,7 @@ from urllib.parse import urlsplit
 
 from . import auth as A
 from .jobs import JobError, JobManager
+from .runner import refine_fields
 from .urls import UrlError, normalize_url
 
 log = logging.getLogger(__name__)
@@ -53,7 +54,11 @@ EVERY_INTERFACE = ("0.0.0.0", "::", "")
 
 
 def load_index() -> bytes:
-    return resources.files("bili_album.web").joinpath("static/index.html").read_bytes()
+    """index.html with the refinement menu (static/refine-menu.html) and its fields filled in."""
+    static = resources.files("bili_album.web").joinpath("static")
+    fields = json.dumps(refine_fields(), ensure_ascii=False).replace("</", "<\\/")
+    menu = static.joinpath("refine-menu.html").read_text(encoding="utf-8").replace("__REFINE_FIELDS__", fields)
+    return static.joinpath("index.html").read_text(encoding="utf-8").replace("<!--refine-menu-->", menu, 1).encode()
 
 
 @dataclass

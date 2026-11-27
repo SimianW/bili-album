@@ -7,10 +7,11 @@ from pathlib import Path
 import pytest
 
 from bili_album.config import Config
+from bili_album.refine import RefineParams
 from bili_album.web.fake import FakeRunner
 from bili_album.web.jobs import JobError, JobManager
-from bili_album.web.runner import Outcome, PipelineRunner, clean_options, plan_options
-from bili_album.web.server import make_server
+from bili_album.web.runner import REFINE_LIMITS, Outcome, PipelineRunner, clean_options, plan_options, refine_fields
+from bili_album.web.server import load_index, make_server
 
 URL = "https://www.bilibili.com/video/BV14PVVzNE2R"
 
@@ -54,7 +55,7 @@ class Recorder:
     def __init__(self):
         self.calls = []
 
-    def start(self, url, workdir, emit, *options):
+    def start(self, url, workdir, emit, options=None):
         self.calls.append(options)
         return Outcome("done")
 
@@ -68,18 +69,18 @@ def test_jobs_store_options_and_hand_them_to_the_runner(tmp_path):
     j = m.submit(URL, options={"search_ms": 900})
     assert j["options"] == {"refine_options": {"search_ms": 900}}
     m.run_next()
-    assert rec.calls == [({"refine_options": {"search_ms": 900}},)]
+    assert rec.calls == [{"refine_options": {"search_ms": 900}}]
     # Saved with the job, so a restart (and retry) keeps them.
     saved = json.loads((tmp_path / "web" / j["id"] / "job.json").read_text(encoding="utf-8"))
     assert saved["options"] == {"refine_options": {"search_ms": 900}}
 
 
-def test_jobs_without_options_call_the_runner_as_before(tmp_path):
+def test_jobs_without_options_give_the_runner_none(tmp_path):
     rec = Recorder()
     m = JobManager(tmp_path / "web", rec, start_worker=False)
     m.submit(URL)
     m.run_next()
-    assert rec.calls == [()]
+    assert rec.calls == [{}]
 
 
 def test_bad_options_are_a_400_and_queue_nothing(tmp_path):
@@ -141,7 +142,16 @@ def test_http_submit_with_options(tmp_path):
         srv.server_close()
 
 
-def test_page_has_the_options_form():
-    html = (Path(__file__).parents[1] / "src/bili_album/web/static/index.html").read_text(encoding="utf-8")
-    for needle in ('id="o-refine"', 'id="o-search"', 'id="o-sil"', 'id="o-deep"', 'id="o-pre"', "refineOptions()"):
-        assert needle in html
+def test_page_menu_fields_come_from_the_refiner():
+    fields = {f["name"]: f for f in refine_fields()}
+    p = RefineParams()
+    assert {n: f["default"] for n, f in fields.items()} == {n: getattr(p, n) for n in fields}
+    assert set(fields) == set(REFINE_LIMITS) and fields["search_ms"]["int"] and not fields["silence_db"]["int"]
+
+
+def test_page_carries_the_menu_with_its_fields():
+    html = load_index().decode("utf-8")
+    assert "<!--refine-menu-->" not in html and "__REFINE_FIELDS__" not in html
+    assert 'id="refm"' in html and "const BiliRefine" in html and "BiliRefine.options()" in html
+    assert html.index("const BiliRefine") < html.index("options = BiliRefine.options()")   # defined before the page uses it
+    assert '"name": "search_ms"' in html and '"label": "搜索范围"' in html and '"default": 1500' in html

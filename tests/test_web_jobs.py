@@ -148,7 +148,7 @@ def test_failure_and_retry_reuses_workdir(mgr, tmp_path):
 
 def test_runner_exception_is_a_failure_in_current_stage(tmp_path):
     class Boom(FakeRunner):
-        def start(self, url, workdir, emit):
+        def start(self, url, workdir, emit, options=None):
             emit(stage="plan", state="done")
             emit(stage="review", state="running", message="Sol 正在核对。")
             raise RuntimeError("model went away")
@@ -246,7 +246,7 @@ def test_secrets_are_scrubbed_everywhere(tmp_path):
         def secrets(self):
             return [secret, base]
 
-        def start(self, url, workdir, emit):
+        def start(self, url, workdir, emit, options=None):
             emit(stage="plan", state="running", message=f"calling {base} with {secret}")
             return Outcome("failed", f"HTTP 401 from {base}: bad key {secret}")
     m = JobManager(tmp_path / "web", Leaky(), start_worker=False)

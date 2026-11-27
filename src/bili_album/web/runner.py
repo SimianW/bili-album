@@ -66,16 +66,28 @@ class Runner(Protocol):
 
 # ----------------------------------------------------------------------------- job options
 
-# Boundary refinement settings the page may send: name -> (type, lowest, highest). The names are
-# keyword arguments of bili_album.refine.refine_starts; anything not listed here is refused.
-REFINE_LIMITS: dict[str, tuple[type, float, float]] = {
-    "search_ms": (int, 200, 5000),
-    "silence_db": (float, -80.0, 0.0),
-    "deep_silence_db": (float, -90.0, 0.0),
-    "pre_roll_ms": (int, 0, 500),
+# Boundary refinement settings the page may send: name -> (type, lowest, highest, label, unit). The
+# names are keyword arguments of bili_album.refine.refine_starts (defaults come from there); anything
+# not listed here is refused. The page's menu is built from refine_fields().
+REFINE_LIMITS: dict[str, tuple[type, float, float, str, str]] = {
+    "search_ms": (int, 200, 5000, "搜索范围", "± 毫秒"),
+    "silence_db": (float, -80.0, 0.0, "第一轮静音阈值", "dB"),
+    "deep_silence_db": (float, -90.0, 0.0, "第二轮静音阈值", "dB"),
+    "pre_roll_ms": (int, 0, 500, "切点前留白", "毫秒"),
 }
-_REFINE_ZH = {"search_ms": "搜索范围", "silence_db": "第一轮静音阈值", "deep_silence_db": "第二轮静音阈值",
-              "pre_roll_ms": "切点前留白"}
+
+
+def refine_defaults() -> dict:
+    from ..refine import RefineParams  # imported late (numpy), like the pipeline
+    d = RefineParams()
+    return {name: getattr(d, name) for name in REFINE_LIMITS}
+
+
+def refine_fields() -> list[dict]:
+    """The settings the page's menu offers: ``[{name, label, unit, int, default, min, max}]``."""
+    defaults = refine_defaults()
+    return [{"name": n, "label": label, "unit": unit, "int": kind is int, "default": defaults[n], "min": lo, "max": hi}
+            for n, (kind, lo, hi, label, unit) in REFINE_LIMITS.items()]
 
 
 def clean_options(raw: Any) -> dict:
@@ -96,16 +108,17 @@ def clean_options(raw: Any) -> dict:
             raise ValueError("「精修切点」只能是开或关。")
         out["refine"] = raw["refine"]
     ro: dict = {}
-    for name, (kind, lo, hi) in REFINE_LIMITS.items():
+    for name, (kind, lo, hi, label, _unit) in REFINE_LIMITS.items():
         if name not in raw:
             continue
         v = raw[name]
         if isinstance(v, bool) or not isinstance(v, (int, float)) or v != v or (kind is int and v != int(v)):
-            raise ValueError(f"「{_REFINE_ZH[name]}」要填数字。")
+            raise ValueError(f"「{label}」要填数字。")
         if not lo <= v <= hi:
-            raise ValueError(f"「{_REFINE_ZH[name]}」要在 {lo:g} 到 {hi:g} 之间。")
+            raise ValueError(f"「{label}」要在 {lo:g} 到 {hi:g} 之间。")
         ro[name] = kind(v)
-    if ro.get("deep_silence_db", -65.0) > ro.get("silence_db", -42.0):
+    defaults = refine_defaults()
+    if ro.get("deep_silence_db", defaults["deep_silence_db"]) > ro.get("silence_db", defaults["silence_db"]):
         raise ValueError("第二轮静音阈值不能高于第一轮。")
     if ro:
         out["refine_options"] = ro

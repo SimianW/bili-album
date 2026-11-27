@@ -460,9 +460,7 @@ class JobManager:
             elif job["action"] == "replace":
                 out = self.runner.replace(wd, emit)
             else:
-                opts = job.get("options") or {}
-                # Runners that take no options keep working for jobs submitted without any.
-                out = self.runner.start(job["url"], wd, emit, opts) if opts else self.runner.start(job["url"], wd, emit)
+                out = self.runner.start(job["url"], wd, emit, job.get("options") or {})
         except Exception as e:  # the runner's own words are scrubbed before they are stored
             log.exception("job %s failed", job["id"])
             out = Outcome("failed", str(e)[:500] or GENERIC_ERROR)

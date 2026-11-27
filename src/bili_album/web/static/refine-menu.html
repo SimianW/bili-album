@@ -1,0 +1,162 @@
+<!-- Corner menu for millisecond boundary refinement (approved design: mockups/web-refine-switch.html).
+     server.load_index() inserts this file at the refine-menu marker in index.html and fills in FIELDS
+     from web/runner.refine_fields(), so names, labels, defaults and limits live in one place.
+     index.html calls BiliRefine.options() when a link is submitted. -->
+<style>
+.bp .refm { position: relative; }
+.bp .refm .trig { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; font: inherit; font-size: 13px;
+  color: var(--ink2); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.bp .refm .trig[aria-expanded=true] { border-color: var(--accent); color: var(--ink); }
+.bp .refm .trig:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bp .refm .st { color: var(--ink); font-weight: 600; }
+.bp .refm .st.off { color: var(--ink2); font-weight: 400; }
+.bp .refm .st.mod { color: var(--warn); }
+.bp .refm .pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; width: 300px; padding: 14px; text-align: left;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.12); color: var(--ink); }
+.bp .refm h3 { margin: 0 0 10px; font-size: 13.5px; font-weight: 650; }
+.bp .refm .seg { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; gap: 3px; background: var(--bg); border: 1px solid var(--line); border-radius: 9px; }
+.bp .refm .seg button { height: 30px; border: 0; border-radius: 6px; font: inherit; font-size: 13px; color: var(--ink2); background: transparent; cursor: pointer; }
+.bp .refm .seg button[aria-pressed=true] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.bp .refm .grid { display: grid; grid-template-columns: 1fr 96px; gap: 8px 10px; align-items: center; margin-top: 14px; font-size: 13px; }
+.bp .refm .grid.dis { opacity: .45; }
+.bp .refm .u { color: var(--ink2); font-size: 12px; }
+.bp .refm input { width: 100%; height: 32px; padding: 0 8px; font: inherit; font-size: 13px; color: var(--ink); text-align: right;
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: 7px; }
+.bp .refm input:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+.bp .refm input.chg { border-color: var(--warn); background: var(--warn-soft); }
+.bp .refm input.bad { border-color: var(--bad); }
+.bp .refm .err { color: var(--bad); font-size: 12.5px; margin: 8px 0 0; }
+.bp .refm .foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--line); font-size: 12px; color: var(--ink2); }
+.bp .refm .foot button { background: none; border: 0; padding: 0; font: inherit; color: var(--ink2); border-bottom: 1px solid var(--line); cursor: pointer; white-space: nowrap; }
+@media (max-width: 519.98px) {
+  .bp .top { position: relative; }
+  .bp .who b { display: none; }
+  .bp .refm { position: static; }
+  .bp .refm .lbl { display: none; }
+  .bp .refm .trig { padding: 0 8px; }
+  .bp .refm .pop { left: 0; right: 0; width: auto; }
+}
+</style>
+<script>
+"use strict";
+const BiliRefine = (function () {
+  const FIELDS = __REFINE_FIELDS__;   // [{name, label, unit, int, default, min, max}]
+  const KEY = "bili-album.refine";    // this viewer's last settings (a convenience; may be unavailable)
+  const SVG = "http://www.w3.org/2000/svg";
+  let on = true;
+  const vals = {};
+  for (const f of FIELDS) vals[f.name] = String(f.default);
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (s && typeof s === "object") {
+      on = s.on !== false;
+      for (const f of FIELDS) if (s.vals && typeof s.vals[f.name] === "string") vals[f.name] = s.vals[f.name];
+    }
+  } catch (e) { /* no storage: defaults */ }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ on, vals })); } catch (e) { /* ignore */ } }
+
+  function el(tag, props, ...kids) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(props || {})) {
+      if (k === "text") n.textContent = v; else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v);
+    }
+    n.append(...kids);
+    return n;
+  }
+  function icon(d, circles) {
+    const s = document.createElementNS(SVG, "svg");
+    for (const [k, v] of Object.entries({ viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", "stroke-width": "1.6",
+      "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" })) s.setAttribute(k, v);
+    const p = document.createElementNS(SVG, "path"); p.setAttribute("d", d); s.append(p);
+    for (const [cx, cy] of circles || []) {
+      const c = document.createElementNS(SVG, "circle");
+      c.setAttribute("cx", cx); c.setAttribute("cy", cy); c.setAttribute("r", "1.5"); s.append(c);
+    }
+    return s;
+  }
+
+  const root = document.getElementById("refm");
+  const st = el("span", { class: "st" });
+  let chev = icon("M4 6l4 4 4-4");
+  const trig = el("button", { type: "button", class: "trig", "aria-expanded": "false", "aria-haspopup": "dialog", onclick: () => show(pop.hidden) },
+    icon("M2 4h7M12 4h2M2 12h3M8 12h6", [[10.5, 4], [6.5, 12]]), el("span", { class: "lbl", text: "切点精修" }), st, chev);
+  const bOn = el("button", { type: "button", text: "开启", onclick: () => { on = true; changed(); } });
+  const bOff = el("button", { type: "button", text: "关闭", onclick: () => { on = false; changed(); } });
+  const grid = el("div", { class: "grid" });
+  const inputs = {};
+  for (const f of FIELDS) {
+    const id = "refm-" + f.name;
+    inputs[f.name] = el("input", { id, inputmode: "decimal", autocomplete: "off", oninput: e => { vals[f.name] = e.target.value; changed(); } });
+    inputs[f.name].value = vals[f.name];
+    grid.append(el("label", { for: id }, f.label + " ", el("span", { class: "u", text: f.unit })), inputs[f.name]);
+  }
+  const err = el("p", { class: "err", role: "alert", hidden: "" });
+  const fine = el("span");
+  const pop = el("div", { class: "pop", role: "dialog", "aria-label": "切点精修", hidden: "" },
+    el("h3", { text: "毫秒级精修歌曲之间的切点" }),
+    el("div", { class: "seg", role: "group", "aria-label": "开启或关闭" }, bOn, bOff), grid, err,
+    el("div", { class: "foot" }, fine, el("button", { type: "button", text: "恢复默认", onclick: reset })));
+  root.append(trig, pop);
+
+  // -> null, or {name, msg} for the first wrong value (checked like runner.clean_options).
+  function check() {
+    if (!on) return null;
+    for (const f of FIELDS) {
+      const raw = vals[f.name].trim(), v = Number(raw);
+      if (raw === "" || !Number.isFinite(v)) return { name: f.name, msg: "「" + f.label + "」要填数字。" };
+      if (f.int && !Number.isInteger(v)) return { name: f.name, msg: "「" + f.label + "」要填整数。" };
+      if (v < f.min || v > f.max) return { name: f.name, msg: "「" + f.label + "」要在 " + f.min + " 到 " + f.max + " 之间。" };
+    }
+    if (Number(vals.deep_silence_db) > Number(vals.silence_db)) return { name: "deep_silence_db", msg: "第二轮静音阈值不能高于第一轮。" };
+    return null;
+  }
+  function differs(f) { return Number(vals[f.name].trim()) !== f.default; }
+  function render() {
+    const bad = check(), mod = on && FIELDS.some(differs);
+    bOn.setAttribute("aria-pressed", String(on));
+    bOff.setAttribute("aria-pressed", String(!on));
+    grid.classList.toggle("dis", !on);
+    for (const f of FIELDS) {
+      const i = inputs[f.name];
+      i.disabled = !on;
+      i.classList.toggle("chg", on && differs(f));
+      i.classList.toggle("bad", !!bad && bad.name === f.name);
+      i.setAttribute("aria-invalid", String(!!bad && bad.name === f.name));
+    }
+    err.textContent = bad ? bad.msg : "";
+    err.hidden = !bad;
+    st.textContent = !on ? "关闭" : mod ? "已调整" : "开启";
+    st.className = "st" + (!on ? " off" : mod ? " mod" : "");
+    fine.textContent = on ? "对之后提交的链接生效" : "关闭后切点按 0.1 秒精度放置";
+  }
+  function changed() { save(); render(); }
+  function reset() {
+    on = true;
+    for (const f of FIELDS) { vals[f.name] = String(f.default); inputs[f.name].value = vals[f.name]; }
+    changed();
+  }
+  function show(open) {
+    pop.hidden = !open;
+    trig.setAttribute("aria-expanded", String(open));
+    const next = icon(open ? "M4 10l4-4 4 4" : "M4 6l4 4 4-4");
+    chev.replaceWith(next); chev = next;
+  }
+  document.addEventListener("click", e => { if (!pop.hidden && !root.contains(e.target)) show(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !pop.hidden) { show(false); trig.focus(); } });
+  render();
+
+  return {
+    // What POST /api/jobs gets as "options": null (all defaults), {refine: false}, only the changed
+    // values, or false when a value is wrong (the menu opens and says which).
+    options() {
+      if (!on) return { refine: false };
+      const bad = check();
+      if (bad) { show(true); inputs[bad.name].focus(); return false; }
+      const out = {};
+      for (const f of FIELDS) if (differs(f)) out[f.name] = Number(vals[f.name].trim());
+      return Object.keys(out).length ? out : null;
+    },
+  };
+})();
+</script>
