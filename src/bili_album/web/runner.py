@@ -217,16 +217,54 @@ def plan_path(workdir: Path) -> Path:
     return workdir / "plan.json"
 
 
+def clean_text(value: str) -> str:
+    """An owner-typed title or artist as it is stored: trimmed, Traditional Chinese written Simplified."""
+    from ..textnorm import to_simplified
+    return to_simplified(value.strip())
+
+
 def apply_edits(path: Path, edits: list[dict]) -> None:
-    """Write the owner's titles / artists into the plan before the pipeline continues."""
+    """Write the owner's titles / artists into the plan before the pipeline continues.
+
+    The album follows where the owner's edit clearly means it (the import folder is
+    ``<album_artist>/<album>``):
+
+    - a single: the artist is also the album artist (``album.artist`` and the track's
+      ``album_artist``); the title is also the album title when the album was named after
+      the song;
+    - an album: the album artist follows only when every track gets the same new artist and
+      every track's old artist was the album artist; otherwise only track artists change.
+    """
     if not edits:
         return
     plan = json.loads(path.read_text(encoding="utf-8"))
-    by_index = {e["index"]: e for e in edits}
-    for t in plan.get("tracks") or []:
+    tracks = plan.get("tracks") or []
+    album = plan.setdefault("album", {})
+    by_index = {e["index"]: {"title": clean_text(e["title"]), "artist": clean_text(e["artist"])} for e in edits}
+    old = {t.get("index"): (t.get("title", ""), t.get("artist", "")) for t in tracks}
+    old_album_title, old_album_artist = album.get("title", ""), album.get("artist", "")
+    for t in tracks:
         e = by_index.get(t.get("index"))
         if e:
             t["title"], t["artist"] = e["title"], e["artist"]
+    if plan.get("kind") == "single" or len(tracks) == 1:
+        t = tracks[0] if tracks else None
+        e = by_index.get(t.get("index")) if t else None
+        if e:
+            old_title = old[t.get("index")][0]
+            album["artist"] = t["album_artist"] = e["artist"]
+            if old_album_title == old_title:
+                album["title"] = e["title"]
+            if t.get("album", old_title) == old_title:
+                t["album"] = e["title"]
+    elif tracks and all(t.get("index") in by_index for t in tracks):
+        new_artists = {by_index[t["index"]]["artist"] for t in tracks}
+        if (len(new_artists) == 1 and old_album_artist not in new_artists
+                and all(old[t["index"]][1] == old_album_artist for t in tracks)):
+            new = new_artists.pop()
+            album["artist"] = new
+            for t in tracks:
+                t["album_artist"] = new
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp.replace(path)
@@ -267,7 +305,10 @@ def read_plan(workdir: Path, *, path: Path | None = None, state: Any = None) -> 
         title, artist = tracks[0].get("title") or title, tracks[0].get("artist") or artist
     out: dict = {"album": {"title": title, "artist": artist, "year": str(al.get("year") or "")[:4],
                            "kind": "single" if single else "album",
-                           "uploader": src.get("uploader", "") if plan.get("derivative") else ""}}
+                           "uploader": src.get("uploader", "") if plan.get("derivative") else "",
+                           # the import folder is <album_artist>/<album_title>
+                           "album_title": (tracks[0].get("album") if tracks else "") or al.get("title", ""),
+                           "album_artist": (tracks[0].get("album_artist") if tracks else "") or artist}}
     flagged = flagged_tracks(plan, state)
     out["tracks"] = [{"index": t.get("index", i), "title": t.get("title", ""), "artist": t.get("artist", ""),
                       "duration": round(float(t.get("end", 0)) - float(t.get("start", 0)), 3),

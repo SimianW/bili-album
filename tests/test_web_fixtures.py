@@ -51,7 +51,8 @@ def plan_view(tmp_path, name):
 
 def test_approved_album_with_skipped_edit(tmp_path):
     v, plan = plan_view(tmp_path, "jaychou-fantasy.plan.reviewed.json")
-    assert v["album"] == {"title": "范特西", "artist": "周杰伦", "year": "2001", "kind": "album", "uploader": ""}
+    assert v["album"] == {"title": "范特西", "artist": "周杰伦", "year": "2001", "kind": "album", "uploader": "",
+                          "album_title": "范特西", "album_artist": "周杰伦"}
     assert len(v["tracks"]) == 10 and not any(t["flagged"] for t in v["tracks"])
     assert v["tracks"][0] == {"index": 1, "title": "爱在西元前", "artist": "周杰伦",
                               "duration": round(plan["tracks"][0]["end"] - plan["tracks"][0]["start"], 3),
@@ -66,7 +67,7 @@ def test_held_derivative_single(tmp_path):
     v, plan = plan_view(tmp_path, "520am-derivative.plan.reviewed.json")
     assert plan["needs_review"] and plan["review"]["flagged_tracks"] == [1]
     assert v["album"] == {"title": "5:20AM", "artist": "soldier", "year": "2024", "kind": "single",
-                          "uploader": "69岁牢二次元"}
+                          "uploader": "69岁牢二次元", "album_title": "5:20AM", "album_artist": "soldier"}
     assert [t["flagged"] for t in v["tracks"]] == [True]
     assert v["review"]["edits"] == [{"tracks": [1], "reason": plan["review"]["edits_applied"][0]["reason_zh"]}]
     assert v["review"]["reasons"] == plan["review"]["reasons"]
@@ -78,6 +79,7 @@ def test_edited_single_is_shown_by_its_song(tmp_path):
     assert plan["album"]["title"] == "Parachutes"
     assert v["album"]["title"] == "Yellow" and v["album"]["artist"] == "Coldplay" and v["album"]["kind"] == "single"
     assert v["album"]["uploader"] == ""  # not a derivative
+    assert (v["album"]["album_artist"], v["album"]["album_title"]) == ("Coldplay", "Parachutes")
     assert v["review"]["verdict"] == "edited"
     assert v["review"]["edits"][0]["reason"].startswith("专辑由「Various Artists - Best 00s Pop Ever」改为")
     assert not any(t["flagged"] for t in v["tracks"])

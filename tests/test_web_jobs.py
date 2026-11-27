@@ -263,7 +263,7 @@ def test_held_single_shows_derivative_and_flags(mgr):
     h = mgr.get(j["id"])
     assert h["status"] == "needs_confirmation"
     assert h["album"] == {"title": "5:20AM", "artist": "soldier", "year": "2024", "kind": "single",
-                          "uploader": "69岁牢二次元"}
+                          "uploader": "69岁牢二次元", "album_title": "5:20AM", "album_artist": "soldier"}
     assert [t["flagged"] for t in h["tracks"]] == [True]
     assert h["review"]["edits"][0]["reason"].startswith("这是乐队演奏版")
     assert h["confirm_error"] == ""

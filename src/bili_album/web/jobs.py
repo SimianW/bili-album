@@ -23,7 +23,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from .runner import STAGES, Outcome, Runner
+from .runner import STAGES, Outcome, Runner, clean_text
 from .urls import video_key
 
 log = logging.getLogger(__name__)
@@ -241,9 +241,9 @@ class JobManager:
                 raise JobError(400, f"曲目编号不对：{idx!r}")
             if not isinstance(title, str) or not isinstance(artist, str):
                 raise JobError(400, "歌名和歌手必须是文字。")
-            title, artist = title.strip(), artist.strip()
+            title, artist = clean_text(title), clean_text(artist)
             if not title or not artist:
-                raise JobError(400, f"第 {idx} 首的歌名和歌手不能为空。")
+                raise JobError(400, "歌名和歌手不能为空。")
             if len(title) > MAX_FIELD or len(artist) > MAX_FIELD or any(ord(c) < 32 for c in title + artist):
                 raise JobError(400, f"第 {idx} 首的歌名或歌手太长或含有控制字符。")
             seen.add(idx)
@@ -363,7 +363,8 @@ class JobManager:
                 job["message"] = upd["message"][:500]
             if isinstance(upd.get("album"), dict):
                 job["album"] = {k: str(upd["album"].get(k) or "")[:MAX_FIELD]
-                                for k in ("title", "artist", "year", "kind", "uploader")}
+                                for k in ("title", "artist", "year", "kind", "uploader", "album_title",
+                                          "album_artist")}
             if isinstance(upd.get("tracks"), list):
                 job["tracks"] = [{"index": int(t.get("index", i)), "title": str(t.get("title", "")),
                                   "artist": str(t.get("artist", "")), "duration": float(t.get("duration") or 0),

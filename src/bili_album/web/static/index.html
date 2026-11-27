@@ -120,6 +120,7 @@ html, body { margin: 0; background: var(--bg); }
 .bp .row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
 .bp .row.flag input { border-color: var(--warn-seg); background: var(--warn-soft); }
 .bp .row .ro { min-width: 0; overflow-wrap: anywhere; }
+.bp .dest { margin: 8px 2px 0; font-size: 12.5px; color: var(--ink2); overflow-wrap: anywhere; }
 .bp .acts { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
 .bp .acts .sp { flex: 1; }
 .bp .acts .q { font-size: 13.5px; font-weight: 600; }
@@ -398,6 +399,10 @@ html, body { margin: 0; background: var(--bg); }
     card.append(...stripEl(job));
     if (reasons.length) card.append(h("div", { class: "box warn" }, h("b", {}, "Sol 的说明"), h("ul", {}, reasons.map(r => h("li", {}, r)))));
     card.append(h("div", { class: "rows" }, flagged.map(t => editRow(job, t, true))));
+    // Where the import will land, recomputed as the owner types (same rule as the server).
+    const dest = h("p", { class: "dest", "aria-live": "polite" });
+    card.append(dest);
+    card.addEventListener("input", () => { dest.textContent = destLine(job, card); });
     if (rest.length) {
       const d = h("details", { open: !!u.openRest, ontoggle: e => { u.openRest = e.target.open; } },
         h("summary", {}, "其余 " + rest.length + " 首没有疑问"),
@@ -419,7 +424,7 @@ html, body { margin: 0; background: var(--bg); }
             title: r.querySelector('[data-f="title"]').value.trim(),
             artist: r.querySelector('[data-f="artist"]').value.trim() }));
           const blank = edits.find(e => !e.title || !e.artist);
-          if (blank) { u.error = "第 " + blank.index + " 首的歌名和歌手不能为空。"; rerender(job.id); return; }
+          if (blank) { u.error = "歌名和歌手不能为空。"; rerender(job.id); return; }
           act(job, "confirm", { tracks: edits });
         } }, "确认并导入"),
         h("button", { class: "btn sm ghost", type: "button", onclick: () => { u.askDiscard = true; rerender(job.id); } }, "放弃"),
@@ -427,7 +432,38 @@ html, body { margin: 0; background: var(--bg); }
         src ? lnk(src, "看原视频", false, "src") : null));
     }
     card.append(errLine(job) || "");
+    dest.textContent = destLine(job, card);
     return card;
+  }
+
+  // apply.sanitize: the folder names the library really gets.
+  function safeFolder(s) {
+    s = (s || "").normalize("NFC").trim().replace(/[\\/:*?"<>|\x00-\x1f]/g, "_").replace(/\s+/g, " ")
+      .replace(/^[ .]+|[ .]+$/g, "");
+    return s || "_";
+  }
+
+  // runner.apply_edits, in the page: a single's artist is the album artist (and its title the album
+  // title when the album was named after the song); an album's artist follows only when every track
+  // gets the same new artist and every track had the album artist before.
+  function destLine(job, card) {
+    const a = job.album || {}, tracks = job.tracks || [];
+    const typed = {};
+    for (const r of card.querySelectorAll(".row[data-index]")) {
+      typed[r.dataset.index] = { title: r.querySelector('[data-f="title"]').value.trim(),
+                                 artist: r.querySelector('[data-f="artist"]').value.trim() };
+    }
+    let artist = a.album_artist || a.artist || "", title = a.album_title || a.title || "";
+    if (a.kind === "single" && tracks.length) {
+      const t = tracks[0], v = typed[t.index];
+      if (v && v.artist) artist = v.artist;
+      if (v && v.title && title === t.title) title = v.title;
+    } else if (tracks.length && tracks.every(t => typed[t.index])) {
+      const names = new Set(tracks.map(t => typed[t.index].artist));
+      const only = names.size === 1 ? Array.from(names)[0] : "";
+      if (only && only !== artist && tracks.every(t => t.artist === artist)) artist = only;
+    }
+    return "将放到音乐库的「" + safeFolder(artist) + " / " + safeFolder(title) + "」文件夹。";
   }
 
   function failedCard(job) {

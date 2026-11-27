@@ -109,7 +109,8 @@ def test_clean_run_maps_everything(tmp_path, monkeypatch):
     j = m.get(jid)
     assert j["status"] == "done", j
     assert j["stages"] == {s: "done" for s in ("plan", "review", "cut", "import")}
-    assert j["album"] == {"title": "Alb", "artist": "A", "year": "2001", "kind": "album", "uploader": ""}
+    assert j["album"] == {"title": "Alb", "artist": "A", "year": "2001", "kind": "album", "uploader": "",
+                          "album_title": "Alb", "album_artist": "A"}
     assert [t["duration"] for t in j["tracks"]] == [99.0, 99.0, 99.0]
     assert j["review"]["edits"] == [{"tracks": [3], "reason": "第 3 首按曲库改名。"}]
     assert j["review"]["rejected"] == []
