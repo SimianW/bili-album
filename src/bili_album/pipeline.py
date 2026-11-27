@@ -126,7 +126,7 @@ def _plan_default(url: str, workdir: Path, opts: dict) -> Path:
     from .plan import PlanOptions, make_plan
     po = PlanOptions(workdir=workdir, repo_root=workdir,
                      **{k: v for k, v in opts.items() if k in ("text_hints", "cookies", "album_hint", "tracklist",
-                                                                "recognize")})
+                                                                "recognize", "refine", "refine_options")})
     return make_plan(url, po)
 
 
@@ -343,7 +343,8 @@ def ingest(url: str, workdir: Path | str, on_event: EventCallback | None = None,
 
     ``on_unsure="hold"`` stops after review when the plan still needs review (status
     ``needs_confirmation``); ``"import"`` imports anyway and sets ``forced_import``.
-    ``plan_options`` may carry ``text_hints``, ``recognize``, ``album_hint``, ``tracklist``, ``cookies``.
+    ``plan_options`` may carry ``text_hints``, ``recognize``, ``album_hint``, ``tracklist``, ``cookies``,
+    ``refine`` and ``refine_options`` (keyword arguments for :func:`bili_album.refine.refine_starts`).
     Never raises (except KeyboardInterrupt); failures come back as status ``failed``."""
     if on_unsure not in ("hold", "import"):
         raise ValueError("on_unsure must be 'hold' or 'import'")

@@ -1302,16 +1302,16 @@ Replanner = Callable[[dict, dict], dict]
 def default_replanner(plan_path: Path) -> Replanner:
     def run(plan: dict, req: dict) -> dict:
         from .plan import PlanOptions, make_plan
-        wd = workdir_of(plan, plan_path)
-        tl_path = None
-        if req.get("tracklist"):
-            tl_path = wd / "review-tracklist.txt"
+        wd, src = workdir_of(plan, plan_path), plan["source"]   # replan with the first plan's settings
+        tl_path = wd / "review-tracklist.txt" if req.get("tracklist") else None
+        if tl_path:
             tl_path.write_text("\n".join(req["tracklist"]) + "\n", encoding="utf-8")
         target = wd / "plan.json"
         keep = target.read_bytes() if target.exists() else None
         try:
-            new_path = make_plan(plan["source"]["url"], PlanOptions(
-                workdir=wd, text_hints=bool(plan["source"].get("text_hints", True)),
+            new_path = make_plan(src["url"], PlanOptions(
+                workdir=wd, text_hints=bool(src.get("text_hints", True)),
+                **{k: src[k] for k in ("refine", "refine_options") if k in src},
                 album_hint=req.get("album_hint"), tracklist=tl_path, repo_root=wd))
             return json.loads(Path(new_path).read_text(encoding="utf-8"))
         finally:

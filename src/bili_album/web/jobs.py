@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from .cleanup import clean_job
-from .runner import STAGES, Outcome, Runner, clean_text
+from .runner import STAGES, Outcome, Runner, clean_options, clean_text
 from .urls import video_key
 
 log = logging.getLogger(__name__)
@@ -75,6 +75,7 @@ def _new_job(url: str, now: float) -> dict:
         "submitted_by": None,   # {"id", "name"} of the signed-in user; None before sign-in existed
         "actions": [],          # [{"action", "by": {"id", "name"}, "at"}]: confirm, replace, keep, retry
         "cleaned": None,        # {"at", "bytes"} once the big files of a finished job are deleted
+        "options": {},          # runner.clean_options(): boundary refinement settings sent with the link
         "version": 0,
     }
 
@@ -244,7 +245,11 @@ class JobManager:
 
     # ------------------------------------------------------------------ actions
 
-    def submit(self, url: str, by: dict | None = None) -> dict:
+    def submit(self, url: str, by: dict | None = None, options: Any = None) -> dict:
+        try:
+            opts = clean_options(options)
+        except ValueError as e:
+            raise JobError(400, str(e)) from None
         key = video_key(url)
         with self._lock:
             for j in self.jobs.values():
@@ -254,6 +259,7 @@ class JobManager:
                 raise JobError(429, QUEUE_FULL)
             job = _new_job(url, time.time())
             job["submitted_by"] = self._by(by)
+            job["options"] = opts
             while job["id"] in self.jobs:
                 job["id"] = uuid.uuid4().hex[:12]
             self.jobs[job["id"]] = job
@@ -454,7 +460,7 @@ class JobManager:
             elif job["action"] == "replace":
                 out = self.runner.replace(wd, emit)
             else:
-                out = self.runner.start(job["url"], wd, emit)
+                out = self.runner.start(job["url"], wd, emit, job.get("options") or {})
         except Exception as e:  # the runner's own words are scrubbed before they are stored
             log.exception("job %s failed", job["id"])
             out = Outcome("failed", str(e)[:500] or GENERIC_ERROR)

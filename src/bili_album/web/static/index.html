@@ -171,7 +171,7 @@ html, body { margin: 0; background: var(--bg); }
   <p class="fine">密码只用来向 Jellyfin 核对一次，不会保存。</p>
 </form>
 <div class="col" id="main" hidden>
-  <div class="top"><span class="brand">bili-album</span><span class="who"><b id="whoname" hidden></b><button id="logout" type="button" hidden>退出</button><a id="lib" href="#" target="_blank" rel="noopener noreferrer" hidden>打开音乐库</a></span></div>
+  <div class="top"><span class="brand">bili-album</span><span class="who"><b id="whoname" hidden></b><button id="logout" type="button" hidden>退出</button><a id="lib" href="#" target="_blank" rel="noopener noreferrer" hidden>打开音乐库</a><span class="refm" id="refm"></span></span></div>
   <form class="paste" id="form" novalidate>
     <input id="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="粘贴 B 站视频链接" aria-label="B 站视频链接" aria-describedby="urlerr">
     <button class="btn" type="submit">导入到 Jellyfin</button>
@@ -183,7 +183,7 @@ html, body { margin: 0; background: var(--bg); }
   <section id="g-active" hidden><h2>正在处理</h2><div class="cards"></div></section>
   <section id="g-done" hidden><h2>最近导入</h2><div class="cards"></div></section>
 </div></div>
-<script>
+<!--refine-menu--><script>
 "use strict";
 (function () {
   const STAGES = ["plan", "review", "cut", "import"];
@@ -750,8 +750,8 @@ html, body { margin: 0; background: var(--bg); }
     const key = (url.match(/BV[0-9A-Za-z]{10}/) || [url])[0];
     const dup = jobs.find(j => (j.status === "queued" || j.status === "running") && ((j.url.match(/BV[0-9A-Za-z]{10}/) || [j.url])[0] === key));
     if (dup) { input.value = ""; flash(dup.id); return; }
-    let r;
-    try { r = await api("POST", "/api/jobs", { url }); } catch (err) { showErr("连不上服务，请稍后再试。"); return; }
+    let r, options = BiliRefine.options(); if (options === false) return;   // false: the menu says which setting is wrong
+    try { r = await api("POST", "/api/jobs", options ? { url, options } : { url }); } catch (err) { showErr("连不上服务，请稍后再试。"); return; }
     if (r.ok) { input.value = ""; seenActive.add(r.data.job.id); await refresh(); }
     else if (r.status === 409 && r.data.existing_id) { input.value = ""; await refresh(); flash(r.data.existing_id); }
     else if (r.status === 401) showLogin();
