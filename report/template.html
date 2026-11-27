@@ -1,0 +1,1569 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bili-album 性能报告</title>
+<style>
+:root {
+  color-scheme: light;
+  --surface: #ffffff;
+  --plane: #f9f9f9;
+  --ink: #191919;
+  --ink-2: #666666;
+  --grid: #e7e7e7;
+  --axis: #c2c2c2;
+  --hair: rgba(11, 11, 11, 0.10);
+  --m-hints: #257de0;
+  --m-blind: #f47230;
+  --m-blind_norecog: #00b894;
+  --s-fetch: #257de0;
+  --s-download: #f47230;
+  --s-analyze: #00b894;
+  --s-catalog: #f2a600;
+  --s-recognize: #ee7fac;
+  --st-good: #0aac23;
+  --st-warn: #fbb315;
+  --st-serious: #f18a59;
+  --st-crit: #dc3c3d;
+  --neutral-1: #d9d9d9;
+  --neutral-2: #bdbdbd;
+  --ghost: rgba(11, 11, 11, 0.05);
+  --font: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface: #191919;
+    --plane: #0b0b0b;
+    --ink: #efefef;
+    --ink-2: #9c9c9c;
+    --grid: #303030;
+    --axis: #474747;
+    --hair: rgba(255, 255, 255, 0.10);
+    --m-hints: #338ced;
+    --m-blind: #e76624;
+    --m-blind_norecog: #00a888;
+    --s-fetch: #338ced;
+    --s-download: #e76624;
+    --s-analyze: #00a888;
+    --s-catalog: #d28e05;
+    --s-recognize: #e24d8b;
+    --neutral-1: #3a3a3a;
+    --neutral-2: #525252;
+    --ghost: rgba(255, 255, 255, 0.06);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: #191919;
+  --plane: #0b0b0b;
+  --ink: #efefef;
+  --ink-2: #9c9c9c;
+  --grid: #303030;
+  --axis: #474747;
+  --hair: rgba(255, 255, 255, 0.10);
+  --m-hints: #338ced;
+  --m-blind: #e76624;
+  --m-blind_norecog: #00a888;
+  --s-fetch: #338ced;
+  --s-download: #e76624;
+  --s-analyze: #00a888;
+  --s-catalog: #d28e05;
+  --s-recognize: #e24d8b;
+  --neutral-1: #3a3a3a;
+  --neutral-2: #525252;
+  --ghost: rgba(255, 255, 255, 0.06);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--plane);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding: 32px 16px 48px; }
+h1 { font-size: 26px; line-height: 1.25; margin: 0 0 6px; font-weight: 650; }
+h2 { font-size: 17px; line-height: 1.35; margin: 0; font-weight: 600; }
+h3 { font-size: 14px; margin: 0; font-weight: 600; }
+p { margin: 0; }
+.muted { color: var(--ink-2); }
+.small { font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; }
+
+header .meta { color: var(--ink-2); margin-bottom: 14px; }
+.mode-notes { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.mode-notes li { display: flex; gap: 8px; align-items: baseline; }
+.mode-notes .name { font-weight: 600; white-space: nowrap; }
+
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; vertical-align: baseline; }
+.linekey { display: inline-block; width: 14px; height: 2px; border-radius: 1px; flex: none; vertical-align: middle; }
+.modelabel { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+/* filter row */
+.filters {
+  display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center;
+  margin: 24px 0 20px; padding: 12px 0; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair);
+}
+.filter { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.filter > .label { color: var(--ink-2); font-size: 13px; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--hair); border-radius: 8px; padding: 2px; gap: 2px; background: var(--surface); }
+.seg button {
+  font: inherit; font-size: 13px; color: var(--ink); background: transparent; border: 0; border-radius: 6px;
+  padding: 5px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.seg button:hover { background: var(--ghost); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.seg button .count { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.seg button[aria-pressed="true"] .count { color: inherit; opacity: 0.75; }
+button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--m-hints); outline-offset: 2px; }
+
+section { margin-top: 28px; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 10px; }
+.scope-tag { font-size: 12px; color: var(--ink-2); border: 1px solid var(--hair); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.card { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 16px; min-width: 0; }
+.card + .card { margin-top: 12px; }
+.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.card-head .sub { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+.tbl-toggle {
+  font: inherit; font-size: 12px; color: var(--ink-2); background: transparent; border: 1px solid var(--hair);
+  border-radius: 6px; padding: 3px 10px; cursor: pointer; flex: none;
+}
+.tbl-toggle:hover { background: var(--ghost); }
+.tbl-toggle[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.scroll-x { overflow-x: auto; }
+.note { color: var(--ink-2); font-size: 13px; }
+
+/* tables */
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 7px 10px 7px 0; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { font-weight: 600; color: var(--ink-2); font-size: 12px; white-space: nowrap; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+.glyph-ok { color: var(--st-good); font-weight: 700; }
+.glyph-bad { color: var(--st-crit); font-weight: 700; }
+
+/* overview matrix */
+.matrix th.mode { min-width: 120px; }
+.matrix td { vertical-align: middle; }
+.meter-cell { display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap; }
+.meter { position: relative; height: 8px; border-radius: 4px; flex: 1 1 72px; min-width: 56px; max-width: 140px; }
+.meter > span { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }
+.fig { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.fig .frac { color: var(--ink-2); margin-left: 6px; font-size: 12px; }
+.matrix .rowlabel { white-space: nowrap; padding-right: 16px; }
+
+/* legend */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--ink-2); font-size: 12px; margin-bottom: 8px; }
+.legend .item { display: inline-flex; align-items: center; gap: 6px; }
+
+/* chart svg text */
+svg text { font-family: var(--font); fill: var(--ink-2); font-size: 11px; }
+svg .tick text, svg text.num { font-variant-numeric: tabular-nums; }
+svg .ink { fill: var(--ink); }
+svg:focus { outline: none; }
+svg:focus-visible { outline: 2px solid var(--m-hints); outline-offset: 2px; border-radius: 4px; }
+.mark { transition: opacity 80ms; }
+.mark.hot { opacity: 0.72; }
+
+/* tiles */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 14px 16px; }
+.tile .label { color: var(--ink-2); font-size: 13px; }
+.tile .value { font-size: 30px; font-weight: 600; line-height: 1.2; margin-top: 4px; }
+.tile .value .unit { font-size: 16px; font-weight: 500; margin-left: 2px; }
+.tile .below { color: var(--ink-2); font-size: 12px; margin-top: 2px; }
+
+/* timelines */
+.tl-row { display: grid; grid-template-columns: 200px minmax(0, 1fr) 132px; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--grid); align-items: center; }
+.tl-row:first-of-type { padding-top: 0; }
+.tl-left .name { font-weight: 600; overflow-wrap: anywhere; }
+.tl-left .sub { color: var(--ink-2); font-size: 12px; }
+.tag { display: inline-block; font-size: 11px; line-height: 16px; padding: 0 6px; border-radius: 4px; border: 1px solid var(--hair); color: var(--ink-2); white-space: nowrap; margin-top: 4px; }
+.tag.review { color: var(--ink); }
+.tl-mid { min-width: 0; display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 0 8px; align-items: center; }
+.tl-mid .lanelabels { display: grid; grid-template-rows: 8px 18px 2px 18px 14px; font-size: 11px; color: var(--ink-2); white-space: nowrap; text-align: right; }
+.tl-mid .lanelabels span { line-height: 18px; }
+.tl-svgbox { min-width: 0; }
+.tl-fail { font-size: 12px; color: var(--ink); margin-top: 4px; overflow-wrap: anywhere; display: flex; gap: 6px; align-items: flex-start; }
+.tl-right { display: grid; gap: 2px; font-size: 12px; color: var(--ink-2); }
+.tl-right > div { white-space: nowrap; }
+.tl-right b { color: var(--ink); font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
+.tl-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; padding-top: 14px; color: var(--ink-2); font-size: 12px; }
+.tl-legend .item { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 760px) {
+  .tl-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .tl-mid { grid-template-columns: minmax(0, 1fr); }
+  .tl-mid .lanelabels { display: none; }
+  .tl-right { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+  .tl-right .tag { margin-top: 0; }
+}
+@media (max-width: 600px) {
+  .matrix th.mode { min-width: 0; }
+  .matrix th .modelabel { white-space: normal; align-items: flex-start; }
+  .matrix th .modelabel .swatch { margin-top: 4px; }
+  .matrix .rowlabel { white-space: normal; padding-right: 8px; min-width: 64px; }
+  .matrix td, .matrix th { padding-right: 8px; }
+  .meter { min-width: 40px; flex-basis: 100%; }
+  .fig .frac { display: block; margin-left: 0; }
+  .confusion th, .confusion td { padding: 8px 6px; }
+  .confusion tbody th { width: 4.5em; white-space: normal; }
+  .confusion td { width: auto; }
+  .confusion .ids { font-size: 11px; overflow-wrap: normal; word-break: normal; }
+}
+
+/* status icon */
+.st-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; font-size: 11px; font-weight: 700; color: #ffffff; flex: none; line-height: 1; }
+.st-icon.crit { background: var(--st-crit); }
+
+/* tag meters */
+.tagmeters { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content; gap: 8px 14px; align-items: center; max-width: 620px; }
+.tagmeters .meter { max-width: none; }
+.plainfigs { display: flex; flex-wrap: wrap; gap: 8px 32px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--grid); }
+.plainfigs .k { color: var(--ink-2); font-size: 12px; }
+.plainfigs .v { font-size: 18px; font-weight: 600; }
+
+/* confusion */
+.confusion th, .confusion td { padding: 10px 12px; border: 1px solid var(--grid); vertical-align: top; }
+.confusion thead th { border-top: 0; }
+.confusion td { width: 40%; }
+.confusion .count { font-size: 26px; font-weight: 600; line-height: 1.2; }
+.confusion .ids { color: var(--ink-2); font-size: 12px; overflow-wrap: anywhere; }
+.confusion .ids span { display: block; }
+.confusion .flag { display: flex; align-items: center; gap: 6px; font-size: 12px; margin-top: 4px; }
+.confusion th:first-child, .confusion td:first-child { border-left: 0; }
+.confusion th:last-child, .confusion td:last-child { border-right: 0; }
+.confusion tbody tr:last-child td, .confusion tbody tr:last-child th { border-bottom: 0; }
+.summary-line { margin-top: 12px; }
+
+/* problems */
+.problems { list-style: none; margin: 0; padding: 0; }
+.problems > li { padding: 12px 0; border-bottom: 1px solid var(--grid); }
+.problems > li:first-child { padding-top: 0; }
+.problems > li:last-child { border-bottom: 0; padding-bottom: 0; }
+.problems .head { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.problems ul { margin: 6px 0 0; padding-left: 20px; }
+.problems ul li { margin: 2px 0; overflow-wrap: anywhere; }
+.problems .own { margin-top: 6px; color: var(--ink-2); font-size: 12px; }
+.problems .own ul { margin-top: 2px; }
+
+footer { margin-top: 32px; color: var(--ink-2); font-size: 13px; display: grid; gap: 6px; }
+footer code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere; }
+
+
+/* system structure (static; not scoped by the filters) */
+.sx { margin-top: 24px; }
+.sx .card { padding: 16px; }
+.sx-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: var(--ink-2); }
+.sx-flow {
+  display: grid; align-items: start; gap: 0;
+  grid-template-columns: minmax(0, 0.8fr) 22px minmax(0, 1.15fr) 22px minmax(0, 2.3fr) 22px minmax(0, 1.4fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr);
+  grid-template-areas: "in a1 fetch a2 ev a3 plan a4 apply a5 out";
+}
+.sx-nw { white-space: nowrap; }
+.sx-dash { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
+.sx-box { border: 1px solid var(--hair); border-radius: 8px; padding: 8px 10px; min-width: 0; background: var(--surface); }
+.sx-box .nm { font-weight: 600; font-size: 13px; line-height: 1.35; }
+.sx-box ul { list-style: none; margin: 4px 0 0; padding: 0; font-size: 12px; line-height: 1.45; color: var(--ink); }
+.sx-box li { margin-top: 2px; overflow-wrap: anywhere; }
+.sx-box li::before { content: "· "; color: var(--ink-2); }
+.sx-in { grid-area: in; } .sx-fetch { grid-area: fetch; } .sx-ev { grid-area: ev; } .sx-plan { grid-area: plan; }
+.sx-apply { grid-area: apply; } .sx-out { grid-area: out; }
+.sx-a1 { grid-area: a1; } .sx-a2 { grid-area: a2; } .sx-a3 { grid-area: a3; } .sx-a4 { grid-area: a4; } .sx-a5 { grid-area: a5; }
+.sx-ev { border: 1px solid var(--hair); border-radius: 10px; padding: 6px; display: grid; gap: 6px; align-content: start; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.sx-ev > .lbl { font-size: 12px; color: var(--ink-2); padding: 0 4px; grid-column: 1 / -1; }
+.sx-ev .sx-box { padding: 6px 8px; }
+.sx-arrow { position: relative; height: 16px; align-self: start; margin-top: 12px; }
+.sx-arrow::before { content: ""; position: absolute; top: 50%; left: 3px; right: 7px; border-top: 1.5px solid var(--ink-2); }
+.sx-arrow::after { content: ""; position: absolute; top: calc(50% - 4px); right: 2px; border-left: 6px solid var(--ink-2); border-top: 4.75px solid transparent; border-bottom: 4.75px solid transparent; }
+.sx-plancol { grid-area: plan; min-width: 0; }
+.sx-loop { display: flex; justify-content: center; gap: 28px; height: 40px; font-size: 11px; color: var(--ink-2); }
+.sx-loop span { position: relative; padding-left: 12px; display: flex; align-items: center; white-space: nowrap; }
+.sx-loop span::before { content: ""; position: absolute; left: 4px; top: 3px; bottom: 3px; border-left: 1px solid var(--axis); }
+.sx-loop span.down::after { content: ""; position: absolute; left: 0.5px; bottom: 0; border-top: 5px solid var(--axis); border-left: 4px solid transparent; border-right: 4px solid transparent; }
+.sx-loop span.up::after { content: ""; position: absolute; left: 0.5px; top: 0; border-bottom: 5px solid var(--axis); border-left: 4px solid transparent; border-right: 4px solid transparent; }
+.sx-rev .sx-box { border-style: dashed; border-color: var(--axis); }
+.sx-rev .sx-box .nm { font-weight: 500; color: var(--ink-2); }
+.sx-rev .sx-box ul { color: var(--ink-2); }
+.sx-helpers { margin-top: 12px; font-size: 12px; color: var(--ink-2); line-height: 1.6; }
+.sx-helpers code, .sx-lower code, .sx-mods code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: var(--ink); }
+.sx-lower { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 12px; margin-top: 12px; }
+.sx-lower h3 { font-size: 13px; margin-bottom: 6px; }
+.sx-matrix th, .sx-matrix td { padding: 5px 8px 5px 0; font-size: 12px; }
+.sx-matrix td.c { text-align: center; color: var(--ink); }
+.sx-matrix th.c { text-align: center; }
+.sx-matrix sup { color: var(--ink-2); font-size: 10px; margin-left: 1px; vertical-align: baseline; position: relative; top: -0.5em; line-height: 0; }
+.sx-notes { margin: 6px 0 0; padding: 0; list-style: none; font-size: 11px; color: var(--ink-2); line-height: 1.5; }
+.sx-eval { display: flex; flex-direction: column; align-items: flex-start; font-size: 12px; }
+.sx-eval .step { border: 1px solid var(--hair); border-radius: 6px; padding: 3px 8px; min-width: 0; max-width: 100%; }
+.sx-eval .step .d { color: var(--ink-2); margin-left: 8px; }
+.sx-eval .to { position: relative; width: 1px; height: 14px; margin-left: 20px; border-left: 1.5px solid var(--ink-2); }
+.sx-eval .to::after { content: ""; position: absolute; left: -5px; bottom: 0; border-top: 5px solid var(--ink-2); border-left: 4px solid transparent; border-right: 4px solid transparent; }
+.sx details { margin-top: 12px; border-top: 1px solid var(--grid); padding-top: 10px; }
+.sx summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+.sx summary:focus-visible { outline: 2px solid var(--m-hints); outline-offset: 2px; }
+.sx-mods { margin-top: 8px; }
+.sx-mods td:first-child { white-space: nowrap; }
+@media (max-width: 900px) {
+  .sx-lower { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .sx-flow { grid-template-columns: minmax(0, 1fr); grid-template-areas: "in" "a1" "fetch" "a2" "ev" "a3" "plan" "a4" "apply" "a5" "out"; }
+  .sx-arrow { height: 22px; margin-top: 0; }
+  .sx-arrow::before { top: 3px; bottom: 7px; left: 50%; right: auto; border-top: 0; border-left: 1.5px solid var(--ink-2); }
+  .sx-arrow::after { top: auto; bottom: 2px; right: auto; left: calc(50% - 4px); border-left: 4.75px solid transparent; border-right: 4.75px solid transparent; border-top: 6px solid var(--ink-2); border-bottom: 0; }
+  .sx-rev { margin-left: 28px; }
+  .sx-loop { justify-content: flex-start; height: 34px; }
+}
+@media (max-width: 420px) {
+  .sx-ev { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* tooltip */
+.tip {
+  position: fixed; z-index: 10; pointer-events: none; background: var(--surface); color: var(--ink);
+  border: 1px solid var(--hair); border-radius: 8px; padding: 8px 10px; font-size: 12px; max-width: 300px;
+  display: none; box-shadow: none;
+}
+.tip .t-title { font-weight: 600; margin-bottom: 4px; overflow-wrap: anywhere; }
+.tip .t-row { display: flex; align-items: baseline; gap: 8px; }
+.tip .t-row .v { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tip .t-row .l { color: var(--ink-2); overflow-wrap: anywhere; }
+.tip .t-row .linekey { align-self: center; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <noscript>这个页面需要启用 JavaScript 才能显示。</noscript>
+</div>
+<section class="sx" id="structure" aria-labelledby="sx-title">
+  <div class="sec-head"><h2 id="sx-title">系统结构</h2><span class="scope-tag">不受筛选影响</span></div>
+  <div class="card">
+    <div class="sx-flow" aria-label="处理流程，从输入到输出">
+      <div class="sx-box sx-in">
+        <div class="nm">输入</div><div class="sx-mono">cli</div>
+        <ul><li>B 站视频链接</li><li>或本地音频 <span class="sx-nw">--audio</span>（配 <span class="sx-nw">--title</span>）</li></ul>
+      </div>
+      <div class="sx-arrow sx-a1" aria-hidden="true"></div>
+      <div class="sx-box sx-fetch">
+        <div class="nm">抓取与下载</div><div class="sx-mono">bilibili · media</div>
+        <ul>
+          <li>B 站接口：简介、分 P、章节、评论、封面</li>
+          <li>yt-dlp 下载 AAC 音轨，ffmpeg 流拷贝成 source.m4a（每 P 一个文件），不重新编码</li>
+          <li>本地音频：AAC / ALAC 直接拷贝，无损转 ALAC</li>
+        </ul>
+      </div>
+      <div class="sx-arrow sx-a2" aria-hidden="true"></div>
+      <div class="sx-ev" role="group" aria-label="四路证据">
+        <div class="lbl">四路证据</div>
+        <div class="sx-box">
+          <div class="nm">文字线索</div><div class="sx-mono">hints</div>
+          <ul><li>章节、简介、评论里的时间戳；分 P 名；简介里列的歌名</li><li>视频标题里的专辑名、歌手、年份</li></ul>
+        </div>
+        <div class="sx-box">
+          <div class="nm">曲库</div><div class="sx-mono">catalog</div>
+          <ul><li>网易云 + iTunes → 专辑、曲目、官方时长、年份、流派、封面</li><li>作曲和歌词取自网易云歌词</li></ul>
+        </div>
+        <div class="sx-box">
+          <div class="nm">音频分析</div><div class="sx-mono">analyze</div>
+          <ul><li>ffmpeg 解码成 8 kHz 单声道 → 静音、能量低谷、音色突变 → 候选切点</li><li>只在判成合集时运行</li></ul>
+        </div>
+        <div class="sx-box">
+          <div class="nm">听歌识曲</div><div class="sx-mono">recognize</div>
+          <ul><li>Shazam 听 12 秒片段 → 歌名、歌手、录音起点</li></ul>
+        </div>
+      </div>
+      <div class="sx-arrow sx-a3" aria-hidden="true"></div>
+      <div class="sx-plancol">
+      <div class="sx-box sx-plan">
+        <div class="nm">融合成方案</div><div class="sx-mono">plan · align</div>
+        <ul>
+          <li>判类型：多个分 P → 分 P；有曲目时间戳 → 合集；9 分钟以内 → 单曲；更长的看曲库是否吻合或识曲</li>
+          <li>定切点：时间戳吸附到 3 秒内的候选点；没有时间戳就用曲库时长做动态规划对齐；连专辑都没有就逐段识曲</li>
+          <li>识曲核对歌名并按录音起点修正切点；每首给置信度，任何疑点写进复核清单 → plan.json</li>
+        </ul>
+      </div>
+      <div class="sx-rev">
+        <div class="sx-loop" aria-hidden="true"><span class="down">plan.json</span><span class="up">重新生成</span></div>
+        <div class="sx-box">
+          <div class="nm">复核（可选，人或 agent）</div>
+          <ul><li>按复核清单直接改 plan.json，再去切分</li><li>或加 <span class="sx-nw">--album-hint</span> / <span class="sx-nw">--tracklist</span> 重新生成方案</li></ul>
+        </div>
+      </div>
+      </div>
+      <div class="sx-arrow sx-a4" aria-hidden="true"></div>
+      <div class="sx-box sx-apply">
+        <div class="nm">切分与写标签</div><div class="sx-mono">apply · tag · media</div>
+        <ul>
+          <li>校验方案 → ffmpeg 流拷贝切分</li>
+          <li>mutagen 写标签、内嵌封面</li>
+          <li>ffprobe 核对时长（误差 ≤ 0.1 秒），读回标签检查</li>
+        </ul>
+      </div>
+      <div class="sx-arrow sx-a5" aria-hidden="true"></div>
+      <div class="sx-box sx-out">
+        <div class="nm">输出</div>
+        <ul>
+          <li>专辑：&lt;专辑&gt;/<wbr>NN-歌名.m4a，加 cover.jpg 或 .png</li>
+          <li>单曲：&lt;歌手&gt; - &lt;歌名&gt;.m4a</li>
+          <li>可选 <span class="sx-nw">--zip</span> 打包专辑文件夹</li>
+        </ul>
+      </div>
+    </div>
+    <p class="sx-helpers">共用模块：<code>net</code> 带磁盘缓存、按站点限速、失败重试的 HTTP 客户端（B 站接口、曲库和封面请求都经过它）· <code>media</code> 调用 ffprobe / ffmpeg：读音频信息、无损切分、准备本地音频、把封面裁成正方形 · <code>textnorm</code> 统一名称写法（繁转简、全角转半角、花体字母、标点）并做模糊匹配</p>
+
+    <div class="sx-lower">
+      <div>
+        <h3>每种模式能用哪些证据</h3>
+        <div class="scroll-x"><table class="sx-matrix">
+          <thead><tr><th scope="col">模式</th><th scope="col" class="c">文字线索</th><th scope="col" class="c">曲库</th><th scope="col" class="c">音频分析</th><th scope="col" class="c">听歌识曲</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><span class="modelabel"><span class="swatch" style="background:var(--m-hints)"></span>带 UP 主时间戳</span></th><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓<sup>1</sup></td></tr>
+            <tr><th scope="row"><span class="modelabel"><span class="swatch" style="background:var(--m-blind)"></span>盲测</span></th><td class="c"><span class="sx-dash">—</span><sup>2</sup></td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
+            <tr><th scope="row"><span class="modelabel"><span class="swatch" style="background:var(--m-blind_norecog)"></span>盲测（不识曲）</span></th><td class="c"><span class="sx-dash">—</span><sup>2</sup></td><td class="c">✓</td><td class="c">✓</td><td class="c"><span class="sx-dash">—</span></td></tr>
+          </tbody>
+        </table></div>
+        <ol class="sx-notes">
+          <li>1 有文字线索时，合集和分 P 只对置信度低于 0.8 的歌识曲；单曲视频总会识曲。盲测里每首都识曲。</li>
+          <li>2 不读章节、简介、评论和分 P 名（--no-text-hints）；视频标题仍用来猜专辑、歌手和歌名。</li>
+        </ol>
+      </div>
+      <div>
+        <h3>评测怎么跑出这个页面</h3>
+        <div class="sx-eval">
+          <div class="step"><code>eval/cases.yaml</code><span class="d"><span id="sx-ncases">15</span> 个带标准答案的视频</span></div><span class="to" aria-hidden="true"></span>
+          <div class="step"><code>eval/run_eval.py</code><span class="d">每个视频跑三种模式；带时间戳模式还切分并检查文件</span></div><span class="to" aria-hidden="true"></span>
+          <div class="step"><code>eval/scoring.py</code><span class="d">给类型、切点、歌名、歌手、专辑、标签、耗时打分</span></div><span class="to" aria-hidden="true"></span>
+          <div class="step"><code>eval/results/results.json</code><span class="d">每次运行的结果和分数</span></div><span class="to" aria-hidden="true"></span>
+          <div class="step"><code>report/build_report.py</code><span class="d">把结果嵌进页面模板</span></div><span class="to" aria-hidden="true"></span>
+          <div class="step">这个页面</div>
+        </div>
+      </div>
+    </div>
+
+    <details>
+      <summary>模块一览</summary>
+      <div class="scroll-x sx-mods"><table>
+        <thead><tr><th scope="col">模块</th><th scope="col">负责什么</th><th scope="col">对接的外部工具或服务</th></tr></thead>
+        <tbody>
+          <tr><td><code>cli</code></td><td>命令行：plan / apply / run / inspect，打印摘要表</td><td>无</td></tr>
+          <tr><td><code>plan</code></td><td>调度各阶段、判类型、融合证据，写出 plan.json 和各阶段耗时</td><td>无（经其他模块）</td></tr>
+          <tr><td><code>bilibili</code></td><td>解析链接，读页面信息、分 P、章节、评论、封面，下载音轨</td><td>B 站接口、yt-dlp、ffmpeg</td></tr>
+          <tr><td><code>hints</code></td><td>从文字里解析时间戳曲目表、分 P 名、标题里的专辑和歌手、--tracklist 文件</td><td>无</td></tr>
+          <tr><td><code>catalog</code></td><td>搜专辑和单曲并按名字、总时长、曲目表排序；补流派、封面、日期；取歌词和作曲</td><td>网易云、iTunes</td></tr>
+          <tr><td><code>analyze</code></td><td>低采样率解码，算音量和频带特征，找静音、低谷、音色突变候选点</td><td>ffmpeg</td></tr>
+          <tr><td><code>align</code></td><td>把曲库时长按动态规划对到候选点上；把粗略时间吸附到附近候选点</td><td>无</td></tr>
+          <tr><td><code>recognize</code></td><td>截 12 秒片段识曲，结果缓存、限速，每次运行有请求上限</td><td>Shazam（shazamio）、ffmpeg</td></tr>
+          <tr><td><code>apply</code></td><td>校验 plan.json，切分、写标签、放封面，核对结果，可选打包</td><td>ffmpeg / ffprobe（经 media）</td></tr>
+          <tr><td><code>tag</code></td><td>读写 MP4 标签和封面</td><td>无（mutagen 库）</td></tr>
+          <tr><td><code>media</code></td><td>读音频信息、无损切分、准备本地音频、裁剪封面</td><td>ffmpeg / ffprobe</td></tr>
+          <tr><td><code>net</code></td><td>带缓存、限速和重试的 HTTP 客户端，只发通用 User-Agent</td><td>B 站接口、网易云、iTunes、封面下载（Shazam 和 yt-dlp 不经过它）</td></tr>
+          <tr><td><code>textnorm</code></td><td>名称归一（繁简、全半角、花体、标点）和相似度</td><td>无</td></tr>
+          <tr><td><code>__init__</code></td><td>版本号和 User-Agent 字符串</td><td>无</td></tr>
+        </tbody>
+      </table></div>
+    </details>
+  </div>
+</section>
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+<script type="application/json" id="results">/*__RESULTS_JSON__*/</script>
+<script>
+(function () {
+  "use strict";
+
+  // ---------- data ----------
+  var DATA;
+  try { DATA = JSON.parse(document.getElementById("results").textContent); }
+  catch (e) { DATA = { cases: [] }; }
+  if (!DATA || typeof DATA !== "object") DATA = { cases: [] };
+  var CASES = Array.isArray(DATA.cases) ? DATA.cases.filter(function (c) { return c && typeof c === "object"; }) : [];
+
+  var MODES = ["hints", "blind", "blind_norecog"];
+  var MODE_NAME = { hints: "带 UP 主时间戳", blind: "盲测", blind_norecog: "盲测（不识曲）" };
+  var MODE_NOTE = {
+    hints: "工具可以用页面上的章节、简介、评论和分 P 名",
+    blind: "只给视频标题和音频，靠曲库时长、音频分析和听歌识曲",
+    blind_norecog: "再去掉听歌识曲"
+  };
+  var STAGES = ["fetch", "download", "analyze", "catalog", "recognize"];
+  var STAGE_NAME = { fetch: "抓取页面", download: "下载音频", analyze: "音频分析", catalog: "查曲库", recognize: "听歌识曲" };
+  var KIND_NAME = { single: "单曲", compilation: "合集", multipart: "分 P" };
+  var QUALITY_NAME = { exact: "精确", good: "较准", approximate: "近似" };
+  var SCOPES = [
+    { key: "all", name: "全部", test: function () { return true; } },
+    { key: "held", name: "没见过的视频", test: function (c) { return c.seen_in_dev !== true; } },
+    { key: "seen", name: "开发时用过的", test: function (c) { return c.seen_in_dev === true; } }
+  ];
+  var DASH = "—";
+  var MINUS = "−";
+
+  var state = { scope: "all", mode: "hints", tables: {} };
+
+  // ---------- small helpers ----------
+  function isNum(x) { return typeof x === "number" && isFinite(x); }
+  function arr(x) { return Array.isArray(x) ? x : []; }
+  function obj(x) { return x && typeof x === "object" && !Array.isArray(x) ? x : null; }
+  function str(x) { return (typeof x === "string" && x !== "") ? x : (isNum(x) ? String(x) : null); }
+  function truthOf(c) { return obj(c.truth) || {}; }
+  function tracksOf(c) { return arr(truthOf(c).tracks).filter(function (t) { return obj(t); }); }
+  // The harness writes a placeholder (ok:false, error "not run", no exit code) for runs it has
+  // not reached yet; those are treated as missing, not as failures.
+  function isNotRun(r) { return !!r && r.ok === false && r.error === "not run" && (r.exit_code === null || r.exit_code === undefined); }
+  function rawRun(c, m) {
+    var runs = obj(c.runs);
+    var r = runs ? obj(runs[m]) : null;
+    return r && Object.keys(r).length ? r : null;
+  }
+  function runOf(c, m) { var r = rawRun(c, m); return r && !isNotRun(r) ? r : null; }
+  function notRunCount() {
+    var n = 0;
+    CASES.forEach(function (c) { MODES.forEach(function (m) { if (isNotRun(rawRun(c, m))) n++; }); });
+    return n;
+  }
+  // Multipart videos in the hints mode are cut along their part files, so the harness scores no
+  // boundaries there; elsewhere the boundary list (misses included) comes from the harness.
+  function scoresBoundaries(c, m) { return !(c.kind === "multipart" && m === "hints"); }
+  function boundaryDen(c, m, r) {
+    if (r && Array.isArray(r.boundaries) && (r.boundaries.length > 0 || runOk(r))) return r.boundaries.length;
+    return scoresBoundaries(c, m) ? nBoundaries(c) : 0;
+  }
+  function runOk(r) { return !!r && r.ok === true; }
+  function caseName(c) { return str(truthOf(c).album) || str(c.id) || DASH; }
+  function caseDur(c) {
+    if (isNum(c.duration) && c.duration > 0) return c.duration;
+    var t = truthOf(c), tr = tracksOf(c);
+    if (isNum(t.end)) return t.end;
+    return 0;
+  }
+  function trueSpans(c) {
+    var tr = tracksOf(c), t = truthOf(c), dur = caseDur(c);
+    var end = isNum(t.end) ? t.end : dur;
+    return tr.map(function (x, i) {
+      var s = isNum(x.start) ? x.start : 0;
+      var e = i + 1 < tr.length && isNum(tr[i + 1].start) ? tr[i + 1].start : end;
+      return { n: x.n, start: s, end: e, title: x.title, artist: x.artist };
+    });
+  }
+  function nBoundaries(c) { return Math.max(0, tracksOf(c).length - 1); }
+  function scopeCases() {
+    var sc = SCOPES.filter(function (s) { return s.key === state.scope; })[0] || SCOPES[0];
+    return CASES.filter(sc.test);
+  }
+  function pct(k, n) { return n > 0 ? Math.round(100 * k / n) + "%" : DASH; }
+  function fmt1(x) { return isNum(x) ? x.toFixed(1) : DASH; }
+  function secs(x) { return isNum(x) ? x.toFixed(1) + " 秒" : DASH; }
+  function signedSecs(x) {
+    if (!isNum(x)) return DASH;
+    var r = Math.round(x * 10) / 10;
+    return (r > 0 ? "+" : (r < 0 ? MINUS : "")) + Math.abs(r).toFixed(1) + " 秒";
+  }
+  function mmss(x) {
+    if (!isNum(x)) return DASH;
+    var s = Math.max(0, Math.round(x));
+    var m = Math.floor(s / 60), r = s % 60;
+    return m + ":" + (r < 10 ? "0" : "") + r;
+  }
+  function mmssd(x) {
+    if (!isNum(x)) return DASH;
+    var t = Math.max(0, Math.round(x * 10) / 10);
+    var m = Math.floor(t / 60), r = t - m * 60;
+    var rs = r.toFixed(1);
+    if (r < 10) rs = "0" + rs;
+    return m + ":" + rs;
+  }
+  function quantile(sorted, p) {
+    if (!sorted.length) return null;
+    var k = (sorted.length - 1) * p, lo = Math.floor(k), hi = Math.min(lo + 1, sorted.length - 1);
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (k - lo);
+  }
+  function speedText(x) { return isNum(x) && x > 0 ? (x >= 10 ? Math.round(x) : x.toFixed(1)) + "×" : DASH; }
+  function quote(x) { var s = str(x); return s === null ? "（空）" : "「" + s + "」"; }
+  function bookTitle(x) { var s = str(x); return s === null ? "（无标题）" : "《" + s + "》"; }
+
+  // DOM helpers: every data string goes through textContent / createTextNode.
+  function h(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (!Object.prototype.hasOwnProperty.call(attrs, k) || attrs[k] === null || attrs[k] === undefined) continue;
+      if (k === "class") e.className = attrs[k];
+      else if (k === "text") e.textContent = attrs[k];
+      else if (k === "style") e.setAttribute("style", attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    append(e, kids);
+    return e;
+  }
+  function append(e, kids) {
+    if (kids === null || kids === undefined) return e;
+    if (!Array.isArray(kids)) kids = [kids];
+    kids.forEach(function (k) {
+      if (k === null || k === undefined || k === false) return;
+      e.appendChild(typeof k === "string" || typeof k === "number" ? document.createTextNode(String(k)) : k);
+    });
+    return e;
+  }
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function s(tag, attrs, parent) {
+    var e = document.createElementNS(SVGNS, tag);
+    if (attrs) for (var k in attrs) {
+      if (!Object.prototype.hasOwnProperty.call(attrs, k) || attrs[k] === null || attrs[k] === undefined) continue;
+      if (k === "text") e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]);
+    }
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function modeLabel(m) {
+    return h("span", { class: "modelabel" }, [h("span", { class: "swatch", style: "background:var(--m-" + m + ")" }), MODE_NAME[m]]);
+  }
+  function okGlyph(v) {
+    if (v === true) return h("span", { class: "glyph-ok", "aria-label": "正确", text: "✓" });
+    if (v === false) return h("span", { class: "glyph-bad", "aria-label": "错误", text: "✕" });
+    return h("span", { class: "muted", text: DASH });
+  }
+
+  // ---------- tooltip ----------
+  var tipEl = document.getElementById("tip");
+  function tipRow(value, label, color) {
+    return h("div", { class: "t-row" }, [
+      color ? h("span", { class: "linekey", style: "background:" + color }) : null,
+      h("span", { class: "v", text: value }),
+      label ? h("span", { class: "l", text: label }) : null
+    ]);
+  }
+  function showTip(content, x, y) {
+    tipEl.textContent = "";
+    append(tipEl, content);
+    tipEl.style.display = "block";
+    var w = tipEl.offsetWidth, hgt = tipEl.offsetHeight;
+    var vw = document.documentElement.clientWidth, vh = window.innerHeight;
+    var left = x + 14, top = y + 14;
+    if (left + w > vw - 8) left = Math.max(8, x - w - 14);
+    if (top + hgt > vh - 8) top = Math.max(8, y - hgt - 14);
+    tipEl.style.left = left + "px";
+    tipEl.style.top = top + "px";
+  }
+  function hideTip() { tipEl.style.display = "none"; }
+  window.addEventListener("scroll", hideTip, { passive: true });
+
+  // Marks inside one svg: hover shows a tooltip at the pointer; the svg is one tab stop and
+  // arrow keys walk the marks, showing the same tooltip next to the focused mark.
+  function bindMarks(svg, items, label) {
+    svg.setAttribute("tabindex", "0");
+    svg.setAttribute("role", "img");
+    if (label) svg.setAttribute("aria-label", label);
+    var idx = -1;
+    function clearHot() { items.forEach(function (it) { it.mark.classList.remove("hot"); }); }
+    items.forEach(function (it, i) {
+      var target = it.hit || it.mark;
+      target.addEventListener("pointermove", function (ev) {
+        clearHot(); it.mark.classList.add("hot"); showTip(it.tip(), ev.clientX, ev.clientY);
+      });
+      target.addEventListener("pointerleave", function () { it.mark.classList.remove("hot"); hideTip(); });
+    });
+    function focusItem(i) {
+      if (!items.length) return;
+      idx = (i + items.length) % items.length;
+      clearHot();
+      var it = items[idx];
+      it.mark.classList.add("hot");
+      var r = (it.hit || it.mark).getBoundingClientRect();
+      showTip(it.tip(), r.left + r.width / 2, r.bottom);
+    }
+    svg.addEventListener("focus", function () { focusItem(idx < 0 ? 0 : idx); });
+    svg.addEventListener("blur", function () { clearHot(); hideTip(); });
+    svg.addEventListener("keydown", function (ev) {
+      if (ev.key === "ArrowRight" || ev.key === "ArrowDown") { focusItem(idx + 1); ev.preventDefault(); }
+      else if (ev.key === "ArrowLeft" || ev.key === "ArrowUp") { focusItem(idx - 1); ev.preventDefault(); }
+      else if (ev.key === "Escape") { clearHot(); hideTip(); }
+    });
+  }
+
+  // ---------- aggregates (pooled over boundaries / tracks, never averaged over cases) ----------
+  // A run that is present but failed (ok:false) counts in the denominators and scores nothing.
+  // A mode with no run at all for a case leaves that case out of that mode's figures.
+  function agg(cases, m) {
+    var a = {
+      runs: 0, failed: 0, kindOk: 0, kindN: 0, bN: 0, hit1: 0, hit3: 0, hit5: 0, extra: 0, errs: [],
+      tN: 0, titleOk: 0, artistOk: 0, albN: 0, albOk: 0, aaN: 0, aaOk: 0, yrN: 0, yrOk: 0,
+      audio: 0, wall: 0, missing: 0
+    };
+    cases.forEach(function (c) {
+      var r = runOf(c, m);
+      if (!r) { a.missing++; return; }
+      var t = truthOf(c), ok = runOk(r);
+      a.runs++;
+      if (r.ok === false || !ok) a.failed++;
+      a.kindN++;
+      if (ok && r.kind_ok === true) a.kindOk++;
+      a.bN += boundaryDen(c, m, r);
+      a.tN += tracksOf(c).length;
+      if (str(t.album) !== null) { a.albN++; if (ok && obj(r.album) && r.album.title_ok === true) a.albOk++; }
+      if (str(t.album_artist) !== null) { a.aaN++; if (ok && obj(r.album) && r.album.artist_ok === true) a.aaOk++; }
+      if (isNum(t.year) || str(t.year) !== null) { a.yrN++; if (ok && obj(r.album) && r.album.year_ok === true) a.yrOk++; }
+      if (!ok) return;
+      arr(r.boundaries).forEach(function (b) {
+        if (!obj(b) || !isNum(b.error)) return;
+        var e = Math.abs(b.error);
+        a.errs.push(e);
+        if (e <= 1) a.hit1++;
+        if (e <= 3) a.hit3++;
+        if (e <= 5) a.hit5++;
+      });
+      a.extra += arr(r.extra_boundaries).filter(isNum).length;
+      arr(r.titles).forEach(function (x) {
+        if (!obj(x)) return;
+        if (x.title_ok === true) a.titleOk++;
+        if (x.artist_ok === true) a.artistOk++;
+      });
+      if (isNum(r.wall_seconds) && r.wall_seconds > 0 && caseDur(c) > 0) { a.audio += caseDur(c); a.wall += r.wall_seconds; }
+    });
+    a.errs.sort(function (x, y) { return x - y; });
+    return a;
+  }
+  function failedCount(cases, m) {
+    return cases.filter(function (c) { var r = runOf(c, m); return r && !runOk(r); }).length;
+  }
+
+  // ---------- page skeleton ----------
+  var app = document.getElementById("app");
+  app.textContent = "";
+
+  function header() {
+    var totalH = CASES.reduce(function (acc, c) { return acc + caseDur(c); }, 0) / 3600;
+    var date = str(DATA.generated_at); date = date ? date.slice(0, 10) : null;
+    var commit = str(DATA.tool_commit); commit = commit ? commit.slice(0, 7) : null;
+    var bits = [CASES.length + " 个真实 B 站视频", "共 " + (totalH >= 10 ? totalH.toFixed(0) : totalH.toFixed(1)) + " 小时音频", MODES.length + " 种模式"];
+    if (date) bits.push(date);
+    if (commit) bits.push("工具版本 " + commit);
+    var nr = notRunCount();
+    return h("header", null, [
+      h("h1", { text: "bili-album 性能报告" }),
+      h("p", { class: "meta", text: bits.join(" · ") }),
+      nr ? h("p", { class: "meta", text: "注意：还有 " + nr + " 次运行没有跑（评测未完成），这些视频在对应模式下不计入，显示为「没有运行记录」。" }) : null,
+      h("ul", { class: "mode-notes" }, MODES.map(function (m) {
+        return h("li", null, [h("span", { class: "name" }, modeLabel(m)), h("span", { class: "muted", text: MODE_NOTE[m] })]);
+      }))
+    ]);
+  }
+
+  function segControl(label, options, current, onPick) {
+    var seg = h("div", { class: "seg", role: "group", "aria-label": label });
+    options.forEach(function (o) {
+      var b = h("button", { type: "button", "aria-pressed": o.key === current ? "true" : "false" }, o.content);
+      b.addEventListener("click", function () { onPick(o.key); });
+      seg.appendChild(b);
+    });
+    return h("div", { class: "filter" }, [h("span", { class: "label", text: label }), seg]);
+  }
+
+  var filtersEl = h("div", { class: "filters", role: "region", "aria-label": "筛选" });
+  var body = h("div");
+  app.appendChild(header());
+  // Static "system structure" section: after the header, before the filter row, so nothing the
+  // filters scope sits above them.
+  var structure = document.getElementById("structure");
+  if (structure) {
+    var nc = document.getElementById("sx-ncases");
+    if (nc && CASES.length) nc.textContent = String(CASES.length);
+    app.appendChild(structure);
+  }
+  app.appendChild(filtersEl);
+  app.appendChild(body);
+
+  function renderFilters() {
+    filtersEl.textContent = "";
+    filtersEl.appendChild(segControl("范围", SCOPES.map(function (sc) {
+      return { key: sc.key, content: [sc.name, h("span", { class: "count", text: String(CASES.filter(sc.test).length) })] };
+    }), state.scope, function (k) { state.scope = k; renderAll(); }));
+    filtersEl.appendChild(segControl("模式", MODES.map(function (m) {
+      return { key: m, content: [h("span", { class: "swatch", style: "background:var(--m-" + m + ")" }), MODE_NAME[m]] };
+    }), state.mode, function (k) { state.mode = k; renderAll(); }));
+  }
+
+  function scopeName() { return (SCOPES.filter(function (s) { return s.key === state.scope; })[0] || SCOPES[0]).name; }
+  function section(title, scopeTag) {
+    var sec = h("section");
+    sec.appendChild(h("div", { class: "sec-head" }, [h("h2", { text: title }), h("span", { class: "scope-tag", text: scopeTag })]));
+    body.appendChild(sec);
+    return sec;
+  }
+  function sideBySideTag() { return "三种模式并排 · 范围：" + scopeName(); }
+  function modeTag() { return "模式：" + MODE_NAME[state.mode] + " · 范围：" + scopeName(); }
+
+  // A chart card with a title, a one-line subtitle and a 「表格」 toggle.
+  function chartCard(parent, key, title, sub, drawChart, drawTable) {
+    var card = h("div", { class: "card" });
+    var pressed = !!state.tables[key];
+    var btn = h("button", { type: "button", class: "tbl-toggle", "aria-pressed": pressed ? "true" : "false", text: "表格" });
+    card.appendChild(h("div", { class: "card-head" }, [
+      h("div", null, [title ? h("h3", { text: title }) : null, sub ? h("p", { class: "sub", text: sub }) : null]),
+      btn
+    ]));
+    var chartBox = h("div", { class: pressed ? "hidden" : "" });
+    var tableBox = h("div", { class: "scroll-x" + (pressed ? "" : " hidden") });
+    card.appendChild(chartBox);
+    card.appendChild(tableBox);
+    parent.appendChild(card);
+    btn.addEventListener("click", function () {
+      state.tables[key] = !state.tables[key];
+      btn.setAttribute("aria-pressed", state.tables[key] ? "true" : "false");
+      chartBox.classList.toggle("hidden", !!state.tables[key]);
+      tableBox.classList.toggle("hidden", !state.tables[key]);
+      hideTip();
+      if (!state.tables[key]) { chartBox.textContent = ""; drawChart(chartBox); }
+    });
+    drawChart(chartBox);
+    tableBox.appendChild(drawTable());
+    return card;
+  }
+
+  function table(headers, rows, numericCols) {
+    numericCols = numericCols || [];
+    var thead = h("thead", null, h("tr", null, headers.map(function (x, i) {
+      return h("th", { class: numericCols.indexOf(i) >= 0 ? "n" : null, scope: "col" }, x);
+    })));
+    var tbody = h("tbody", null, rows.map(function (r) {
+      return h("tr", null, r.map(function (cell, i) {
+        var v = cell === null || cell === undefined || cell === "" ? DASH : cell;
+        return h("td", { class: numericCols.indexOf(i) >= 0 ? "n" : null }, v);
+      }));
+    }));
+    return h("table", null, [thead, tbody]);
+  }
+
+  // ---------- 3. overview matrix ----------
+  function overview() {
+    var sec = section("总览", sideBySideTag());
+    var cases = scopeCases();
+    var A = {};
+    MODES.forEach(function (m) { A[m] = agg(cases, m); });
+    var rows = [
+      { name: "类型判断正确", k: "kindOk", n: "kindN" },
+      { name: "切点误差 ≤ 1 秒", k: "hit1", n: "bN" },
+      { name: "切点误差 ≤ 3 秒", k: "hit3", n: "bN" },
+      { name: "切点误差 ≤ 5 秒", k: "hit5", n: "bN" },
+      { name: "多切的切点", count: function (a) { return a.extra; } },
+      { name: "歌名正确", k: "titleOk", n: "tN" },
+      { name: "歌手正确", k: "artistOk", n: "tN" },
+      { name: "专辑名正确", k: "albOk", n: "albN" },
+      { name: "专辑歌手正确", k: "aaOk", n: "aaN" },
+      { name: "发行年份正确", k: "yrOk", n: "yrN" },
+      { name: "运行失败", count: function (a) { return a.failed; } }
+    ];
+    var anyMissing = MODES.some(function (m) { return A[m].missing > 0; });
+    var sub = "每格是该模式的比例和原始计数；切点按真实切点合计，没找到的算错；运行失败的视频按全部答错计入；分 P 视频在带 UP 主时间戳模式下按文件切，不评切点。" +
+      (anyMissing ? "缺少某模式运行记录的视频不计入该模式。" : "");
+    chartCard(sec, "overview", "三种模式各项指标", sub, function (box) {
+      var t = h("table", { class: "matrix" });
+      t.appendChild(h("thead", null, h("tr", null, [h("th", { scope: "col", text: "指标" })].concat(MODES.map(function (m) {
+        return h("th", { scope: "col", class: "mode" }, modeLabel(m));
+      })))));
+      var tb = h("tbody");
+      rows.forEach(function (row) {
+        var tr = h("tr", null, h("td", { class: "rowlabel", text: row.name }));
+        MODES.forEach(function (m) {
+          var a = A[m];
+          if (row.count) {
+            tr.appendChild(h("td", null, h("span", { class: "fig", text: a.runs ? String(row.count(a)) : DASH })));
+            return;
+          }
+          var k = a[row.k], n = a[row.n];
+          var cell = h("div", { class: "meter-cell" });
+          var meter = h("div", { class: "meter", style: "background:color-mix(in srgb, var(--m-" + m + ") 20%, var(--surface))", "aria-hidden": "true" });
+          if (n > 0) meter.appendChild(h("span", { style: "width:" + (100 * k / n).toFixed(2) + "%;background:var(--m-" + m + ")" }));
+          cell.appendChild(meter);
+          cell.appendChild(h("span", { class: "fig" }, [pct(k, n), h("span", { class: "frac", text: n > 0 ? k + "/" + n : "" })]));
+          tr.appendChild(h("td", null, cell));
+        });
+        tb.appendChild(tr);
+      });
+      t.appendChild(tb);
+      box.appendChild(h("div", { class: "scroll-x" }, t));
+    }, function () {
+      return table(["指标"].concat(MODES.map(function (m) { return MODE_NAME[m]; })), rows.map(function (row) {
+        return [row.name].concat(MODES.map(function (m) {
+          var a = A[m];
+          if (row.count) return a.runs ? String(row.count(a)) : DASH;
+          var k = a[row.k], n = a[row.n];
+          return n > 0 ? pct(k, n) + "（" + k + "/" + n + "）" : DASH;
+        }));
+      }), [1, 2, 3]);
+    });
+  }
+
+  // ---------- 4. CDF of boundary error ----------
+  function cdf() {
+    var sec = section("切点误差的累积分布", sideBySideTag());
+    var cases = scopeCases();
+    var A = {};
+    MODES.forEach(function (m) { A[m] = agg(cases, m); });
+    var XMAX = 15;
+    function shareAt(m, x) {
+      var a = A[m];
+      if (!a.bN) return null;
+      var k = 0;
+      for (var i = 0; i < a.errs.length && a.errs[i] <= x + 1e-9; i++) k++;
+      return { k: k, n: a.bN, v: k / a.bN };
+    }
+    chartCard(sec, "cdf", "切点误差在 x 秒以内的比例",
+      "横轴是切点绝对误差（秒），纵轴是误差不超过它的真实切点占比。越靠左上越好；线停在 100% 以下表示有切点完全没找到。",
+      function (box) {
+        box.appendChild(h("div", { class: "legend" }, MODES.map(function (m) {
+          return h("span", { class: "item" }, [h("span", { class: "linekey", style: "background:var(--m-" + m + ")" }), MODE_NAME[m]]);
+        })));
+        var W = Math.max(280, box.clientWidth || 600);
+        var narrow = W < 560;
+        var M = { l: 40, r: narrow ? 12 : 150, t: 10, b: 38 };
+        var H = 280, pw = W - M.l - M.r, ph = H - M.t - M.b;
+        var svg = s("svg", { width: W, height: H, viewBox: "0 0 " + W + " " + H });
+        var X = function (x) { return M.l + pw * x / XMAX; };
+        var Y = function (v) { return M.t + ph * (1 - v); };
+        var g = s("g", { class: "tick" }, svg);
+        [0, 0.25, 0.5, 0.75, 1].forEach(function (v) {
+          s("line", { x1: M.l, x2: M.l + pw, y1: Y(v), y2: Y(v), stroke: v === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1, "shape-rendering": "crispEdges" }, g);
+          s("text", { x: M.l - 6, y: Y(v) + 4, "text-anchor": "end", text: Math.round(v * 100) + "%" }, g);
+        });
+        for (var xt = 0; xt <= XMAX; xt += 3) {
+          s("line", { x1: X(xt), x2: X(xt), y1: M.t + ph, y2: M.t + ph + 4, stroke: "var(--axis)", "shape-rendering": "crispEdges" }, g);
+          s("text", { x: X(xt), y: M.t + ph + 16, "text-anchor": "middle", text: String(xt) }, g);
+        }
+        s("text", { x: M.l + pw / 2, y: H - 4, "text-anchor": "middle", text: "绝对误差（秒）" }, svg);
+        var ends = [];
+        MODES.forEach(function (m) {
+          var a = A[m];
+          if (!a.bN) return;
+          var errs = a.errs.filter(function (e) { return e <= XMAX; });
+          var k = 0, d = "", y0;
+          // leading zeros (exact hits) lift the line at x = 0
+          while (k < errs.length && errs[k] <= 0) k++;
+          y0 = Y(k / a.bN);
+          d = "M" + X(0) + "," + y0;
+          for (var i = k; i < errs.length; i++) {
+            d += " H" + X(errs[i]).toFixed(2);
+            k = i + 1;
+            while (k < errs.length && errs[k] === errs[i]) { k++; i++; }
+            d += " V" + Y(k / a.bN).toFixed(2);
+          }
+          d += " H" + X(XMAX);
+          s("path", { d: d, fill: "none", stroke: "var(--m-" + m + ")", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+          var fin = shareAt(m, XMAX);
+          ends.push({ m: m, y: Y(fin.v), v: fin });
+        });
+        if (!narrow && ends.length) {
+          // direct labels at the right end; push apart and use leader lines when they would collide
+          var lab = ends.slice().sort(function (p, q) { return p.y - q.y; });
+          var GAP = 16;
+          lab.forEach(function (p, i) { p.ly = p.y; if (i > 0 && p.ly < lab[i - 1].ly + GAP) p.ly = lab[i - 1].ly + GAP; });
+          var over = lab[lab.length - 1].ly - (M.t + ph);
+          if (over > 0) lab.forEach(function (p) { p.ly -= over; });
+          for (var i = lab.length - 2; i >= 0; i--) if (lab[i].ly > lab[i + 1].ly - GAP) lab[i].ly = lab[i + 1].ly - GAP;
+          lab.forEach(function (p) {
+            var x0 = X(XMAX);
+            s("circle", { cx: x0, cy: p.y, r: 4, fill: "var(--m-" + p.m + ")", stroke: "var(--surface)", "stroke-width": 2 }, svg);
+            if (Math.abs(p.ly - p.y) > 1) {
+              s("path", { d: "M" + (x0 + 6) + "," + p.y + " L" + (x0 + 14) + "," + p.ly + " H" + (x0 + 18), fill: "none", stroke: "var(--axis)", "stroke-width": 1 }, svg);
+            }
+            var tx = s("text", { x: x0 + 22, y: p.ly + 4 }, svg);
+            s("tspan", { class: "ink", "font-weight": 600, text: Math.round(p.v.v * 100) + "%" }, tx);
+            s("tspan", { dx: 6, text: MODE_NAME[p.m] }, tx);
+          });
+        }
+        // crosshair, snapped to 0.5 s
+        var cross = s("line", { y1: M.t, y2: M.t + ph, stroke: "var(--axis)", "stroke-width": 1, visibility: "hidden", "pointer-events": "none" }, svg);
+        var dots = MODES.map(function (m) { return s("circle", { r: 4, fill: "var(--m-" + m + ")", stroke: "var(--surface)", "stroke-width": 2, visibility: "hidden", "pointer-events": "none" }, svg); });
+        var overlay = s("rect", { x: M.l, y: M.t, width: pw, height: ph, fill: "transparent" }, svg);
+        var cur = 3;
+        function tipAt(x) {
+          var rows = [h("div", { class: "t-title", text: "误差 ≤ " + x.toFixed(1) + " 秒" })];
+          MODES.forEach(function (m) {
+            var v = shareAt(m, x);
+            rows.push(tipRow(v ? Math.round(v.v * 100) + "%" : DASH, (v ? v.k + "/" + v.n + " · " : "") + MODE_NAME[m], "var(--m-" + m + ")"));
+          });
+          return rows;
+        }
+        function place(x, cx, cy) {
+          cur = x;
+          cross.setAttribute("x1", X(x)); cross.setAttribute("x2", X(x)); cross.setAttribute("visibility", "visible");
+          MODES.forEach(function (m, i) {
+            var v = shareAt(m, x);
+            if (!v) { dots[i].setAttribute("visibility", "hidden"); return; }
+            dots[i].setAttribute("cx", X(x)); dots[i].setAttribute("cy", Y(v.v)); dots[i].setAttribute("visibility", "visible");
+          });
+          if (cx === undefined) {
+            var r = svg.getBoundingClientRect();
+            cx = r.left + X(x); cy = r.top + M.t + 10;
+          }
+          showTip(tipAt(x), cx, cy);
+        }
+        function clear() { cross.setAttribute("visibility", "hidden"); dots.forEach(function (d) { d.setAttribute("visibility", "hidden"); }); hideTip(); }
+        overlay.addEventListener("pointermove", function (ev) {
+          var r = svg.getBoundingClientRect();
+          var x = (ev.clientX - r.left - M.l) / pw * XMAX;
+          x = Math.max(0, Math.min(XMAX, Math.round(x * 2) / 2));
+          place(x, ev.clientX, ev.clientY);
+        });
+        overlay.addEventListener("pointerleave", clear);
+        svg.setAttribute("tabindex", "0");
+        svg.setAttribute("role", "img");
+        svg.setAttribute("aria-label", "切点误差累积分布，按左右方向键移动");
+        svg.addEventListener("focus", function () { place(cur); });
+        svg.addEventListener("blur", clear);
+        svg.addEventListener("keydown", function (ev) {
+          if (ev.key === "ArrowRight") { place(Math.min(XMAX, cur + 0.5)); ev.preventDefault(); }
+          else if (ev.key === "ArrowLeft") { place(Math.max(0, cur - 0.5)); ev.preventDefault(); }
+          else if (ev.key === "Escape") clear();
+        });
+        box.appendChild(svg);
+        if (!MODES.some(function (m) { return A[m].bN > 0; })) box.appendChild(h("p", { class: "note", text: "当前范围里没有多首歌的视频，没有切点可画。" }));
+      },
+      function () {
+        var xs = [0.5, 1, 2, 3, 5, 10, 15];
+        return table(["误差 ≤"].concat(MODES.map(function (m) { return MODE_NAME[m]; })), xs.map(function (x) {
+          return [x + " 秒"].concat(MODES.map(function (m) {
+            var v = shareAt(m, x);
+            return v ? Math.round(v.v * 100) + "%（" + v.k + "/" + v.n + "）" : DASH;
+          }));
+        }), [1, 2, 3]);
+      });
+  }
+
+  // ---------- 5. stat tiles ----------
+  function tiles() {
+    var sec = section("关键数字", modeTag());
+    var a = agg(scopeCases(), state.mode);
+    var med = quantile(a.errs, 0.5), p90 = quantile(a.errs, 0.9);
+    var speed = a.wall > 0 ? a.audio / a.wall : null;
+    function tile(label, value, unit, below) {
+      return h("div", { class: "tile" }, [
+        h("div", { class: "label", text: label }),
+        h("div", { class: "value" }, [value, unit && value !== DASH ? h("span", { class: "unit", text: unit }) : null]),
+        h("div", { class: "below", text: below || " " })
+      ]);
+    }
+    sec.appendChild(h("div", { class: "tiles" }, [
+      tile("类型判断正确", a.kindN ? a.kindOk + "/" + a.kindN : DASH, null, a.kindN ? pct(a.kindOk, a.kindN) : ""),
+      tile("切点误差 ≤ 3 秒", pct(a.hit3, a.bN), null, a.bN ? a.hit3 + "/" + a.bN : "没有切点"),
+      tile("切点误差中位数", med === null ? DASH : med.toFixed(1), " 秒", p90 === null ? "" : "90% 的切点误差在 " + p90.toFixed(1) + " 秒以内"),
+      tile("歌名正确", pct(a.titleOk, a.tN), null, a.tN ? a.titleOk + "/" + a.tN : ""),
+      tile("处理速度", speed === null ? DASH : speedText(speed), null, speed === null ? "" : "每小时音频约 " + Math.round(3600 / speed) + " 秒")
+    ]));
+  }
+
+  // ---------- 6. per-case timelines ----------
+  function overlap(a0, a1, b0, b1) { return Math.max(0, Math.min(a1, b1) - Math.max(a0, b0)); }
+  function predSegs(r) {
+    var segs = arr(r.tracks_pred).filter(function (p) { return obj(p) && isNum(p.start) && isNum(p.end) && p.end > p.start; });
+    // Multipart plans in the hints mode give each track's time on its own part file, so starts
+    // restart near 0. Then lay the parts end to end in order (display only).
+    var restarts = segs.some(function (p, i) { return i > 0 && p.start < segs[i - 1].end - 1; });
+    if (!restarts) return segs;
+    var acc = 0;
+    return segs.map(function (p) {
+      var len = p.end - p.start, q = {};
+      for (var k in p) if (Object.prototype.hasOwnProperty.call(p, k)) q[k] = p[k];
+      q.start = acc; q.end = acc + len; q.laidOut = true; q.partStart = p.start; q.partEnd = p.end;
+      acc += len;
+      return q;
+    });
+  }
+  // A predicted segment is "wrong" when it is the segment whose title the harness matched to
+  // a true track (same title, largest overlap) and that match was marked title_ok:false.
+  function wrongSegIndexes(c, r) {
+    var spans = trueSpans(c), segs = predSegs(r), titles = arr(r.titles), wrong = {};
+    segs.forEach(function (p, i) {
+      var best = -1, bo = 0;
+      spans.forEach(function (t, j) { var o = overlap(t.start, t.end, p.start, p.end); if (o > bo) { bo = o; best = j; } });
+      if (best < 0) return;
+      var n = spans[best].n;
+      var tt = titles.filter(function (x) { return obj(x) && x.truth_n === n; })[0];
+      if (tt && tt.title_ok === false && (tt.pred_title === p.title || str(tt.pred_title) === null)) wrong[i] = true;
+    });
+    return wrong;
+  }
+  function runFigures(c, r, m) {
+    var nb = boundaryDen(c, m, r), hits = 0, errs = [], tok = 0, tn = tracksOf(c).length;
+    if (runOk(r)) {
+      arr(r.boundaries).forEach(function (b) {
+        if (obj(b) && isNum(b.error)) { errs.push(Math.abs(b.error)); if (Math.abs(b.error) <= 3) hits++; }
+      });
+      arr(r.titles).forEach(function (x) { if (obj(x) && x.title_ok === true) tok++; });
+    }
+    errs.sort(function (x, y) { return x - y; });
+    return { nb: nb, hits: hits, med: quantile(errs, 0.5), tok: tok, tn: tn };
+  }
+  function titleAround(spans, n) {
+    var i = -1;
+    spans.forEach(function (t, j) { if (t.n === n) i = j; });
+    return { prev: i > 0 ? spans[i - 1].title : null, next: i >= 0 ? spans[i].title : null };
+  }
+
+  function drawTimeline(box, c, r, m) {
+    var W = Math.max(200, box.clientWidth || 600);
+    var dur = caseDur(c) || Math.max.apply(null, trueSpans(c).map(function (t) { return t.end; }).concat([1]));
+    var X = function (t) { return Math.max(0, Math.min(W, W * t / dur)); };
+    var ok = runOk(r);
+    var LT = 8, LH = 18, GAPL = 2, MK = 14;
+    var yTrue = LT, yPred = LT + LH + GAPL, H = ok ? yPred + LH + MK : LT + LH;
+    var svg = s("svg", { width: W, height: H, viewBox: "0 0 " + W + " " + H });
+    var items = [];
+    var spans = trueSpans(c);
+    function seg(x0, x1, y, fill, last) {
+      var w = Math.max(1, x1 - x0 - (last ? 0 : 2));
+      return s("rect", { x: x0, y: y, width: w, height: LH, rx: 3, fill: fill, class: "mark" }, svg);
+    }
+    // true lane + boundary ticks above it
+    spans.forEach(function (t, i) {
+      var el = seg(X(t.start), X(t.end), yTrue, i % 2 ? "var(--neutral-2)" : "var(--neutral-1)", i === spans.length - 1);
+      items.push({ mark: el, tip: function () {
+        return [h("div", { class: "t-title", text: "标准答案 · 第 " + (t.n !== undefined ? t.n : i + 1) + " 首" }),
+          tipRow(str(t.title) || DASH, null), tipRow(str(t.artist) || DASH, "歌手"),
+          tipRow(mmssd(t.start) + " – " + mmssd(t.end), "起止"), tipRow(mmss(t.end - t.start), "时长")];
+      } });
+      if (i > 0) s("line", { x1: X(t.start), x2: X(t.start), y1: 1, y2: LT - 1, stroke: "var(--ink-2)", "stroke-width": 1, "shape-rendering": "crispEdges" }, svg);
+    });
+    if (ok) {
+      var segs = predSegs(r), wrong = wrongSegIndexes(c, r);
+      segs.forEach(function (p, i) {
+        var isWrong = !!wrong[i];
+        var fill = isWrong ? "var(--st-crit)" : (i % 2 ? "color-mix(in srgb, var(--m-" + m + ") 50%, var(--surface))" : "var(--m-" + m + ")");
+        var x0 = X(p.start), x1 = X(p.end);
+        var el = seg(x0, x1, yPred, fill, i === segs.length - 1);
+        if (isWrong && x1 - x0 >= 16) s("text", { x: (x0 + x1 - 2) / 2, y: yPred + 13, "text-anchor": "middle", fill: "#ffffff", style: "fill:#ffffff;font-weight:700", "pointer-events": "none", text: "✕" }, svg);
+        items.push({ mark: el, tip: function () {
+          var rows = [h("div", { class: "t-title", text: "工具结果 · 第 " + (isNum(p.index) ? p.index : i + 1) + " 首" + (isWrong ? "（歌名不对）" : "") }),
+            tipRow(str(p.title) || DASH, null), tipRow(str(p.artist) || DASH, "歌手"),
+            p.laidOut ? tipRow(mmssd(p.partStart) + " – " + mmssd(p.partEnd), "在分 P 文件内的起止") : tipRow(mmssd(p.start) + " – " + mmssd(p.end), "起止"),
+            tipRow(mmss(p.end - p.start), "时长"),
+            tipRow(isNum(p.confidence) ? Math.round(p.confidence * 100) + "%" : DASH, "置信度")];
+          var ev = arr(p.evidence_kinds).map(str).filter(function (x) { return x; });
+          rows.push(tipRow(ev.length ? ev.join("、") : DASH, "证据"));
+          return rows;
+        } });
+      });
+      // boundary result markers under the predicted lane
+      var my = yPred + LH + 2;
+      function hitRect(x) { return s("rect", { x: x - 12, y: yPred, width: 24, height: LH + MK, fill: "transparent" }, svg); }
+      arr(r.boundaries).forEach(function (b) {
+        if (!obj(b)) return;
+        var around = titleAround(spans, b.truth_n);
+        var mark, hit, x;
+        if (!isNum(b.error) || !isNum(b.pred_start)) {
+          x = X(b.truth_start);
+          hit = hitRect(x);
+          mark = s("text", { x: x, y: my + 10, "text-anchor": "middle", style: "fill:var(--st-crit);font-weight:700;font-size:12px", class: "mark", "pointer-events": "none", text: "✕" }, svg);
+        } else if (Math.abs(b.error) > 3) {
+          x = X(b.pred_start);
+          hit = hitRect(x);
+          mark = s("path", { d: "M" + x + "," + my + " l5,9 h-10 z", fill: "var(--st-serious)", class: "mark", "pointer-events": "none" }, svg);
+        } else {
+          x = X(b.pred_start);
+          hit = hitRect(x);
+          mark = s("line", { x1: x, x2: x, y1: my, y2: my + 7, stroke: "var(--ink-2)", "stroke-width": 1.5, class: "mark", "pointer-events": "none" }, svg);
+        }
+        items.push({ mark: mark, hit: hit, tip: function () {
+          var status = !isNum(b.error) ? "没找到这个切点" : (Math.abs(b.error) > 3 ? "切点偏差超过 3 秒" : "切点在 3 秒以内");
+          return [h("div", { class: "t-title", text: status }),
+            tipRow(bookTitle(around.prev) + " → " + bookTitle(around.next), null),
+            tipRow(mmssd(b.truth_start), "真实时间"), tipRow(isNum(b.pred_start) ? mmssd(b.pred_start) : DASH, "工具切点"),
+            tipRow(signedSecs(b.error), "误差")];
+        } });
+      });
+      arr(r.extra_boundaries).filter(isNum).forEach(function (t) {
+        var x = X(t), hit = hitRect(x);
+        var inside = spans.filter(function (sp) { return t >= sp.start && t < sp.end; })[0];
+        var mark = s("path", { d: "M" + x + "," + my + " l4.5,4.5 l-4.5,4.5 l-4.5,-4.5 z", fill: "var(--st-warn)", class: "mark", "pointer-events": "none" }, svg);
+        items.push({ mark: mark, hit: hit, tip: function () {
+          return [h("div", { class: "t-title", text: "多切的切点" }), tipRow(mmssd(t), "工具切点"),
+            tipRow(inside ? bookTitle(inside.title) : DASH, "落在")];
+        } });
+      });
+    }
+    bindMarks(svg, items, caseName(c) + " 的切点时间线，按方向键逐个查看");
+    box.appendChild(svg);
+  }
+
+  function timelines() {
+    var m = state.mode;
+    var sec = section("逐个视频的切点", modeTag());
+    var cases = scopeCases().filter(function (c) { return tracksOf(c).length > 1; });
+    chartCard(sec, "timeline", "每个多首歌视频的切点对比",
+      "每行一个视频，按它自己的时长铺满：上面是标准答案，下面是工具的切分；下方的记号表示每个切点切得准不准。",
+      function (box) {
+        if (!cases.length) { box.appendChild(h("p", { class: "note", text: "当前范围里没有多首歌的视频。" })); return; }
+        var rows = [];
+        cases.forEach(function (c) {
+          var r = runOf(c, m), f = runFigures(c, r, m);
+          var t = truthOf(c);
+          var left = h("div", { class: "tl-left" }, [
+            h("div", { class: "name", text: caseName(c) }),
+            h("div", { class: "sub", text: [KIND_NAME[c.kind] || str(c.kind) || DASH, mmss(caseDur(c)), tracksOf(c).length + " 首", "答案" + (QUALITY_NAME[c.truth_quality] || str(c.truth_quality) || DASH)].join(" · ") }),
+            c.seen_in_dev === true ? h("span", { class: "tag", text: "开发时用过" }) : null
+          ]);
+          var svgBox = h("div", { class: "tl-svgbox" });
+          var mid = h("div", { class: "tl-mid" }, [
+            h("div", { class: "lanelabels", "aria-hidden": "true" }, [h("span"), h("span", { text: "标准答案" }), h("span"), runOk(r) ? h("span", { text: "工具结果" }) : null, h("span")]),
+            svgBox
+          ]);
+          var right = h("div", { class: "tl-right" });
+          if (runOk(r)) {
+            if (f.nb > 0) {
+              right.appendChild(h("div", null, ["切点 ", h("b", { text: f.hits + "/" + f.nb })]));
+              right.appendChild(h("div", null, ["误差中位数 ", h("b", { text: f.med === null ? DASH : f.med.toFixed(1) + " 秒" })]));
+            } else {
+              right.appendChild(h("div", null, ["切点 ", h("b", { text: DASH })]));
+              right.appendChild(h("div", { text: scoresBoundaries(c, m) ? "没有可评的切点" : "按分 P 文件切，不评切点" }));
+            }
+            right.appendChild(h("div", null, ["歌名 ", h("b", { text: f.tok + "/" + f.tn })]));
+            if (r.needs_review === true) right.appendChild(h("div", null, h("span", { class: "tag review", text: "已标记需复核" })));
+          } else {
+            right.appendChild(h("div", { text: r ? "运行失败" : "没有运行记录" }));
+          }
+          var row = h("div", { class: "tl-row" }, [left, mid, right]);
+          box.appendChild(row);
+          rows.push({ box: svgBox, c: c, r: r, mid: mid });
+        });
+        // draw once the rows are in the DOM so the svg can size to its box
+        rows.forEach(function (x) {
+          drawTimeline(x.box, x.c, x.r, m);
+          if (!runOk(x.r)) {
+            var msg = x.r ? ("运行失败" + (isNum(x.r.exit_code) ? "（退出码 " + x.r.exit_code + "）" : "") + "：" + (str(x.r.error) || "没有错误信息")) : "这个模式没有运行记录。";
+            x.box.appendChild(h("div", { class: "tl-fail" }, [x.r ? h("span", { class: "st-icon crit", "aria-hidden": "true", text: "!" }) : null, h("span", { text: msg })]));
+          }
+        });
+        box.appendChild(timelineLegend(m));
+      },
+      function () {
+        var out = [];
+        cases.forEach(function (c) {
+          var r = runOf(c, m), ok = runOk(r), spans = trueSpans(c);
+          var titles = ok ? arr(r.titles) : [], bnds = ok ? arr(r.boundaries) : [];
+          spans.forEach(function (t, i) {
+            var tt = titles.filter(function (x) { return obj(x) && x.truth_n === t.n; })[0] || null;
+            var predStart = null, err = null;
+            if (ok && i === 0 && obj(r.trim) && isNum(r.trim.first_start_error)) { err = r.trim.first_start_error; predStart = t.start + err; }
+            if (ok && i > 0) {
+              var b = bnds.filter(function (x) { return obj(x) && x.truth_n === t.n; })[0];
+              if (b) { predStart = isNum(b.pred_start) ? b.pred_start : null; err = isNum(b.error) ? b.error : null; }
+            }
+            out.push([caseName(c), String(isNum(t.n) ? t.n : i + 1), str(t.title) || DASH,
+              ok ? (tt ? str(tt.pred_title) || DASH : DASH) : (r ? "运行失败" : "没有运行记录"),
+              mmssd(t.start), ok && i > 0 && err === null ? "没找到" : mmssd(predStart), signedSecs(err),
+              ok && tt ? okGlyph(tt.title_ok) : DASH, ok && tt ? okGlyph(tt.artist_ok) : DASH]);
+          });
+        });
+        return table(["视频", "曲序", "真实歌名", "工具歌名", "真实开始", "工具开始", "误差", "歌名", "歌手"], out, [1, 4, 5, 6]);
+      });
+  }
+
+  function legendIcon(draw) {
+    var svg = s("svg", { width: 16, height: 14, viewBox: "0 0 16 14", "aria-hidden": "true" });
+    draw(svg);
+    return svg;
+  }
+  function timelineLegend(m) {
+    function item(icon, text) { return h("span", { class: "item" }, [icon, text]); }
+    return h("div", { class: "tl-legend" }, [
+      item(legendIcon(function (g) { s("rect", { x: 0, y: 3, width: 7, height: 8, rx: 2, fill: "var(--neutral-1)" }, g); s("rect", { x: 9, y: 3, width: 7, height: 8, rx: 2, fill: "var(--neutral-2)" }, g); }), "上排：标准答案（每段一首歌）"),
+      item(legendIcon(function (g) { s("rect", { x: 0, y: 3, width: 7, height: 8, rx: 2, fill: "var(--m-" + m + ")" }, g); s("rect", { x: 9, y: 3, width: 7, height: 8, rx: 2, fill: "color-mix(in srgb, var(--m-" + m + ") 50%, var(--surface))" }, g); }), "下排：工具结果"),
+      item(legendIcon(function (g) { s("rect", { x: 0, y: 3, width: 16, height: 8, rx: 2, fill: "var(--st-crit)" }, g); }), "歌名不对的段"),
+      item(legendIcon(function (g) { s("line", { x1: 8, x2: 8, y1: 3, y2: 11, stroke: "var(--ink-2)", "stroke-width": 1.5 }, g); }), "切点在 3 秒以内"),
+      item(legendIcon(function (g) { s("path", { d: "M8,2.5 l5,9 h-10 z", fill: "var(--st-serious)" }, g); }), "偏了 3 秒以上"),
+      item(legendIcon(function (g) { s("text", { x: 8, y: 11.5, "text-anchor": "middle", style: "fill:var(--st-crit);font-weight:700;font-size:12px", text: "✕" }, g); }), "没找到（画在真实位置）"),
+      item(legendIcon(function (g) { s("path", { d: "M8,2.5 l4.5,4.5 l-4.5,4.5 l-4.5,-4.5 z", fill: "var(--st-warn)" }, g); }), "多切的切点")
+    ]);
+  }
+
+  // ---------- 7. singles ----------
+  function singles() {
+    var m = state.mode;
+    var sec = section("单曲", modeTag());
+    var cases = scopeCases().filter(function (c) { return tracksOf(c).length === 1; });
+    var card = h("div", { class: "card" });
+    sec.appendChild(card);
+    if (!cases.length) { card.appendChild(h("p", { class: "note", text: "当前范围里没有单曲视频。" })); return; }
+    var rows = cases.map(function (c) {
+      var r = runOf(c, m), ok = runOk(r), t = tracksOf(c)[0];
+      var tt = ok ? arr(r.titles).filter(obj)[0] : null;
+      var predTitle = ok ? (tt ? str(tt.pred_title) : (predSegs(r)[0] ? str(predSegs(r)[0].title) : null)) : null;
+      var predArtist = ok ? (tt ? str(tt.pred_artist) : (predSegs(r)[0] ? str(predSegs(r)[0].artist) : null)) : null;
+      var failText = r ? "运行失败：" + (str(r.error) || "没有错误信息") : "没有运行记录";
+      return [
+        str(c.id) || DASH,
+        h("div", null, [h("div", { text: str(t.title) || DASH }), h("div", { class: "muted small", text: str(t.artist) || DASH })]),
+        ok ? h("div", null, [h("div", { text: predTitle || DASH }), h("div", { class: "muted small", text: predArtist || DASH })]) : h("span", { class: "muted", text: failText }),
+        ok ? (KIND_NAME[r.kind_pred] || str(r.kind_pred) || DASH) : DASH,
+        ok && tt ? okGlyph(tt.title_ok) : DASH,
+        ok && tt ? okGlyph(tt.artist_ok) : DASH,
+        ok ? (r.needs_review === true ? "已标记" : (r.needs_review === false ? "没标" : DASH)) : DASH
+      ];
+    });
+    card.appendChild(h("p", { class: "note", text: "每个单曲视频一行；类型判断看工具是否也认成了单曲。", style: "margin-bottom:8px" }));
+    card.appendChild(h("div", { class: "scroll-x" }, table(["视频", "真实歌名 / 歌手", "工具歌名 / 歌手", "判成", "歌名", "歌手", "需复核"], rows)));
+  }
+
+  // ---------- 8. output tags ----------
+  var TAGS = [["title", "歌名"], ["artist", "歌手"], ["album", "专辑"], ["album_artist", "专辑歌手"], ["track", "曲序"], ["disc", "碟号"],
+    ["year", "年份"], ["genre", "流派"], ["cover", "封面"], ["composer", "作曲"], ["lyrics", "歌词"]];
+  function outputTags() {
+    var m = state.mode;
+    var sec = section("输出文件的标签", modeTag());
+    if (m !== "hints") {
+      sec.appendChild(h("div", { class: "card" }, h("p", { class: "note", text: "只有「带 UP 主时间戳」模式会真的切出文件，切换到该模式查看标签情况。" })));
+      return;
+    }
+    var runs = scopeCases().map(function (c) { return runOf(c, m); }).filter(function (r) { return runOk(r) && obj(r.output); });
+    var files = 0, w = {}, maxDev = null, copyOk = 0, copyN = 0;
+    TAGS.forEach(function (t) { w[t[0]] = { k: 0, n: 0 }; });
+    runs.forEach(function (r) {
+      var o = r.output, f = isNum(o.files) ? o.files : 0, tc = obj(o.tag_completeness) || {};
+      files += f;
+      TAGS.forEach(function (t) { if (isNum(tc[t[0]])) { w[t[0]].k += tc[t[0]] * f; w[t[0]].n += f; } });
+      if (isNum(o.max_duration_dev)) maxDev = maxDev === null ? o.max_duration_dev : Math.max(maxDev, Math.abs(o.max_duration_dev));
+      if (typeof o.stream_copy_ok === "boolean") { copyN++; if (o.stream_copy_ok) copyOk++; }
+    });
+    function share(t) { var x = w[t]; return x.n > 0 ? x.k / x.n : null; }
+    function figs() {
+      return h("div", { class: "plainfigs" }, [
+        h("div", null, [h("div", { class: "k", text: "输出文件总数" }), h("div", { class: "v", text: String(files) })]),
+        h("div", null, [h("div", { class: "k", text: "时长最大偏差" }), h("div", { class: "v", text: maxDev === null ? DASH : maxDev.toFixed(2) + " 秒" })]),
+        h("div", null, [h("div", { class: "k", text: "原码流直接拷贝" }), h("div", { class: "v", text: copyN ? copyOk + "/" + copyN : DASH })])
+      ]);
+    }
+    chartCard(sec, "tags", "带每种标签的文件比例",
+      "按输出文件数合计：每行是写了这个标签的文件占全部输出文件的比例。",
+      function (box) {
+        if (!runs.length) { box.appendChild(h("p", { class: "note", text: "当前范围里没有成功输出的文件。" })); return; }
+        var list = h("div", { class: "tagmeters" });
+        TAGS.forEach(function (t) {
+          var v = share(t[0]);
+          var meter = h("div", { class: "meter", style: "background:color-mix(in srgb, var(--m-hints) 20%, var(--surface))", "aria-hidden": "true" });
+          if (v !== null) meter.appendChild(h("span", { style: "width:" + (100 * v).toFixed(2) + "%;background:var(--m-hints)" }));
+          list.appendChild(h("div", { text: t[1] }));
+          list.appendChild(meter);
+          list.appendChild(h("div", { class: "fig", text: v === null ? DASH : Math.round(100 * v) + "%" }));
+        });
+        box.appendChild(list);
+        box.appendChild(figs());
+      },
+      function () {
+        var t = table(["标签", "带这个标签的文件"], TAGS.map(function (tg) {
+          var v = share(tg[0]);
+          return [tg[1], v === null ? DASH : Math.round(100 * v) + "%（约 " + Math.round(w[tg[0]].k) + "/" + w[tg[0]].n + "）"];
+        }), [1]);
+        return h("div", null, [t, figs()]);
+      });
+  }
+
+  // ---------- 9. review flag confusion ----------
+  function reviewFlag() {
+    var m = state.mode;
+    var sec = section("「需要复核」标记准不准", modeTag());
+    var card = h("div", { class: "card" });
+    sec.appendChild(card);
+    var cells = { fp: [], fn: [], tp: [], tn: [] }, skipped = 0;
+    scopeCases().forEach(function (c) {
+      var r = runOf(c, m);
+      if (!runOk(r) || typeof r.had_problem !== "boolean" || typeof r.needs_review !== "boolean") { if (r) skipped++; return; }
+      var key = r.needs_review ? (r.had_problem ? "tp" : "fp") : (r.had_problem ? "fn" : "tn");
+      cells[key].push(str(c.id) || DASH);
+    });
+    function cell(list, danger) {
+      var td = h("td", null, [h("div", { class: "count", text: String(list.length) }), h("div", { class: "ids" }, list.map(function (id) { return h("span", { text: id }); }))]);
+      if (danger) {
+        td.appendChild(list.length > 0
+          ? h("div", { class: "flag" }, [h("span", { class: "st-icon crit", "aria-hidden": "true", text: "!" }), h("span", { text: "漏报：结果有问题但工具没提醒" })])
+          : h("div", { class: "flag" }, [h("span", { class: "glyph-ok", "aria-hidden": "true", text: "✓" }), h("span", { text: "没有漏报" })]));
+      }
+      return td;
+    }
+    card.appendChild(h("p", { class: "note", style: "margin-bottom:10px", text: "按运行计：行是工具有没有自己标「需复核」，列是结果实际有没有问题（类型错、切点偏 3 秒以上或缺失或多切、歌名歌手专辑信息有错）。" }));
+    card.appendChild(h("div", { class: "scroll-x" }, h("table", { class: "confusion" }, [
+      h("thead", null, h("tr", null, [h("th", { scope: "col" }), h("th", { scope: "col", text: "结果确实有问题" }), h("th", { scope: "col", text: "结果没问题" })])),
+      h("tbody", null, [
+        h("tr", null, [h("th", { scope: "row", text: "工具标了需复核" }), cell(cells.tp), cell(cells.fp)]),
+        h("tr", null, [h("th", { scope: "row", text: "工具没标" }), cell(cells.fn, true), cell(cells.tn)])
+      ])
+    ])));
+    var n = cells.tp.length + cells.fp.length + cells.fn.length + cells.tn.length;
+    var bad = cells.tp.length + cells.fn.length;
+    var sentence = n === 0 ? "当前范围里没有可统计的运行。"
+      : (n + " 次运行里有 " + bad + " 次结果有问题" + (bad ? "，其中 " + cells.tp.length + " 次被工具自己标了出来。" : "。") +
+        (cells.fp.length ? "另有 " + cells.fp.length + " 次结果没问题但也被标了需复核。" : ""));
+    if (skipped) sentence += "运行失败的 " + skipped + " 次不计入。";
+    card.appendChild(h("p", { class: "summary-line", text: sentence }));
+  }
+
+  // ---------- 10. timings ----------
+  function timings() {
+    var m = state.mode;
+    var sec = section("耗时", modeTag());
+    var rows = scopeCases().map(function (c) {
+      var r = runOf(c, m);
+      if (!runOk(r) || !obj(r.timings)) return null;
+      var tm = r.timings, parts = {}, sum = 0;
+      STAGES.forEach(function (k) { var v = isNum(tm[k]) && tm[k] > 0 ? tm[k] : 0; parts[k] = v; sum += v; });
+      var total = isNum(tm.total) && tm.total > 0 ? tm.total : sum;
+      var wall = isNum(r.wall_seconds) && r.wall_seconds > 0 ? r.wall_seconds : null;
+      return { c: c, r: r, parts: parts, sum: sum, total: total, wall: wall, dur: caseDur(c), speed: wall ? caseDur(c) / wall : null, cached: str(r.cache) !== null && r.cache !== "cold" };
+    }).filter(Boolean).sort(function (a, b) { return b.dur - a.dur; });
+    chartCard(sec, "timing", "每个视频的处理时间",
+      "每条是一个视频，按音频时长从长到短排；各段是各阶段用的秒数，条尾是总秒数和速度（音频时长 ÷ 实际用时）。",
+      function (box) {
+        box.appendChild(h("div", { class: "legend" }, STAGES.map(function (k) {
+          return h("span", { class: "item" }, [h("span", { class: "swatch", style: "background:var(--s-" + k + ")" }), STAGE_NAME[k]]);
+        })));
+        if (!rows.length) { box.appendChild(h("p", { class: "note", text: "当前范围里没有成功的运行。" })); return; }
+        var W = Math.max(300, box.clientWidth || 600);
+        var narrow = W < 640;
+        var LBL = narrow ? 8 : 190, TIP = 104, BAR = 16, ROW = narrow ? 44 : 30, TOP = 6, AX = 26;
+        var maxV = Math.max.apply(null, rows.map(function (x) { return Math.max(x.total, x.sum); }));
+        var step = niceStep(maxV / 5), xmax = Math.ceil(maxV / step) * step;
+        var pw = W - LBL - TIP;
+        var X = function (v) { return LBL + pw * v / xmax; };
+        var H = TOP + rows.length * ROW + AX;
+        var svg = s("svg", { width: W, height: H, viewBox: "0 0 " + W + " " + H });
+        var g = s("g", { class: "tick" }, svg);
+        for (var v = 0; v <= xmax + 1e-9; v += step) {
+          s("line", { x1: X(v), x2: X(v), y1: TOP, y2: TOP + rows.length * ROW, stroke: v === 0 ? "var(--axis)" : "var(--grid)", "shape-rendering": "crispEdges" }, g);
+          var last = v + step > xmax + 1e-9;
+          s("text", { x: X(v), y: TOP + rows.length * ROW + 14, "text-anchor": last ? "start" : "middle", dx: last ? -6 : 0, text: String(Math.round(v)) + (last ? " 秒" : "") }, g);
+        }
+        var items = [];
+        rows.forEach(function (row, i) {
+          var y0 = TOP + i * ROW + (narrow ? 20 : (ROW - BAR) / 2);
+          var label = (str(row.c.id) || DASH) + (row.cached ? "（缓存续跑）" : "");
+          s("text", narrow ? { x: LBL, y: y0 - 6, class: "ink", text: label } : { x: LBL - 10, y: y0 + BAR / 2 + 4, "text-anchor": "end", class: "ink", text: label }, svg);
+          var acc = 0;
+          var nonzero = STAGES.filter(function (k) { return row.parts[k] > 0; });
+          nonzero.forEach(function (k, j) {
+            var x0 = X(acc), x1 = X(acc + row.parts[k]);
+            acc += row.parts[k];
+            var last = j === nonzero.length - 1;
+            var w = Math.max(0.5, x1 - x0 - (last ? 0 : 2));
+            var el = s("path", { d: barPath(x0, y0, w, BAR, last ? Math.min(4, w) : 0), fill: "var(--s-" + k + ")", class: "mark" }, svg);
+            var hit = s("rect", { x: x0, y: y0 - 4, width: Math.max(6, x1 - x0), height: BAR + 8, fill: "transparent" }, svg);
+            items.push({ mark: el, hit: hit, tip: function () {
+              return [h("div", { class: "t-title", text: str(row.c.id) || DASH }),
+                tipRow(row.parts[k].toFixed(1) + " 秒", STAGE_NAME[k], "var(--s-" + k + ")"),
+                tipRow(pct(row.parts[k], row.sum), "占这一条的比例")];
+            } });
+          });
+          var tipTxt = s("text", { x: X(acc) + 6, y: y0 + BAR / 2 + 4, class: "num" }, svg);
+          s("tspan", { class: "ink", text: Math.round(row.total) + " 秒" }, tipTxt);
+          s("tspan", { dx: 6, text: speedText(row.speed) }, tipTxt);
+        });
+        bindMarks(svg, items, "各视频处理耗时，按方向键逐段查看");
+        box.appendChild(h("div", { class: "scroll-x" }, svg));
+      },
+      function () {
+        return table(["视频"].concat(STAGES.map(function (k) { return STAGE_NAME[k]; })).concat(["合计", "实际用时", "音频时长", "速度"]),
+          rows.map(function (row) {
+            return [(str(row.c.id) || DASH) + (row.cached ? "（缓存续跑）" : "")].concat(STAGES.map(function (k) { return fmt1(row.parts[k]); }))
+              .concat([fmt1(row.total), fmt1(row.wall), mmss(row.dur), speedText(row.speed)]);
+          }), [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      });
+  }
+  function niceStep(raw) {
+    if (!(raw > 0)) return 1;
+    var p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+    return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+  }
+  // rectangle with only the right-hand (data-end) corners rounded
+  function barPath(x, y, w, hgt, r) {
+    if (r <= 0) return "M" + x + "," + y + " h" + w + " v" + hgt + " h" + (-w) + " z";
+    return "M" + x + "," + y + " h" + (w - r) + " a" + r + "," + r + " 0 0 1 " + r + "," + r + " v" + (hgt - 2 * r) +
+      " a" + r + "," + r + " 0 0 1 " + (-r) + "," + r + " h" + (-(w - r)) + " z";
+  }
+
+  // ---------- 11. what went wrong ----------
+  function problems() {
+    var m = state.mode;
+    var sec = section("出了什么问题", modeTag());
+    var card = h("div", { class: "card" });
+    sec.appendChild(card);
+    var list = h("ul", { class: "problems" });
+    var count = 0;
+    scopeCases().forEach(function (c) {
+      var r = runOf(c, m);
+      if (!r) return;
+      var ok = runOk(r);
+      if (ok && r.had_problem !== true) return;
+      count++;
+      var spans = trueSpans(c), lines = [];
+      if (!ok) {
+        lines.push("运行失败" + (isNum(r.exit_code) ? "（退出码 " + r.exit_code + "）" : "") + "：" + (str(r.error) || "没有错误信息"));
+      } else {
+        if (r.kind_ok === false) lines.push("类型判断错了：判成了" + (KIND_NAME[r.kind_pred] || str(r.kind_pred) || "未知") + "，应为" + (KIND_NAME[r.expected_kind] || str(r.expected_kind) || "未知") + "。");
+        arr(r.boundaries).forEach(function (b) {
+          if (!obj(b)) return;
+          var a = titleAround(spans, b.truth_n);
+          var pair = bookTitle(a.prev) + "和" + bookTitle(a.next) + "之间";
+          if (!isNum(b.error)) lines.push(pair + "的切点没找到（应在 " + mmssd(b.truth_start) + "）。");
+          else if (Math.abs(b.error) > 3) lines.push(pair + "的切点偏了 " + signedSecs(b.error) + "（应在 " + mmssd(b.truth_start) + "，工具切在 " + mmssd(b.pred_start) + "）。");
+        });
+        arr(r.extra_boundaries).filter(isNum).forEach(function (t) {
+          var inside = spans.filter(function (sp) { return t >= sp.start && t < sp.end; })[0];
+          lines.push("在 " + mmssd(t) + " 多切了一刀" + (inside ? "（落在" + bookTitle(inside.title) + "中间）" : "") + "。");
+        });
+        arr(r.titles).forEach(function (x) {
+          if (!obj(x)) return;
+          var n = isNum(x.truth_n) ? "第 " + x.truth_n + " 首" : "";
+          if (x.title_ok === false) lines.push(n + "歌名应为" + quote(x.truth_title) + "，写成了" + quote(x.pred_title) + "。");
+          if (x.artist_ok === false) lines.push(n + bookTitle(x.truth_title) + "的歌手应为" + quote(x.truth_artist) + "，写成了" + quote(x.pred_artist) + "。");
+        });
+        var al = obj(r.album), t = truthOf(c);
+        if (al) {
+          if (al.title_ok === false) lines.push("专辑名应为" + quote(t.album) + "，写成了" + quote(al.title) + "。");
+          if (al.artist_ok === false) lines.push("专辑歌手应为" + quote(t.album_artist) + "，写成了" + quote(al.artist) + "。");
+          if (al.year_ok === false) lines.push("发行年份应为" + quote(t.year) + "，写成了" + quote(al.year) + "。");
+        }
+        if (!lines.length) lines.push("评测标记了有问题，但没有具体的切点或文字错误记录。");
+      }
+      var head = h("div", { class: "head" }, [h("h3", { text: caseName(c) }), h("span", { class: "muted small", text: str(c.id) || "" }),
+        ok ? h("span", { class: "tag" + (r.needs_review ? " review" : ""), text: r.needs_review ? "已标记需复核" : "工具没标需复核" }) : null]);
+      var li = h("li", null, [head, h("ul", null, lines.map(function (x) { return h("li", { text: x }); }))]);
+      var own = arr(r.review_reasons).map(str).filter(function (x) { return x; });
+      if (own.length) li.appendChild(h("div", { class: "own" }, ["工具自己的说明", h("ul", null, own.map(function (x) { return h("li", { text: x }); }))]));
+      list.appendChild(li);
+    });
+    if (!count) card.appendChild(h("p", { text: "这个范围和模式下没有出问题的运行。" }));
+    else card.appendChild(list);
+  }
+
+  function footer() {
+    return h("footer", null, [
+      h("p", { text: "答案准确度：精确 = 来自分 P 或单曲本身，边界就是文件边界；较准 = 来自 UP 主的章节、简介或评论，并与官方曲长核对过；近似 = 手工从音频里找的边界。" }),
+      h("p", { text: "「近似」的视频，标准答案的切点本身可能就差一两秒，这些视频上 1 秒以内的误差不必较真。" }),
+      h("p", null, ["重新生成：", h("code", { text: "uv run python report/build_report.py --results eval/results/results.json --out eval/results/report.html" })])
+    ]);
+  }
+
+  function renderAll() {
+    hideTip();
+    renderFilters();
+    body.textContent = "";
+    if (!CASES.length) {
+      body.appendChild(h("div", { class: "card" }, h("p", { class: "note", text: "results.json 里没有任何视频的结果。" })));
+    } else {
+      overview(); cdf(); tiles(); timelines(); singles(); outputTags(); reviewFlag(); timings(); problems();
+    }
+    body.appendChild(footer());
+  }
+
+  renderAll();
+  var lastW = window.innerWidth, rt = null;
+  window.addEventListener("resize", function () {
+    if (window.innerWidth === lastW) return;
+    lastW = window.innerWidth;
+    clearTimeout(rt);
+    rt = setTimeout(renderAll, 120);
+  });
+})();
+</script>
+</body>
+</html>
