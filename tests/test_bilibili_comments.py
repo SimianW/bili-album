@@ -1,11 +1,11 @@
-"""Comment collection: pinned, like order, and the uploader's comments from previews, threads and extra pages.
+"""Comment collection (comments.py, through Bilibili._comments): pinned, like order, and the uploader's comments from previews, threads and extra pages.
 
 Offline: ``Bilibili._api`` is replaced by a scripted fake keyed by (endpoint, page, root).
 """
 
 import pytest
 
-from bili_album import bilibili as bb
+from bili_album import comments as bb
 from bili_album.bilibili import Bilibili, BilibiliError, VideoInfo
 
 UP = 42
