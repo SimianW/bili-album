@@ -14,10 +14,11 @@ from __future__ import annotations
 import logging
 import math
 import re
+import time
 from dataclasses import asdict, dataclass, field
 
 from .net import Http, HttpError
-from .textnorm import fold, norm, similarity
+from .textnorm import fold, norm, similarity, strip_decorations
 
 log = logging.getLogger(__name__)
 
@@ -98,17 +99,29 @@ class Provider:
 
 class NetEase(Provider):
     name = "netease"
+    retry_pause = 2.0
 
     def __init__(self, http: Http):
         self.http = http
 
     def _get(self, path: str, params: dict | None = None, relevant=None) -> dict:
+        """One API call. NetEase answers HTTP 200 / ``code: 200`` even when it throttles, but
+        then the body lists popular items unrelated to the query; ``relevant`` spots that.
+        Such an answer is never cached; it is retried once after a pause, then reported."""
         def ok(j):
             return isinstance(j, dict) and j.get("code") == 200 and (relevant is None or relevant(j))
-        j = self.http.get_json("https://music.163.com" + path, params=params, headers=NETEASE_HEADERS,
-                               validate=ok, stateless=True)
+        url = "https://music.163.com" + path
+        j = self.http.get_json(url, params=params, headers=NETEASE_HEADERS, validate=ok, stateless=True)
+        if isinstance(j, dict) and j.get("code") == 200 and not ok(j):
+            time.sleep(self.retry_pause)
+            j = self.http.get_json(url, params=params, headers=NETEASE_HEADERS, validate=ok, stateless=True,
+                                   cache=False)
+            if ok(j):
+                self.http.store_json(url, params, j)  # cache the good answer under the normal key
+            elif isinstance(j, dict) and j.get("code") == 200:
+                raise HttpError(f"netease {path}: answer unrelated to the query (throttled?)")
         if not ok(j):
-            raise HttpError(f"netease {path}: code {j.get('code')}")
+            raise HttpError(f"netease {path}: code {j.get('code') if isinstance(j, dict) else '?'}")
         return j
 
     @staticmethod
@@ -164,7 +177,8 @@ class NetEase(Provider):
                          artist=" & ".join(x["name"] for x in s.get("artists") or [] if x.get("name")),
                          duration=(s.get("duration") or 0) / 1000.0, number=int(s.get("no") or 0),
                          id=str(s.get("id", "")), provider="netease")
-            out.append((t, self._summary({**al, "artists": s.get("artists") or []}) if al.get("id") else
+            al_artists = [al["artist"]] if (al.get("artist") or {}).get("name") else (s.get("artists") or [])
+            out.append((t, self._summary({**al, "artists": al_artists}) if al.get("id") else
                         CatAlbum("netease", "", "", t.artist)))
         return out
 
@@ -196,7 +210,8 @@ class ITunes(Provider):
         art = (a.get("artworkUrl100") or "").replace("100x100bb", "1200x1200bb")
         return CatAlbum(
             provider="itunes", id=f"{a['collectionId']}@{country}", title=a.get("collectionName", ""),
-            artist=a.get("artistName", ""), url=a.get("collectionViewUrl", "").split("?")[0],
+            artist=a.get("collectionArtistName") or a.get("artistName", ""),
+            url=a.get("collectionViewUrl", "").split("?")[0],
             year=rd[:4], release_date=rd[:10], genre=a.get("primaryGenreName", ""), cover_url=art,
             track_count=int(a.get("trackCount") or 0))
 
@@ -403,6 +418,31 @@ class Catalog:
                         return got
         return "", ""
 
+    def original_titles(self, album: CatAlbum) -> list[str]:
+        """When ``album`` lists some titles only in Latin letters (a storefront translation),
+        look up the same album at the other providers and take original-script titles for
+        tracks at the same position with the same length. Returns notes on what changed."""
+        if not album.tracks or not any(latin_only(t.title) for t in album.tracks):
+            return []
+        notes: list[str] = []
+        for p in self.providers:
+            if p.name == album.provider:
+                continue
+            for a in (self._try(p.search_albums, f"{album.artist} {album.title}") or [])[:5]:
+                if similarity(a.title, album.title) < 0.85 or similarity(a.artist, album.artist) < 0.6:
+                    continue
+                full = self._try(p.album, a)
+                if not full or not full.tracks:
+                    continue
+                for t, o in zip(album.tracks, full.tracks):
+                    if abs(t.duration - o.duration) <= 3.0 and original_script_better(t.title, o.title, album.artist):
+                        notes.append(f"{t.title!r} -> {o.title!r} from {full.provider}")
+                        t.title = o.title
+                if notes:
+                    return notes
+                break
+        return notes
+
     def enrich(self, best: CatAlbum) -> CatAlbum:
         """Fill genre / cover / date gaps from the same album at another provider."""
         if best.genre and best.cover_url and best.release_date:
@@ -426,8 +466,64 @@ class Catalog:
         return best
 
 
+_BONUS = re.compile(r"bonus|demo|live|remix|acoustic|version|ver\.|edit\b|伴奏|纯音乐|instrumental|inst\b|"
+                    r"inst\.|karaoke|off\s*vocal|现场|试听|片段|铃声", re.I)
+
+
+def edition_subsets(tracks: list[CatTrack]) -> list[tuple[str, list[CatTrack]]]:
+    """The track lists an upload of this edition may plausibly contain: the whole edition,
+    and the edition without its instrumental / accompaniment tracks, without repeated
+    titles (a second block of the same songs), or without a trailing block of bonus
+    material (every dropped track marked bonus / demo / live / remix / instrumental)."""
+    out: list[tuple[str, list[CatTrack]]] = [("", list(tracks))]
+    n = len(tracks)
+    if n < 3:
+        return out
+
+    def add(label: str, sub: list[CatTrack]):
+        ids = [id(t) for t in sub]
+        if 2 <= len(sub) < n and all(ids != [id(t) for t in x] for _, x in out):
+            out.append((label, sub))
+
+    vocal = [t for t in tracks if not _EDITION.search(t.title)]
+    add("instrumental tracks dropped", vocal)
+    seen: set[str] = set()
+    uniq = []
+    for t in vocal:
+        k = norm(strip_decorations(t.title))
+        if k and k in seen:
+            continue
+        seen.add(k)
+        uniq.append(t)
+    add("instrumental and repeated tracks dropped", uniq)
+    k = n
+    while k > 2 and (_BONUS.search(tracks[k - 1].title) or
+                     norm(strip_decorations(tracks[k - 1].title)) in
+                     {norm(strip_decorations(t.title)) for t in tracks[:k - 1]}):
+        k -= 1
+    if k >= max(2, n // 2):
+        add("trailing bonus block dropped", tracks[:k])
+    return out
+
+
 def score_album(a: CatAlbum, *, duration: float, artists=(), works=(), titles=(),
                 n_tracks: int | None = None) -> AlbumMatch:
+    """Score the best-fitting subset of the edition (see :func:`edition_subsets`)."""
+    best: AlbumMatch | None = None
+    for label, sub in edition_subsets(a.tracks):
+        b = a if not label else CatAlbum(**{**a.__dict__, "tracks": sub, "track_count": len(sub)})
+        m = _score_album(b, duration=duration, artists=artists, works=works, titles=titles, n_tracks=n_tracks)
+        if label:
+            m.reason = m.reason[:-1] + f"; {len(sub)} of {len(a.tracks)} edition tracks, {label})"
+            b.edition_note = label  # type: ignore[attr-defined]
+        if best is None or m.score > best.score + 0.02:
+            best = m
+    assert best is not None
+    return best
+
+
+def _score_album(a: CatAlbum, *, duration: float, artists=(), works=(), titles=(),
+                 n_tracks: int | None = None) -> AlbumMatch:
     name = max([similarity(w, a.title) for w in works] or [0.0])
     art = max([similarity(x, a.artist) for x in artists] or [0.0])
     # Artist can also appear inside the works list when the title had no clear layout.
@@ -467,3 +563,70 @@ def same_script(name: str, candidates) -> bool:
 
 def is_cjk(s: str) -> bool:
     return bool(_CJK.search(fold(s)))
+
+
+# ----------------------------------------------------------------------------- releases
+
+VARIOUS = re.compile(r"^(?:various(?: artists)?|va|群星|华语群星|欧美群星|日韩群星|multiple artists|"
+                     r"verschiedene interpreten|artistes divers|v\.?a\.?)$", re.I)
+_COMPILATION_TITLE = re.compile(
+    r"\bbest\b|greatest|\bhits\b|collection|essential|anthology|playlist|now that|\btop\s*\d+|"
+    r"\b\d{2,4}s\b|精选|合辑|合集|金曲|热歌|榜单|串烧|经典老歌|sampler|soundtrack|原声|\bost\b|"
+    r"compilation|\bvol\.?\s*\d|party|workout|chill|love songs|mixtape|歌单", re.I)
+_SINGLE_TITLE = re.compile(r"\s-\s(?:single|ep)$|\((?:single|ep)\)$", re.I)
+DERIVED_TRACK = re.compile(r"翻唱|翻自|原唱|\bcover\b|伴奏|\bkaraoke\b|\binstrumental\b|\binst\b|\bremix\b|"
+                           r"\bdj\b|\blive\b|现场|版\)|版）|\bver\.|\bversion\b|纯音乐|钢琴|吉他|片段|铃声|"
+                           r"\bsped up\b|\bslowed\b", re.I)
+
+
+def release_kind(al: CatAlbum, t: CatTrack) -> str:
+    """``album`` (the artist's own album), ``single`` (single / EP named after the song) or
+    ``compilation`` (various artists, best-of, soundtrack sampler, playlist)."""
+    if VARIOUS.match((al.artist or "").strip()):
+        return "compilation"
+    if al.artist and t.artist and similarity(al.artist, t.artist) < 0.5 and \
+            not any(similarity(x, al.artist) >= 0.8 for x in re.split(r"\s*(?:&|,|、|/|feat\.?)\s*", t.artist)):
+        return "compilation"
+    if _COMPILATION_TITLE.search(al.title or "") and norm(al.title) != norm(t.title):
+        return "compilation"
+    if al.track_count >= 40:
+        return "compilation"
+    if _SINGLE_TITLE.search(al.title or ""):
+        return "single"
+    base = _SINGLE_TITLE.sub("", al.title or "")
+    if similarity(strip_decorations(base), strip_decorations(t.title)) >= 0.9 and (al.track_count or 1) <= 4:
+        return "single"
+    return "album"
+
+
+_RELEASE_RANK = {"album": 0, "single": 1, "compilation": 2}
+
+
+def rank_releases(pairs: list[tuple[CatTrack, CatAlbum]]) -> list[tuple[str, CatTrack, CatAlbum]]:
+    """Order releases of one recording: the artist's own albums first, then singles / EPs,
+    then compilations; within each, the earliest release first (undated last)."""
+    out = [(release_kind(al, t), t, al) for t, al in pairs if al.title]
+    out.sort(key=lambda x: (_RELEASE_RANK[x[0]], x[2].release_date or x[2].year or "9999"))
+    return out
+
+
+# ----------------------------------------------------------------------------- scripts
+
+_HANGUL_KANA = re.compile(r"[぀-ヿ가-힯ᄀ-ᇿ]")
+_HAN = re.compile(r"[㐀-鿿]")
+_LATIN_ONLY = re.compile(r"^[\x00-\x7f\u00c0-\u024f\u2018-\u201f]+$")
+
+
+def latin_only(s: str) -> bool:
+    return bool(s) and bool(_LATIN_ONLY.match(s))
+
+
+def original_script_better(ours: str, other: str, artist: str = "") -> bool:
+    """Is ``other`` the original-script spelling of a title we only have in Latin letters?
+    Hangul and kana always count (no catalog used here translates into them); Han counts
+    when the artist's name is written in Han too."""
+    if not latin_only(ours) or latin_only(other):
+        return False
+    if _HANGUL_KANA.search(other):
+        return True
+    return bool(_HAN.search(other) and _HAN.search(artist or ""))

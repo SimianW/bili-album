@@ -77,3 +77,20 @@ def _similarity(a: str, b: str) -> float:
 def contains(haystack: str, needle: str) -> bool:
     n = norm(needle)
     return bool(n) and n in norm(haystack)
+
+
+_TRANSLATION_PAREN = re.compile(r"^(?P<main>.*\S)\s*[\(（](?P<par>[A-Za-z][A-Za-z0-9 ,.'’&!?:\-]*)[\)）]\s*$")
+_VERSION_WORD = re.compile(r"feat|\bft\b|\bwith\b|prod|remix|\bmix\b|live|\bver\b|version|edit|remaster|"
+                           r"\binst|acoustic|demo|karaoke|\bop\b|\bed\b|\bost\b|theme|intro|outro|interlude|"
+                           r"sped|slowed|english|korean|japanese|chinese|mandarin|cantonese|\bsolo\b|\bunit\b",
+                           re.I)
+_NON_LATIN = re.compile(r"[぀-ヿ㐀-鿿가-힯ᄀ-ᇿ]")
+
+
+def strip_translation(title: str) -> str:
+    """Drop a Latin-letter translation in brackets after an original-script title:
+    ``괴물(Monster)`` -> ``괴물``. Version markers (``(Live)``, ``(feat. X)``) stay."""
+    m = _TRANSLATION_PAREN.match(title or "")
+    if not m or not _NON_LATIN.search(m.group("main")) or _VERSION_WORD.search(m.group("par")):
+        return title
+    return m.group("main").strip()

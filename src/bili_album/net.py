@@ -149,6 +149,14 @@ class Http:
                                                 encoding="utf-8")
         return obj
 
+    def store_json(self, url: str, params, obj, method: str = "GET", data=None) -> None:
+        """Put an answer fetched with ``cache=False`` into the cache under its normal key."""
+        if not self.cache_dir:
+            return
+        path = self.cache_dir / f"{self._key(method, url, params, data)}.json"
+        path.write_text(json.dumps(obj, ensure_ascii=False), encoding="utf-8")
+        path.with_suffix(".url").write_text(f"{method} {url}?{urlencode(params or {})}\n", encoding="utf-8")
+
     @property
     def cookies(self) -> CookieJar:
         return self.session.cookies
