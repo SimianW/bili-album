@@ -7,14 +7,23 @@ place, so Jellyfin's real-time monitor never sees half-written files. Nothing
 is overwritten silently: an existing album folder gives a ``duplicate`` result
 unless ``replace=True``.
 
+After Jellyfin lists the album, :func:`normalize_script` puts back the tool's Simplified
+Chinese where Jellyfin's own metadata fetcher (MusicBrainz) replaced or duplicated a value in
+Traditional script (周杰倫 next to 周杰伦). It is driven by the tags the tool wrote, touches only the
+album just imported and its tracks, and sets ``LockData`` on the items it corrects: Jellyfin 12.2
+has no lockable artist field (``LockedFields`` covers Name, Genres, Cast, ...), and without the lock a
+metadata refresh with "replace all" brought the Traditional artist back in the live test.
+
 Entry point: :func:`import_album`.
 """
 
 from __future__ import annotations
 
+import functools
 import json
 import logging
 import os
+import re
 import shutil
 import tempfile
 import time
@@ -39,6 +48,8 @@ POLL_INTERVAL = 3.0
 # Jellyfin 12.2 accepted the path-scoped notice (POST /Library/Media/Updated) but did not act on it within
 # 60 s in the live test; the full scan (POST /Library/Refresh) did. Both are sent, the full scan after this.
 NARROW_GRACE = 10.0
+SETTLE_TIMEOUT = 45.0     # seconds to wait for Jellyfin's online metadata fetch before comparing
+SCAN_TIMEOUT = 120.0
 
 
 @dataclass
@@ -57,8 +68,17 @@ class ImportResult:
     jellyfin_album_artist: str = ""
     web_url: str = ""
     refresh: str = ""                # how the scan was triggered
-    reason: str = ""
+    reason: str = ""                 # English detail
+    reason_code: str = ""            # jellyfin_unreachable | not_listed_in_time | tracks_incomplete |
+                                     # jellyfin_not_configured | duplicate | ""
     timings: dict = field(default_factory=dict)
+    # Traditional -> Simplified corrections made in Jellyfin: {item, type, name, field, from, to}
+    normalized: list[dict] = field(default_factory=list)
+    normalize_locked: list[str] = field(default_factory=list)    # item ids given LockData=true
+    normalize_verified: bool | None = None   # still Simplified after a full library scan (None: nothing to do)
+    leftover_artists: list[str] = field(default_factory=list)    # Traditional artist entries still present
+    normalize_error: str = ""
+    warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -119,6 +139,49 @@ class Jellyfin:
         j = self._call("GET", "/Items", {"ParentId": album_id, "IncludeItemTypes": "Audio", "Recursive": "true",
                                          "Limit": "0"}) or {}
         return int(j.get("TotalRecordCount") or 0)
+
+    # -- item metadata (reading needs a user id with an API key; any administrator will do) --------
+
+    @functools.cached_property
+    def admin_user_id(self) -> str:
+        users = self._call("GET", "/Users") or []
+        uid = next((u["Id"] for u in users if (u.get("Policy") or {}).get("IsAdministrator")), "")
+        if not uid:
+            raise JellyfinError("no administrator user to read item metadata with")
+        return uid
+
+    def get_item(self, item_id: str) -> dict:
+        return self._call("GET", f"/Items/{item_id}", {"userId": self.admin_user_id}) or {}
+
+    def item_exists(self, item_id: str) -> bool:
+        try:
+            return bool(self.get_item(item_id).get("Id"))
+        except JellyfinError as e:
+            if "404" in str(e):
+                return False
+            raise
+
+    def update_item(self, item_id: str, dto: dict) -> None:
+        """``POST /Items/{id}`` takes the whole item: send back what get_item returned, modified."""
+        self._call("POST", f"/Items/{item_id}", body=dto)
+
+    def delete_item(self, item_id: str) -> None:
+        """Remove an item record (used only for the tool's own album after its files are gone)."""
+        try:
+            self._call("DELETE", f"/Items/{item_id}")
+        except JellyfinError as e:
+            if "404" not in str(e):
+                raise
+
+    def album_tracks(self, album_id: str) -> list[dict]:
+        j = self._call("GET", "/Items", {"ParentId": album_id, "IncludeItemTypes": "Audio", "Recursive": "true",
+                                         "Fields": "Path"}) or {}
+        return j.get("Items") or []
+
+    def library_scan_running(self) -> bool:
+        tasks = self._call("GET", "/ScheduledTasks") or []
+        t = next((x for x in tasks if x.get("Key") == "RefreshLibrary"), {})
+        return t.get("State") not in (None, "Idle")
 
 
 # ----------------------------------------------------------------------------- source
@@ -255,7 +318,8 @@ def web_link(cfg: Config, item_id: str, server_id: str) -> str:
 def import_album(source: Path | str, *, config: Config | None = None, replace: bool = False,
                  dry_run: bool = False, wait_timeout: float = WAIT_TIMEOUT, poll_interval: float = POLL_INTERVAL,
                  jellyfin: Jellyfin | None = None, on_progress: Callable[[str], None] | None = None,
-                 staging_root: Path | None = None, cover: Path | None = None) -> ImportResult:
+                 staging_root: Path | None = None, cover: Path | None = None,
+                 settle_timeout: float = SETTLE_TIMEOUT) -> ImportResult:
     """Copy an album (folder, single file or plan.json) into the library and wait for Jellyfin.
 
     Never raises for Jellyfin trouble: files stay in place and the status is
@@ -265,12 +329,14 @@ def import_album(source: Path | str, *, config: Config | None = None, replace: b
     t0 = time.monotonic()
     say = on_progress or (lambda m: None)
     st = stage(Path(source), staging_root=staging_root, cover=cover)
+    # The tags the tool wrote, per destination file name: what Jellyfin should show.
+    tags = {name: read_tags(src) for src, name in st.files if Path(name).suffix.lower() == ".m4a"}
     try:
         dest, cpath = destination(cfg, st.album_artist, st.album)
         res = ImportResult("dry_run" if dry_run else "imported", album=st.album, album_artist=st.album_artist,
                            dest=str(dest), container_path=cpath, files=[n for _, n in st.files])
         if dest.exists() and any(dest.iterdir()) and not replace:
-            res.status = "duplicate"
+            res.status, res.reason_code = "duplicate", "duplicate"
             res.existing = sorted(p.name for p in dest.iterdir() if not p.name.startswith("."))
             res.reason = f"{dest} already holds {len(res.existing)} file(s); pass replace=True to replace this album"
             return res
@@ -287,17 +353,24 @@ def import_album(source: Path | str, *, config: Config | None = None, replace: b
         if st.tmpdir:
             shutil.rmtree(st.tmpdir, ignore_errors=True)
     n_audio = sum(1 for _, n in st.files if Path(n).suffix.lower() in AUDIO_EXT)
-    _confirm(res, cfg, jellyfin, n_audio, wait_timeout, poll_interval, say)
+    jf = _confirm(res, cfg, jellyfin, n_audio, wait_timeout, poll_interval, say)
+    if res.status == "imported" and res.item_id and jf is not None:
+        say("checking Jellyfin's names against the tags")
+        t1 = time.monotonic()
+        normalize_script(res, jf, tags, settle_timeout=settle_timeout, poll=poll_interval,
+                         scan_timeout=SCAN_TIMEOUT)
+        res.timings["normalize_s"] = round(time.monotonic() - t1, 2)
     res.timings["total_s"] = round(time.monotonic() - t0, 2)
     return res
 
 
 def _confirm(res: ImportResult, cfg: Config, jf: Jellyfin | None, n_audio: int, wait_timeout: float,
-             poll: float, say: Callable[[str], None]) -> None:
+             poll: float, say: Callable[[str], None]) -> Jellyfin | None:
     if jf is None:
         if not cfg.jellyfin_ready:
             res.status, res.reason = "imported_unconfirmed", "Jellyfin is not configured"
-            return
+            res.reason_code = "jellyfin_not_configured"
+            return None
         jf = Jellyfin(cfg.jellyfin_url, cfg.jellyfin_api_key)
     t0 = time.monotonic()
     try:
@@ -306,7 +379,8 @@ def _confirm(res: ImportResult, cfg: Config, jf: Jellyfin | None, n_audio: int, 
         res.refresh = "media_updated"
     except JellyfinError as e:
         res.status, res.reason = "imported_unconfirmed", f"Jellyfin unreachable: {e}"
-        return
+        res.reason_code = "jellyfin_unreachable"
+        return None
     say("waiting for Jellyfin to list the album")
     full_scan = False
     item = None
@@ -333,22 +407,208 @@ def _confirm(res: ImportResult, cfg: Config, jf: Jellyfin | None, n_audio: int, 
     if not item:
         res.status = "imported_unconfirmed"
         res.reason = f"Jellyfin did not list the album within {wait_timeout:.0f}s" + (f" ({last_err})" if last_err else "")
+        res.reason_code = "jellyfin_unreachable" if last_err else "not_listed_in_time"
     elif (res.jellyfin_track_count or 0) < n_audio:
         res.status = "imported_unconfirmed"
         res.reason = f"Jellyfin lists {res.jellyfin_track_count} of {n_audio} tracks after {wait_timeout:.0f}s"
+        res.reason_code = "tracks_incomplete"
+    return jf
 
 
-def remove_album(dest: Path | str, *, library_dir: Path | str, remove_empty_artist: bool = True) -> list[str]:
+# ----------------------------------------------------------------------------- Simplified Chinese in Jellyfin
+
+@functools.lru_cache(maxsize=1)
+def _opencc_t2s():
+    from opencc import OpenCC
+    return OpenCC("t2s")
+
+
+def t2s(text: str) -> str:
+    return _opencc_t2s().convert(text or "")
+
+
+_ARTIST_SPLIT = re.compile(r"\s*(?:&|/|;|、|,|，|\bfeat\.?|\bft\.?)\s*", re.I)
+
+
+def tag_artists(*values: str) -> list[str]:
+    """Names a tag stands for: the whole value and its parts ("A & B" -> "A & B", "A", "B")."""
+    out: list[str] = []
+    for v in values:
+        for x in [v, *_ARTIST_SPLIT.split(v or "")]:
+            x = (x or "").strip()
+            if x and x not in out:
+                out.append(x)
+    return out
+
+
+def fix_name(current: str, tagged: str) -> str | None:
+    """The tagged value when Jellyfin shows the same text in Traditional script, else None."""
+    if current and tagged and current != tagged and t2s(current) == tagged:
+        return tagged
+    return None
+
+
+def fix_artists(current: list[str], tagged: list[str]) -> tuple[list[str], list[str]] | None:
+    """(new list, removed names) when an entry is a Traditional-script variant of a tagged artist:
+    replaced by the tagged spelling, or dropped when that spelling is already there. Names that are
+    not variants of a tagged artist (other scripts, other people) are kept as they are."""
+    allowed = set(tagged)
+    out: list[str] = []
+    removed: list[str] = []
+    for name in current:
+        target = name if name in allowed else (t2s(name) if t2s(name) in allowed else None)
+        if target is None:
+            out.append(name)
+        elif target in out:
+            removed.append(name)
+        else:
+            out.append(target)
+            if target != name:
+                removed.append(name)
+    return (out, removed) if removed else None
+
+
+def _names(pairs) -> list[str]:
+    return [p.get("Name", "") for p in pairs or [] if p.get("Name")]
+
+
+def _plan_fixes(dto: dict, want: dict) -> list[tuple[str, object, object, list[str]]]:
+    """[(field, old, new, removed artist names)] for one item. ``want`` keys: name, artists, album_artists."""
+    fixes = []
+    new = fix_name(dto.get("Name", ""), want.get("name", ""))
+    if new:
+        fixes.append(("Name", dto.get("Name"), new, []))
+    for fld, key in (("ArtistItems", "artists"), ("AlbumArtists", "album_artists")):
+        if want.get(key):
+            cur = _names(dto.get(fld))
+            got = fix_artists(cur, want[key])
+            if got:
+                fixes.append((fld, cur, got[0], got[1]))
+    return fixes
+
+
+def _apply_fixes(jf: Jellyfin, dto: dict, fixes: list) -> None:
+    for fld, _old, new, _rm in fixes:
+        if fld == "Name":
+            dto["Name"] = new
+        elif fld == "ArtistItems":
+            dto["ArtistItems"] = [{"Name": n} for n in new]
+            dto["Artists"] = list(new)
+        elif fld == "AlbumArtists":
+            dto["AlbumArtists"] = [{"Name": n} for n in new]
+            dto["AlbumArtist"] = new[0] if new else ""
+    dto["LockData"] = True
+    jf.update_item(dto["Id"], dto)
+
+
+def _wants(tags: dict[str, dict], tracks: list[dict]) -> tuple[dict, dict[str, dict]]:
+    vals = list(tags.values())
+    album = {"name": next((t["album"] for t in vals if t.get("album")), ""),
+             "album_artists": tag_artists(*{t.get("album_artist", "") for t in vals}),
+             "artists": tag_artists(*{t.get("artist", "") for t in vals})}
+    per: dict[str, dict] = {}
+    for tr in tracks:
+        t = tags.get(Path(tr.get("Path") or "").name)
+        if t:
+            per[tr["Id"]] = {"name": t.get("title", ""), "artists": tag_artists(t.get("artist", "")),
+                             "album_artists": tag_artists(t.get("album_artist", ""))}
+    return album, per
+
+
+def _scan_fixes(jf: Jellyfin, album_id: str, tags: dict[str, dict]) -> list[tuple[dict, list]]:
+    tracks = jf.album_tracks(album_id)
+    want_album, want_tracks = _wants(tags, tracks)
+    out = []
+    dto = jf.get_item(album_id)
+    fx = _plan_fixes(dto, want_album)
+    if fx:
+        out.append((dto, fx))
+    for tid, want in want_tracks.items():
+        tdto = jf.get_item(tid)
+        fx = _plan_fixes(tdto, want)
+        if fx:
+            out.append((tdto, fx))
+    return out
+
+
+def normalize_script(res: ImportResult, jf: Jellyfin, tags: dict[str, dict], *, settle_timeout: float = SETTLE_TIMEOUT,
+                     poll: float = POLL_INTERVAL, scan_timeout: float = SCAN_TIMEOUT) -> None:
+    """Undo Jellyfin's Traditional-script names on the album just imported (see module docstring).
+    Never raises: problems become ``normalize_error`` and a warning; the import stays imported."""
+    if not tags:
+        return
+    try:
+        # Jellyfin fetches online metadata a little after the scan lists the album; wait for it
+        # (a MusicBrainz id on the album) so a late fetch cannot undo the check.
+        t0 = time.monotonic()
+        while time.monotonic() - t0 < settle_timeout:
+            dto = jf.get_item(res.item_id)
+            if any(k.startswith("MusicBrainz") for k in (dto.get("ProviderIds") or {})):
+                break
+            time.sleep(poll)
+        res.timings["settle_s"] = round(time.monotonic() - t0, 2)
+        fixes = _scan_fixes(jf, res.item_id, tags)
+        if not fixes:
+            return
+        artist_ids: dict[str, str] = {}
+        for dto, fx in fixes:
+            for fld, old, new, removed in fx:
+                if fld in ("ArtistItems", "AlbumArtists"):
+                    for p in dto.get(fld) or []:
+                        if p.get("Name") in removed and p.get("Id"):
+                            artist_ids[p["Name"]] = p["Id"]
+            _apply_fixes(jf, dto, fx)
+            res.normalize_locked.append(dto["Id"])
+            for fld, old, new, removed in fx:
+                res.normalized.append({"item": dto["Id"], "type": dto.get("Type", ""), "name": dto.get("Name", ""),
+                                       "field": fld, "from": old, "to": new})
+        # Make sure it sticks: a full library scan, then compare again.
+        jf.refresh_library()
+        res.refresh = (res.refresh + "+" if res.refresh else "") + "normalize_scan"
+        t1 = time.monotonic()
+        time.sleep(min(3.0, poll))
+        while time.monotonic() - t1 < scan_timeout and jf.library_scan_running():
+            time.sleep(poll)
+        again = _scan_fixes(jf, res.item_id, tags)
+        res.normalize_verified = not again
+        if again:
+            res.warnings.append("Jellyfin shows Traditional-script names again after a library scan: " +
+                                "; ".join(f"{d.get('Name')}: {f[0]}" for d, fx in again for f in fx))
+        # The scan deletes artist entries nothing points at; report any that stayed (never deleted here).
+        res.leftover_artists = [n for n, i in artist_ids.items() if jf.item_exists(i)]
+    except Exception as e:  # the import itself succeeded; this is a cosmetic correction
+        res.normalize_error = f"{type(e).__name__}: {e}"[:300]
+        res.warnings.append(f"could not correct Traditional-script names in Jellyfin: {res.normalize_error}")
+        log.warning("normalize: %s", res.normalize_error)
+
+
+def remove_album(dest: Path | str, *, library_dir: Path | str, remove_empty_artist: bool = True,
+                 jellyfin: Jellyfin | None = None, config: Config | None = None) -> list[str]:
     """Delete one album folder under the library (and its artist folder if that is then empty).
-    Refuses anything that is not exactly ``library_dir/<artist>/<album>``."""
+    Refuses anything that is not exactly ``library_dir/<artist>/<album>``.
+
+    With ``jellyfin`` and ``config`` it also deletes the album's record in Jellyfin and asks for a
+    library scan. Jellyfin 12.2 keeps the album record (an orphan whose artist entry then stays
+    alive) when the album's artist folder disappears, with or without the tool's lock (checked live);
+    ``DELETE /Items/{id}`` removes it, and the scan then drops artist entries nothing points at."""
     dest = Path(dest).resolve()
     lib = Path(library_dir).resolve()
     if dest.parent.parent != lib or not dest.is_dir():
         raise ValueError(f"{dest} is not an album folder directly under {lib}/<artist>/")
+    album_id = ""
+    if jellyfin is not None and config is not None:
+        rel = dest.relative_to(lib).as_posix()
+        item = jellyfin.album_by_path(f"{config.jellyfin_library_path.rstrip('/')}/{rel}")
+        album_id = item["Id"] if item else ""
     removed = [str(dest)]
     shutil.rmtree(dest)
     if remove_empty_artist and not any(dest.parent.iterdir()):
         dest.parent.rmdir()
         removed.append(str(dest.parent))
+    if jellyfin is not None:
+        if album_id:
+            jellyfin.delete_item(album_id)
+            removed.append(f"jellyfin:{album_id}")
+        jellyfin.refresh_library()
     return removed
 

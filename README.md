@@ -52,6 +52,28 @@ answers nonsense, the plan stays as it was with `review.error` set. Derivative v
 through a hidden temporary folder renamed into place, never overwrites without `--replace`, then asks Jellyfin to
 scan and waits until the album is listed with all tracks; it prints the Jellyfin item id and the album's web link.
 
+**The tool writes Jellyfin metadata, for its own imports only.** Chinese is always Simplified. Jellyfin's
+MusicBrainz fetcher can add a Traditional-script duplicate during the scan (周杰倫 next to 周杰伦). After an import
+the tool compares Jellyfin's album name, album artists, track names and track artists with the tags it wrote; where
+Jellyfin shows the same text in Traditional script (OpenCC `t2s` of Jellyfin's value equals the tag) or adds a
+Traditional duplicate of a tagged artist, it updates that item through the API (`POST /Items/{id}`) to the tagged
+value and sets `LockData` on it (Jellyfin passes the lock on to the album's tracks). Other scripts and other names
+are never touched. Jellyfin 12.2 has no lockable artist field, and without the lock a metadata refresh with "replace
+all" brought the Traditional artist back. The correction is checked again after a full library scan; the scan also
+drops the Traditional artist entry once nothing points at it. Results are in the import result (`normalized`,
+`normalize_locked`, `normalize_verified`, `leftover_artists`, `warnings`); a failed correction is a warning, the import
+still counts. Because of the lock, Jellyfin no longer refreshes those items from the internet; to change one later,
+untick "Lock this item" in Jellyfin's metadata editor.
+
+Deleting an album folder by hand leaves its record behind in Jellyfin 12.2 (an orphan album that also keeps its
+artist entry alive; seen with and without the lock). Delete albums from Jellyfin's own UI, or with
+`bili_album.library.remove_album(dest, library_dir=..., jellyfin=..., config=...)`, which removes the folder, deletes
+the album's record (`DELETE /Items/{id}`) and starts a scan.
+
+Messages shown to the owner (`message`, `error` in the job state, stage events, `reason_zh` of rejected edits in the
+job state) are plain Simplified Chinese; the technical text is kept in `error_detail`, with a stable `error_code`
+(see `bili_album/messages.py`).
+
 `ingest` runs plan → review → cut → import; with `--on-unsure hold` (default) it stops before cutting when the
 reviewed plan still needs review. The Python API for a web front end is `bili_album.pipeline`
 (`ingest`, `confirm`, `discard`, `load_job`; state in `<workdir>/job.json`).

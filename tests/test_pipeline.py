@@ -119,7 +119,9 @@ def test_confirm_refuses_broken_plan(tmp_path):
     d["tracks"][0]["artist"] = ""
     Path(job.plan_path).write_text(json.dumps(d), encoding="utf-8")
     res = confirm(job, steps=st, config=CFG)
-    assert res.status == "needs_confirmation" and "missing artist" in res.error
+    assert res.status == "needs_confirmation" and res.error_code == "plan_problems"
+    assert res.error == "方案还有问题，暂时不能导入。第 1 首缺少艺人。请修改后再确认。" == res.message
+    assert "missing artist" in res.error_detail
 
 
 def test_on_unsure_import_marks_forced(tmp_path):
@@ -149,8 +151,9 @@ def test_failure_becomes_result_and_callback_errors_ignored(tmp_path):
         raise RuntimeError("page went away")
 
     job = ingest("u", tmp_path / "w", bad_callback, steps=steps(False, plan_raises=SystemExit(2)), config=CFG)
-    assert job.status == "failed" and "SystemExit" in job.error
-    assert job.events[-1]["status"] == "failed" and job.events[-1]["message"].startswith("分析失败")
+    assert job.status == "failed" and job.error_code == "unexpected" and "SystemExit" in job.error_detail
+    assert job.error == "分析失败：处理时出现意外错误。请稍后重试；如果反复出现，请把日志交给维护者。"
+    assert job.events[-1]["status"] == "failed" and job.events[-1]["message"] == job.error
     assert load_job(tmp_path / "w").status == "failed"
 
 
@@ -158,3 +161,60 @@ def test_no_review_holds_tool_flagged_plan(tmp_path):
     calls = []
     job = ingest("u", tmp_path / "w", review=False, steps=steps(False, calls=calls), config=CFG)
     assert job.status == "needs_confirmation" and calls == ["plan"]
+
+
+def test_missing_video_message(tmp_path):
+    from bili_album.bilibili import BilibiliError
+    err = BilibiliError("https://api.bilibili.com/x/web-interface/view: code -404 啥都木有")
+    job = ingest("u", tmp_path / "w", steps=steps(False, plan_raises=err), config=CFG)
+    assert job.error == "分析失败：找不到这个视频：链接可能有误，或视频已被删除。请检查链接后再试。"
+    assert job.error_code == "video_not_found" and "-404" in job.error_detail and "-404" not in job.message
+
+
+def test_import_messages_unconfirmed_and_normalized(tmp_path):
+    @dataclass
+    class Imp:
+        d: dict
+
+        def to_dict(self):
+            return self.d
+
+    def imp_with(d):
+        st = steps(False)
+        st.import_ = lambda source, cover, replace, config: Imp(d)
+        return st
+
+    job = ingest("u", tmp_path / "a", steps=imp_with({"status": "imported_unconfirmed", "album": "范特西",
+                                                       "reason_code": "jellyfin_unreachable",
+                                                       "reason": "Jellyfin unreachable: refused"}), config=CFG)
+    assert job.status == "imported_unconfirmed" and job.message.startswith("文件已放进音乐库，但连不上 Jellyfin")
+    assert job.error_detail == "Jellyfin unreachable: refused"
+    job = ingest("u", tmp_path / "b", steps=imp_with({"status": "imported", "album": "范特西", "jellyfin_track_count": 10,
+                                                       "normalized": [{"field": "AlbumArtists"}]}), config=CFG)
+    assert job.message == "已导入 Jellyfin：《范特西》10 首；已把 Jellyfin 里的繁体歌手名改回简体"
+    job = ingest("u", tmp_path / "c", steps=imp_with({"status": "imported", "album": "范特西", "jellyfin_track_count": 10,
+                                                       "normalize_error": "JellyfinError: 500",
+                                                       "warnings": ["could not correct"]}), config=CFG)
+    assert "仍可能显示繁体" in job.message and job.warnings == ["could not correct"]
+
+
+def test_rejected_edit_reason_is_fully_chinese_in_job(tmp_path):
+    st = steps(True)
+
+    def review(plan_path, config):
+        d = json.loads(plan_path.read_text(encoding="utf-8"))
+        d["review"] = {"verdict": "needs_human", "edits_applied": [], "flagged_tracks": [1], "tool_notes": [
+            "工具无法核实“修改曲名/艺人（第 1 首）”，未采纳，需要人工确认（title 'X' not found in the catalog "
+            "tracklist, recognition, uploader text or a catalog lookup）。"],
+            "edits_rejected": [{"edit": {"op": "relabel_track", "track": 1, "title": "X"},
+                                "why": "title 'X' not found in the catalog tracklist, recognition, uploader text or "
+                                       "a catalog lookup", "reason_zh": "old (English)"}],
+            "error": "ModelError: HTTP 504 from proxy"}
+        plan_path.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+
+    st.review = review
+    job = ingest("u", tmp_path / "w", steps=st, config=CFG)
+    r = job.review["edits_rejected"][0]["reason_zh"]
+    assert r == "工具无法核实“修改曲名/艺人（第 1 首）”，未采纳，需要人工确认：在专辑曲目表、音频识别、投稿文字和曲库里都找不到这个名字。"
+    assert job.review["tool_notes"] == [r]
+    assert job.review["error_zh"].startswith("模型复核失败") and "已跳过复核" in job.review["error_zh"]

@@ -79,7 +79,15 @@ After edits run `apply` on the edited plan. `apply` validates first (increasing 
   values (not into tests, fixtures or error messages); `Config` hides them from `repr` and `Config.scrub` masks them.
 - `review.py`: the model only proposes; every edit must be confirmed by data (`Editor.op_*`). Keep it that way when
   adding edit kinds. Offline tests use a local fake endpoint (`tests/test_review.py`); never record real replies.
-- `library.py` writes into the live Jellyfin library: test with a temporary `library_dir` and a fake Jellyfin.
+- `library.py` writes into the live Jellyfin library and, after an import, writes item metadata with the API key
+  (Traditional -> Simplified corrections plus `LockData`, for the album just imported and its tracks only; see
+  README). Never extend that to other items. Test with a temporary `library_dir` and a fake Jellyfin.
+- Never call `GET /Artists/{name}` to check for an artist: Jellyfin creates the artist when it does not exist. Look
+  items up by id (`GET /Items/{id}?userId=<admin>`).
+- To remove an imported album use `remove_album(..., jellyfin=, config=)` (deletes the Jellyfin record too); a bare
+  folder delete leaves an orphan album record in Jellyfin 12.2.
+- Owner-facing text goes through `messages.py`: plain Simplified Chinese in `message` / `error`, technical text in
+  `error_detail`.
 
 ## Web page (`src/bili_album/web/`)
 

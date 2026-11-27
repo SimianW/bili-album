@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .config import Config, load_config
+from .messages import Z, explain, hold_message, import_reason, problems_zh, rejected_reason_zh, review_error
 
 log = logging.getLogger(__name__)
 
@@ -73,7 +74,9 @@ class IngestResult:
     output_files: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     import_result: dict | None = None
-    error: str = ""
+    error: str = ""                  # plain Chinese: why it stopped / why confirm refused ("" when fine)
+    error_code: str = ""             # stable key, see messages.Z (video_not_found, plan_problems, ...)
+    error_detail: str = ""           # technical detail for logs (exception class and text), never shown as is
     message: str = ""                # last Chinese status line
     events: list[dict] = field(default_factory=list)
     created_at: str = field(default_factory=_now)
@@ -196,13 +199,14 @@ class _Run:
         except BaseException as e:  # SystemExit from deep code included; KeyboardInterrupt re-raised
             if isinstance(e, KeyboardInterrupt):
                 raise
-            text = f"{type(e).__name__}: {e}"
-            if self._config is not None:
-                text = self._config.scrub(text)
-            log.warning("stage %s failed: %s", name, text)
+            ex = explain(e, name)
+            detail = self._config.scrub(ex.detail) if self._config is not None else ex.detail
+            log.warning("stage %s failed: %s", name, detail)
             self.job.status = FAILED
-            self.job.error = text[:1000]
-            self.emit(name, "failed", f"{_zh_stage(name)}失败：{text[:200]}", time.monotonic() - t0)
+            self.job.error = f"{_zh_stage(name)}失败：{ex.zh}"
+            self.job.error_code = ex.code
+            self.job.error_detail = detail[:1000]
+            self.emit(name, "failed", self.job.error, time.monotonic() - t0, code=ex.code)
             return False
         self.emit(name, "finished", msg, time.monotonic() - t0)
         return True
@@ -226,6 +230,14 @@ class _Run:
                                                 "edits_applied", "edits_rejected", "edits_skipped", "tool_notes",
                                                 "flagged_tracks", "error", "timing", "replan")
                         if k in rv}
+            # Rejected edits: a fully Chinese reason (the plan's own text ends in the English "why").
+            rej = [dict(r, reason_zh=rejected_reason_zh(r)) for r in rv.get("edits_rejected") or []]
+            j.review["edits_rejected"] = rej
+            if rv.get("tool_notes") is not None:
+                skipped = [n for n in rv.get("tool_notes") or [] if not n.startswith("工具无法核实")]
+                j.review["tool_notes"] = skipped + [r["reason_zh"] for r in rej]
+            if rv.get("error"):
+                j.review["error_zh"] = review_error(rv["error"]).zh
         flagged = set(rv.get("flagged_tracks") or []) if rv and j.needs_review else set()
         if j.needs_review and not rv:
             # Not reviewed by the model (review=False): fall back to the tool's own low-confidence marks.
@@ -247,7 +259,7 @@ class _Run:
         self.read_plan()
         rv = getattr(out, "review", None) or self.job.review or {}
         if rv.get("error"):
-            return "模型复核失败，保留原方案（需要人工确认）"
+            return review_error(rv["error"]).zh
         v = rv.get("verdict")
         n = len(rv.get("edits_applied") or [])
         base = {"approved": "复核通过", "edited": f"复核完成，已修正 {n} 处",
@@ -277,15 +289,28 @@ class _Run:
         d = res.to_dict() if hasattr(res, "to_dict") else dict(res)
         self.job.import_result = d
         st = d.get("status")
+        if d.get("warnings"):
+            self.job.warnings = list(self.job.warnings) + list(d["warnings"])
         if st == "imported":
             self.job.status = IMPORTED
-            return f"已导入 Jellyfin：《{d.get('album')}》{d.get('jellyfin_track_count')} 首"
+            msg = f"已导入 Jellyfin：《{d.get('album')}》{d.get('jellyfin_track_count')} 首"
+            fields = {n.get("field") for n in d.get("normalized") or []}
+            if fields & {"ArtistItems", "AlbumArtists"}:
+                msg += "；已把 Jellyfin 里的繁体歌手名改回简体"
+            elif fields:
+                msg += "；已把 Jellyfin 里的繁体名称改回简体"
+            if d.get("normalize_error") or d.get("normalize_verified") is False:
+                msg += "（但 Jellyfin 里仍可能显示繁体名称，可在 Jellyfin 里手动修改）"
+            return msg
         if st == "duplicate":
             self.job.status = DUPLICATE
-            return f"音乐库里已有《{d.get('album')}》（{len(d.get('existing') or [])} 个文件），未覆盖"
+            return (f"音乐库里已有《{d.get('album')}》（{len(d.get('existing') or [])} 个文件），没有覆盖。"
+                    "如要替换，请选择替换后再导入。")
         if st == "imported_unconfirmed":
             self.job.status = IMPORTED_UNCONFIRMED
-            return f"文件已放入音乐库，但 Jellyfin 尚未确认：{d.get('reason')}"
+            self.job.error_code = d.get("reason_code") or "not_listed_in_time"
+            self.job.error_detail = str(d.get("reason") or "")
+            return import_reason(self.job.error_code)
         raise RuntimeError(f"import ended with status {st}: {d.get('reason')}")
 
     # -- flows ---------------------------------------------------------------------
@@ -295,7 +320,7 @@ class _Run:
         if j.needs_review and not confirmed:
             if on_unsure == "hold":
                 j.status = NEEDS_CONFIRMATION
-                j.message = "需要确认：请检查曲目和问题后继续或放弃"
+                _code, j.message = hold_message(j.reasons, bool(j.derivative))
                 save_job(j)
                 return j
             j.forced_import = True
@@ -335,11 +360,7 @@ def ingest(url: str, workdir: Path | str, on_event: EventCallback | None = None,
             return job
         return r.after_review(on_unsure, do_import, replace, confirmed=False)
     except Exception as e:  # anything outside a stage (disk full writing job.json, ...)
-        job.status, job.error = FAILED, f"{type(e).__name__}: {e}"
-        try:
-            save_job(job)
-        except Exception:
-            pass
+        _fail(job, e)
         return job
 
 
@@ -350,7 +371,8 @@ def confirm(job: IngestResult | Path | str, on_event: EventCallback | None = Non
     ``duplicate`` (with ``replace=True``) or ``imported_unconfirmed``."""
     j = job if isinstance(job, IngestResult) else load_job(job)
     if j.status not in (NEEDS_CONFIRMATION, DUPLICATE, IMPORTED_UNCONFIRMED, FAILED) or not j.plan_path:
-        j.error = f"cannot continue a job with status {j.status}"
+        j.error, j.error_code = Z["bad_status"], "bad_status"
+        j.error_detail = f"cannot continue a job with status {j.status}"
         return j
     r = _Run(j, on_event, steps, config)
     try:
@@ -358,18 +380,19 @@ def confirm(job: IngestResult | Path | str, on_event: EventCallback | None = Non
         from .review import structural_problems
         problems = structural_problems(plan)
         if problems:
-            j.error = "plan has problems: " + "; ".join(problems)
-            j.message = "方案仍有硬性问题，无法导入：" + "；".join(problems)[:200]
+            j.error = Z["plan_problems"] + problems_zh(problems)
+            j.error_code = "plan_problems"
+            j.error_detail = "; ".join(problems)
+            j.message = j.error
             save_job(j)
             return j
         j.confirmed = True
-        j.error = ""
+        j.error = j.error_code = j.error_detail = ""
         j.status = RUNNING
         imp = j.options.get("do_import", True) if do_import is None else do_import
         return r.after_review("import", imp, replace, confirmed=True)
     except Exception as e:
-        j.status, j.error = FAILED, f"{type(e).__name__}: {e}"
-        save_job(j)
+        _fail(j, e)
         return j
 
 
@@ -383,6 +406,16 @@ def discard(job: IngestResult | Path | str) -> IngestResult:
     j.message = "已放弃"
     save_job(j)
     return j
+
+
+def _fail(job: IngestResult, e: BaseException) -> None:
+    ex = explain(e)
+    job.status, job.error, job.error_code, job.error_detail = FAILED, ex.zh, ex.code, ex.detail
+    job.message = ex.zh
+    try:
+        save_job(job)
+    except Exception:
+        pass
 
 
 def _zh_stage(name: str) -> str:
