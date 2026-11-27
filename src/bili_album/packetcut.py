@@ -33,7 +33,11 @@ OVERLAP = 0.001    # seconds two ranges may overlap and still share one boundary
 
 
 class PacketCutError(ValueError):
-    pass
+    """The source or ffmpeg could not give a verified copy (not something a plan edit fixes)."""
+
+
+class RangeError(PacketCutError):
+    """A planned range does not fit the source's packets (overlap, past the end, too short)."""
 
 
 @dataclass(frozen=True)
@@ -106,17 +110,17 @@ def packet_ranges(ranges: list[tuple[float, float]], rate: int, samples: int,
         if samples < e <= samples + slack:
             e = Fraction(samples)
         if not 0 <= s < e <= samples:
-            raise PacketCutError(f"range {start:.3f}-{end:.3f}s does not fit the audio ({samples / rate:.3f}s)")
+            raise RangeError(f"range {start:.3f}-{end:.3f}s does not fit the audio ({samples / rate:.3f}s)")
         first = 0 if s == 0 else bisect.bisect_left(positions, s)
         last = len(positions) if e == samples else bisect.bisect_left(positions, e)
         if first >= last:
-            raise PacketCutError(f"range {start:.3f}-{end:.3f}s holds no whole audio packet")
+            raise RangeError(f"range {start:.3f}-{end:.3f}s holds no whole audio packet")
         out.append((first, last))
     for i in range(len(out) - 1):
         (a0, a1), (b0, b1) = out[i], out[i + 1]
         if b0 < a1:
             if ranges[i][1] - ranges[i + 1][0] > OVERLAP or b0 <= a0:
-                raise PacketCutError("ranges overlap once moved to packet boundaries")
+                raise RangeError("ranges overlap once moved to packet boundaries")
             out[i] = (a0, b0)
     return out
 
@@ -150,8 +154,15 @@ def cut_tracks(src: Path, ranges: list[tuple[float, float]], dsts: list[Path], *
             raise FileExistsError(d)
     stream = audio_stream(src)
     if stream.get("codec_name") not in COPY_CODECS:
-        for (s, e), d in zip(ranges, dsts):
-            cut(src, d, s, e, overwrite=overwrite)
+        written: list[Path] = []
+        try:
+            for (s, e), d in zip(ranges, dsts):
+                cut(src, d, s, e, overwrite=overwrite)
+                written.append(d)
+        except BaseException:
+            for d in written:
+                d.unlink(missing_ok=True)
+            raise
         return [Cut(s, e, "encode") for s, e in ranges]
     rate = int(stream["sample_rate"])
     samples, hashes, positions = timeline(src, stream)

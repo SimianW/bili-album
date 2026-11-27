@@ -16,7 +16,7 @@ from pathlib import Path
 
 from .hints import fmt_ts
 from .media import audio_info, image_kind
-from .packetcut import Cut, PacketCutError, cut_tracks
+from .packetcut import Cut, PacketCutError, RangeError, cut_tracks
 from .tag import OPTIONAL, REQUIRED, read_tags, write_tags
 
 DUR_TOL = 0.1
@@ -27,6 +27,10 @@ class PlanError(ValueError):
     def __init__(self, problems: list[str]):
         super().__init__("\n".join(problems))
         self.problems = problems
+
+
+class CutError(PlanError):
+    """The source or ffmpeg failed while cutting (``cut failed: …``); editing the plan does not help."""
 
 
 def sanitize(name: str, max_len: int = 120) -> str:
@@ -142,19 +146,25 @@ def apply_plan(plan_path: Path, outdir: Path, *, force: bool = False, make_zip: 
     by_source: dict[Path, list[int]] = {}
     for i, t in enumerate(tracks):
         by_source.setdefault(track_source(plan, t), []).append(i)
-    # A source that fails removes the files earlier sources wrote in this run (untagged so far).
+    # Every source is cut into hidden staging files first; only when all succeed do they replace
+    # the outputs, so a failure leaves no new file and (with --force) keeps the old ones.
+    staged = [f.with_name("." + f.stem + ".cut.m4a") for f in files]
     cuts: dict[int, Cut] = {}
     try:
         for src, idx in by_source.items():
             done = cut_tracks(src, [(float(tracks[i]["start"]), float(tracks[i]["end"])) for i in idx],
-                              [files[i] for i in idx], overwrite=force)
+                              [staged[i] for i in idx], overwrite=True)
             cuts.update(zip(idx, done))
     except BaseException as e:
-        for i in cuts:
-            files[i].unlink(missing_ok=True)
+        for s in staged:
+            s.unlink(missing_ok=True)
+        if isinstance(e, RangeError):
+            raise PlanError([str(e)]) from e
         if isinstance(e, PacketCutError):
-            raise PlanError([f"cut failed: {e}"]) from e
+            raise CutError([f"cut failed: {e}"]) from e
         raise
+    for s, f in zip(staged, files):
+        s.replace(f)
     for t, dst in zip(tracks, files):
         span = f"{fmt_ts(t['start'])}-{fmt_ts(t['end'])}"
         comment = f"{url} {span}".strip() if url else f"{plan['source'].get('title', '')} {span}".strip()
@@ -189,8 +199,10 @@ def apply_plan(plan_path: Path, outdir: Path, *, force: bool = False, make_zip: 
                "planned": round(planned, 3), "actual": round(info["duration"], 3), "file": str(f),
                "cut_start": round(c.start, 3), "cut_end": round(c.end, 3), "cut": c.mode}
         res.rows.append(row)
-        if abs(info["duration"] - planned) > DUR_TOL:
-            res.warnings.append(f"track {t['index']}: duration {info['duration']:.3f}s vs planned {planned:.3f}s")
+        # Packet cuts move each boundary by up to a packet (about 93 ms for ALAC): compare with what was cut.
+        if abs(info["duration"] - (c.end - c.start)) > DUR_TOL:
+            res.warnings.append(f"track {t['index']}: duration {info['duration']:.3f}s vs cut "
+                                f"{c.end - c.start:.3f}s (planned {planned:.3f}s)")
         if info["start_time"] < 0:
             res.warnings.append(f"track {t['index']}: negative start time {info['start_time']}")
         for key in REQUIRED:

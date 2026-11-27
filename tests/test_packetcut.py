@@ -159,3 +159,73 @@ def test_apply_removes_earlier_sources_and_reports_a_plan_error(aac, tmp_path, m
     with pytest.raises(PlanError, match="cut failed"):
         apply_plan(p, tmp_path / "out")
     assert not list((tmp_path / "out").rglob("*.m4a"))
+
+
+def _apply_plan_file(tmp_path, sources_and_ranges, kind="multipart"):
+    import json
+    tracks = [{"index": i, "start": s, "end": e, "title": f"t{i}", "artist": "x", "album": "al",
+               "album_artist": "x", "audio_path": str(src)}
+              for i, (src, s, e) in enumerate(sources_and_ranges, 1)]
+    plan = {"version": 1, "kind": kind, "tracks": tracks,
+            "source": {"url": "", "title": "t", "audio_path": str(sources_and_ranges[0][0]),
+                       "parts": len(tracks)},
+            "album": {"title": "al", "artist": "x", "cover_path": ""}}
+    p = tmp_path / "plan.json"
+    p.write_text(json.dumps(plan))
+    return p
+
+
+def test_failed_force_run_keeps_the_old_files(aac, tmp_path, monkeypatch):
+    from bili_album.apply import PlanError, apply_plan
+    part2 = tmp_path / "p2.m4a"
+    shutil.copy(aac, part2)
+    p = _apply_plan_file(tmp_path, [(aac, 0.0, 10.0), (part2, 0.0, 10.0)])
+    res = apply_plan(p, tmp_path / "out")
+    before = [f.read_bytes() for f in res.files]
+    real = packetcut.cut_tracks
+
+    def fail_second_source(src, *a, **k):
+        if Path(src) == part2:
+            raise PacketCutError("audio packets differ from the source range")
+        return real(src, *a, **k)
+    monkeypatch.setattr("bili_album.apply.cut_tracks", fail_second_source)
+    with pytest.raises(PlanError):
+        apply_plan(p, tmp_path / "out", force=True)
+    assert [f.read_bytes() for f in res.files] == before
+    assert not list((tmp_path / "out").rglob(".*"))
+
+
+def test_encode_path_failure_leaves_no_file(tmp_path, monkeypatch):
+    flac = gen(tmp_path / "src.flac", ["-c:a", "flac"])
+    real, calls = packetcut.cut, []
+
+    def second_fails(*a, **k):
+        calls.append(1)
+        if len(calls) == 2:
+            raise subprocess.CalledProcessError(1, "ffmpeg")
+        return real(*a, **k)
+    monkeypatch.setattr(packetcut, "cut", second_fails)
+    dsts = [tmp_path / "a.m4a", tmp_path / "b.m4a"]
+    with pytest.raises(subprocess.CalledProcessError):
+        cut_tracks(flac, [(0.0, 4.0), (4.0, 10.0)], dsts)
+    assert not any(d.exists() for d in dsts)
+
+
+def test_cut_failures_and_range_problems_read_differently():
+    from bili_album.apply import CutError, PlanError
+    from bili_album.messages import explain
+    assert explain(CutError(["cut failed: audio packets differ from the source range"]), "cut").code == "cut_failed"
+    assert explain(PlanError(["range 9.000-12.000s does not fit the audio (10.000s)"]), "cut").code == "plan_problems"
+
+
+def test_long_alac_packets_do_not_trip_the_duration_check(tmp_path):
+    from bili_album.apply import apply_plan
+    alac = tmp_path / "src.m4a"
+    subprocess.run(["ffmpeg", "-v", "error", "-nostdin", "-y", "-f", "lavfi", "-i",
+                    "sine=frequency=440:duration=10:sample_rate=22050", "-ac", "2", "-c:a", "alac", str(alac)],
+                   check=True)
+    # 4096-sample packets are 186 ms at 22.05 kHz: each boundary can move by most of one.
+    p = _apply_plan_file(tmp_path, [(alac, 0.0, 3.01), (alac, 3.01, 10.0)], kind="compilation")
+    res = apply_plan(p, tmp_path / "out")
+    assert [r["cut"] for r in res.rows] == ["packets", "packets"]
+    assert not res.warnings, res.warnings
