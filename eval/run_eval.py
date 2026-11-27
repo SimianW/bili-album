@@ -8,12 +8,16 @@
 
 Modes (each with its own cold work directory ``.work/eval/<mode>/<case-id>/``):
 
-hints          plan <url>, apply, inspect --json (the real workflow)
-blind          plan --no-text-hints (multipart: parts concatenated by the harness, passed with --audio/--title)
-blind_norecog  blind + --no-recognize
+hints          plan <url>, review, apply + inspect --json on the reviewed plan (the real workflow)
+blind          plan --no-text-hints (multipart: parts concatenated by the harness, passed with --audio/--title), review
+blind_norecog  blind + --no-recognize, review
+
+After every plan the model review (``bili-album review --out plan.reviewed.json``) runs on a copy unless
+``--no-review``; both the raw plan and the reviewed plan are scored (``runs[mode]`` and ``runs[mode].reviewed``).
 
 Raw records of each run (commands, exit codes, wall times, stderr tails, probes, inspect output) are kept in
-``eval/results/runs/<mode>/<id>.json`` and the plan (lyrics blanked) in ``eval/results/plans/<mode>/<id>.json``,
+``eval/results/runs/<mode>/<id>.json`` and the plans (lyrics blanked) in ``eval/results/plans/<mode>/<id>.json``
+and ``<id>.reviewed.json``,
 so ``--score-only`` needs nothing from ``.work/``. Scoring lives in ``eval/scoring.py`` (pure).
 """
 
@@ -41,8 +45,13 @@ CASES_FILE = HERE / "cases.yaml"
 RESULTS = HERE / "results"
 WORK = REPO / ".work" / "eval"
 MODES = ("hints", "blind", "blind_norecog")
+# Cases the developer ran or inspected while building or fixing the tool (updated 2026-11-27 after the planner
+# fixes). Held out: shiyankai-5th, keyl-back-to-2000, a2o-soul-superstar, radiohead-ok-computer, mixed-hot-playlist.
 SEEN_IN_DEV = {"user-520am-derivative", "jaychou-fantasy", "weeknd-starboy-gapless", "wego6-sixhearts",
-               "zhangjie-yaode"}
+               "zhangjie-yaode", "coldplay-yellow", "billie-dsam-vinyl", "jaychou-geqian", "huangxiaoyun-meiyu",
+               "huyanbin-fireworks"}
+REVIEW_LABEL = "Sol"   # the owner's name for the review model; no model id, URL or key goes into results
+REVIEW = True          # --no-review turns the model review off
 TIMEOUT = 45 * 60
 RETRY_412 = 3
 PAUSE_412 = 25
@@ -210,12 +219,16 @@ def run_one(case: dict, mode: str, force: bool = False) -> bool:
     if force and workdir.exists():
         shutil.rmtree(workdir)
     (RESULTS / "plans" / mode / f"{cid}.json").unlink(missing_ok=True)
+    (RESULTS / "plans" / mode / f"{cid}.reviewed.json").unlink(missing_ok=True)
     cache = "resumed" if workdir.exists() and any(workdir.iterdir()) else "cold"
     workdir.mkdir(parents=True, exist_ok=True)
     rec: dict = {"case_id": cid, "mode": mode, "started_at": now_iso(), "head_commit": git("rev-parse", "HEAD"),
+                 "tool_commit": git("log", "-1", "--format=%H", "--", "src"),
+                 "src_dirty": bool(git("status", "--porcelain", "--", "src")),
                  "cache": cache, "ok": False, "error": None, "exit_code": None, "wall_seconds": 0.0,
                  "plan_wall_seconds": None, "invocations": [], "source_prep": None, "part_offsets": None,
-                 "source_probe": None, "output_files": None}
+                 "source_probe": None, "output_files": None, "output_from": None,
+                 "review_enabled": REVIEW, "review": None}
     log(f"run {cid} / {mode} ({cache})")
     try:
         _run_one(case, mode, workdir, outdir, rec)
@@ -276,13 +289,32 @@ def _run_one(case: dict, mode: str, workdir: Path, outdir: Path, rec: dict) -> N
             cum += probe(p)["duration"]
         rec["part_offsets"] = offs
     store_plan(plan, mode, cid)
+    applied_path, applied = plan_path, plan
+    if REVIEW:
+        reviewed_path = workdir / "plan.reviewed.json"
+        reviewed_path.unlink(missing_ok=True)
+        inv = _record(rec, "review", invoke(["uv", "run", "bili-album", "review", rel(plan_path),
+                                             "--out", rel(reviewed_path)]))
+        rv = {"exit_code": inv["exit_code"], "timed_out": inv["timed_out"], "wall_seconds": inv["wall_seconds"],
+              "ok": False, "error": None}
+        if inv["exit_code"] == 0 and reviewed_path.exists():
+            reviewed = json.loads(reviewed_path.read_text(encoding="utf-8"))
+            store_plan(reviewed, mode, cid, suffix=".reviewed")
+            rv["ok"] = True
+            applied_path, applied = reviewed_path, reviewed
+        else:
+            rv["error"] = "review timed out" if inv["timed_out"] else \
+                f"review exited {inv['exit_code']}: {inv['stderr_tail'].strip()[-300:]}"
+        rec["review"] = rv
     if mode != "hints":
         rec["ok"] = True
         return
-    # hints: apply + inspect
+    # hints: apply + inspect, on the reviewed plan when there is one (the shipped product cuts that)
+    plan = applied
+    rec["output_from"] = "reviewed" if applied_path != plan_path else "raw"
     if outdir.exists():
         shutil.rmtree(outdir)
-    inv = _record(rec, "apply", invoke(["uv", "run", "bili-album", "apply", rel(plan_path), "-o", rel(outdir)]))
+    inv = _record(rec, "apply", invoke(["uv", "run", "bili-album", "apply", rel(applied_path), "-o", rel(outdir)]))
     if inv["timed_out"] or inv["exit_code"] not in (0, 1):
         rec["error"] = f"apply exited {inv['exit_code']}: {inv['stderr_tail'].strip()[-500:]}"
         rec["exit_code"] = inv["exit_code"]
@@ -314,12 +346,14 @@ def _run_one(case: dict, mode: str, workdir: Path, outdir: Path, rec: dict) -> N
     rec["ok"] = True
 
 
-def store_plan(plan: dict, mode: str, cid: str) -> None:
+def store_plan(plan: dict, mode: str, cid: str, suffix: str = "") -> None:
     p = json.loads(json.dumps(plan))
     for t in p.get("tracks") or []:
         if "lyrics" in t:
             t["lyrics"] = ""
-    write_json(RESULTS / "plans" / mode / f"{cid}.json", p)
+    if isinstance(p.get("review"), dict) and p["review"].get("model"):
+        p["review"]["model"] = REVIEW_LABEL     # results name the reviewer, never the model id
+    write_json(RESULTS / "plans" / mode / f"{cid}{suffix}.json", p)
 
 
 # ----------------------------------------------------------------------------- results
@@ -352,6 +386,12 @@ def build_results(cases: list[dict]) -> dict:
     per_mode: dict[str, list] = {m: [] for m in MODES}
     held: dict[str, list] = {m: [] for m in MODES}
     seen: dict[str, list] = {m: [] for m in MODES}
+    per_mode_r: dict[str, list] = {m: [] for m in MODES}
+    held_r: dict[str, list] = {m: [] for m in MODES}
+    seen_r: dict[str, list] = {m: [] for m in MODES}
+    review_enabled = False
+    tool_commits: dict[str, int] = {}
+    dirty = False
     for c in cases:
         runs = {}
         ce = scoring.with_measured_starts(c, measured_offsets(c))
@@ -364,15 +404,33 @@ def build_results(cases: list[dict]) -> dict:
                 plan = None
             alt = [float(t["start_cases_yaml"]) for t in ce["tracks"]] \
                 if (ce is not c and scoring.scores_boundaries(c["kind"], mode)) else None
+            if rec.get("head_commit"):
+                tc = rec.get("tool_commit") or git("log", "-1", "--format=%H", rec["head_commit"], "--", "src")
+                tool_commits[tc] = tool_commits.get(tc, 0) + 1
+                dirty = dirty or bool(rec.get("src_dirty"))
+            rplan = read_json(RESULTS / "plans" / mode / f"{c['id']}.reviewed.json") if plan is not None else None
+            rv_rec = rec.get("review") or {}
+            review_enabled = review_enabled or bool(rec.get("review_enabled") and rv_rec)
+            out_from = rec.get("output_from") or ("raw" if rec.get("output_files") is not None else None)
             sc = scoring.score_run(ce, mode, plan, part_offsets=rec.get("part_offsets"),
-                                   output_files=rec.get("output_files"), source_probe=rec.get("source_probe"),
-                                   alt_starts=alt)
+                                   output_files=rec.get("output_files") if out_from == "raw" else None,
+                                   source_probe=rec.get("source_probe"), alt_starts=alt)
+            sc_r = scoring.score_run(ce, mode, rplan, part_offsets=rec.get("part_offsets"),
+                                     output_files=rec.get("output_files") if out_from == "reviewed" else None,
+                                     source_probe=rec.get("source_probe"), alt_starts=alt) \
+                if rplan is not None else None
             run = {"ok": bool(rec.get("ok")), "error": rec.get("error"), "exit_code": rec.get("exit_code"),
                    "wall_seconds": rec.get("wall_seconds"), "cache": rec.get("cache")}
             for k in ("expected_kind", "kind_pred", "kind_ok", "kind_reason", "needs_review", "review_reasons",
                       "had_problem", "timings", "album", "tracks_pred", "boundaries", "extra_boundaries", "trim",
                       "titles", "metrics", "output"):
                 run[k] = sc[k]
+            if out_from == "reviewed" and sc_r is not None:
+                run["output"] = sc_r["output"]
+            if run["output"] is not None:
+                run["output"]["from"] = out_from
+            if run["timings"] is not None:
+                run["timings"] = dict(run["timings"], review=rv_rec.get("wall_seconds", 0.0) if rv_rec else 0.0)
             run["problems"] = sc["problems"]
             run["boundaries_alt_truth"] = sc["boundaries_alt_truth"]
             dur = float(c["duration"])
@@ -383,10 +441,24 @@ def build_results(cases: list[dict]) -> dict:
             run["plan_file"] = f"{rel(RESULTS)}/plans/{mode}/{c['id']}.json" if plan is not None else None
             run["invocations"] = [{k: i.get(k) for k in ("step", "cmd", "exit_code", "timed_out", "wall_seconds",
                                                          "stderr_tail")} for i in rec.get("invocations", [])]
+            if sc_r is not None:
+                rev = scoring.reviewed_run(sc_r, rplan.get("review"), ok=bool(rv_rec.get("ok", True)),
+                                           seconds=rv_rec.get("wall_seconds"))
+                rev["review_file"] = f"{rel(RESULTS)}/plans/{mode}/{c['id']}.reviewed.json"
+            else:
+                rev = None
+            run["reviewed"] = rev
             runs[mode] = run
             if run["error"] != "not run":       # never-run pairs are reported in "not_run", not as failures
                 per_mode[mode].append((c, run))
                 (seen if c["id"] in SEEN_IN_DEV else held)[mode].append((c, run))
+                if rev is not None or not run["ok"]:
+                    # Reviewed summaries: the reviewed plan, with the raw run's speed; a failed raw run fails here
+                    # too. Runs that were planned but not reviewed (--no-review, review crash) are left out.
+                    base = rev if rev is not None else {k: run.get(k) for k in scoring.REVIEWED_FIELDS}
+                    rs = dict(base, wall_seconds=run["wall_seconds"], timings=run["timings"])
+                    per_mode_r[mode].append((c, rs))
+                    (seen_r if c["id"] in SEEN_IN_DEV else held_r)[mode].append((c, rs))
         out_cases.append({
             "id": c["id"], "kind": c["kind"], "category": c["category"], "url": c["url"],
             "duration": float(c["duration"]), "truth_source": c["truth_source"],
@@ -402,29 +474,39 @@ def build_results(cases: list[dict]) -> dict:
             "notes": c.get("notes"),
             "runs": runs,
         })
-    src_commit = git("log", "-1", "--format=%H", "--", "src")
+    # The tool version the runs used (recorded per run), not the tree at scoring time.
+    src_commit = max(tool_commits, key=tool_commits.get) if tool_commits else git("log", "-1", "--format=%H", "--", "src")
     not_run = [f"{c['id']}/{m}" for c in out_cases for m, r in c["runs"].items() if r["error"] == "not run"]
     return {
         "generated_at": now_iso(),
         "partial": bool(not_run),
         "not_run": not_run,
         "tool_commit": src_commit,
+        "tool_commits": tool_commits,
         "head_commit": git("rev-parse", "HEAD"),
-        "src_dirty": bool(git("status", "--porcelain", "--", "src")),
+        "src_dirty": dirty,
         "modes": list(MODES),
+        "review": {"enabled": review_enabled, "label": REVIEW_LABEL},
         "scoring": {"match_window_s": scoring.MATCH_WINDOW, "hit_tolerances_s": list(scoring.HIT_TOLERANCES),
                     "f_tolerance_s": scoring.F_TOL, "problem_tolerance_s": scoring.PROBLEM_TOL,
                     "title_ratio": scoring.TITLE_RATIO,
                     "notes": "Rates are pooled over boundaries / tracks. Failed runs count fully (all boundaries "
                              "missed, all titles wrong); case+mode pairs that were never run (see not_run) are left "
                              "out of the summaries. Multipart truth starts are the measured part offsets (see "
-                             "truth.start_basis); stream_copy_ok follows the 5 % bitrate rule, which VBR sources can "
-                             "fail on short cuts, so stream_copy_format_ok (codec, rate, channels) is given too. Multipart cases are boundary-scored only in blind modes "
-                             "(synthetic concatenation). wall_seconds sums every tool invocation of a run."},
+                             "truth.start_basis). stream_copy_ok = same codec, sample rate and channels; the bitrate "
+                             "ratio is reported apart (VBR). Multipart cases are boundary-scored only in blind modes "
+                             "(synthetic concatenation). wall_seconds sums every tool invocation of a run, including "
+                             "the review (timings.review). Fields directly under runs[mode] describe the raw plan; "
+                             "runs[mode].reviewed the plan after the model review, and the summary_reviewed* blocks "
+                             "pool those. auto_ok / auto_wrong / held_wrong / held_ok count runs by needs_review "
+                             "(false = imported without asking) and had_problem."},
         "cases": out_cases,
         "summary": {m: scoring.summarize(per_mode[m]) for m in MODES},
         "summary_held_out": {m: scoring.summarize(held[m]) for m in MODES},
         "summary_seen_in_dev": {m: scoring.summarize(seen[m]) for m in MODES},
+        "summary_reviewed": {m: scoring.summarize(per_mode_r[m]) for m in MODES},
+        "summary_reviewed_held_out": {m: scoring.summarize(held_r[m]) for m in MODES},
+        "summary_reviewed_seen_in_dev": {m: scoring.summarize(seen_r[m]) for m in MODES},
     }
 
 
@@ -435,15 +517,17 @@ def write_results(cases: list[dict]) -> Path:
 
 
 def main() -> int:
-    global RESULTS
+    global RESULTS, REVIEW
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--case", action="append", help="case id (repeatable); default all")
     ap.add_argument("--mode", action="append", choices=MODES, help="mode (repeatable); default all")
     ap.add_argument("--force", action="store_true", help="re-run even if a result exists (wipes the work dir)")
     ap.add_argument("--score-only", action="store_true", help="only rescore stored runs and rewrite results.json")
+    ap.add_argument("--no-review", action="store_true", help="skip the model review (reviewed: null)")
     ap.add_argument("--results-dir", type=Path, default=RESULTS,
                     help="where runs/, plans/ and results.json live (default eval/results; e.g. eval/results/baseline)")
     a = ap.parse_args()
+    REVIEW = not a.no_review
     RESULTS = a.results_dir.resolve()
     cases = load_cases()
     if a.case:

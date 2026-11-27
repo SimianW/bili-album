@@ -28,7 +28,9 @@ PROBLEM_TOL = 3.0
 TITLE_RATIO = 0.85
 TAGS = ("title", "artist", "album", "album_artist", "track", "disc", "year", "genre", "cover", "composer",
         "lyrics")
-STAGES = ("fetch", "download", "analyze", "catalog", "recognize", "total")
+STAGES = ("fetch", "download", "analyze", "catalog", "recognize", "review", "total")
+TEXT_TAGS = ("title", "artist", "album", "album_artist", "genre", "composer")   # lyrics are skipped
+_KANA = re.compile(r"[\u3040-\u30ff\u31f0-\u31ff\uff66-\uff9f]")
 
 # ----------------------------------------------------------------------------- text
 
@@ -40,8 +42,8 @@ _CLOSE = r"\)\]）】》>〉」』"
 _BRACKETED = re.compile(rf"[{_BRACKETS}][^{_CLOSE}]*(?:{_VERSION_WORDS})[^{_CLOSE}]*[{_CLOSE}]", re.IGNORECASE)
 _DASH_SUFFIX = re.compile(rf"\s+[-–—]\s+[^-–—]*(?:{_VERSION_WORDS})[^-–—]*$", re.IGNORECASE)
 _FEAT_TAIL = re.compile(r"\s+(?:feat\.?|ft\.?|featuring)\s+.*$", re.IGNORECASE)
-_ARTIST_SPLIT = re.compile(r"\s*(?:,|，|、|/|&|＆|;|；|×|\s+x\s+|\s+feat\.?\s+|\s+ft\.?\s+|\s+featuring\s+|"
-                           r"\s+with\s+|\s+and\s+)\s*", re.IGNORECASE)
+_ARTIST_SPLIT = re.compile(r"\s*(?:,|，|、|/|&|＆|;|；|×|\s+x\s+|\s+(?:feat|ft)\.\s*|\s+(?:feat|ft)\s+|"
+                           r"\s+featuring\s+|\s+with\s+|\s+and\s+)\s*", re.IGNORECASE)
 
 
 def t2s(s: str) -> str:
@@ -110,9 +112,23 @@ def primary_artist(artist: str | None) -> str:
     return parts[0].strip() if parts else (artist or "").strip()
 
 
+def credited_names(artist: str | None) -> list[str]:
+    """The names credited in an artist string, each with its ``Name (Alias)`` variants."""
+    out: list[str] = []
+    for part in _ARTIST_SPLIT.split(artist or ""):
+        if part.strip():
+            out += title_variants(part)
+    return out
+
+
 def artist_ok(truth: str | None, pred: str | None) -> bool:
-    prim = normalize(primary_artist(truth))
-    return bool(prim) and prim in normalize(pred)
+    """The true primary artist (first credited name) is one of the names credited in the prediction.
+
+    Stricter than containment: ``黄霄云 原创`` (a name plus a stray word) does not credit ``黄霄雲``, while
+    ``Billie Eilish & Vince Staples`` credits ``Billie Eilish`` and ``周杰倫 (Jay Chou)`` credits ``周杰伦``.
+    """
+    prim = {normalize(v) for v in title_variants(primary_artist(truth))} - {""}
+    return bool(prim) and any(normalize(n) in prim for n in credited_names(pred))
 
 
 def year_ok(truth: int | None, pred) -> bool:
@@ -298,8 +314,9 @@ def score_output(n_planned: int, planned_durations: list[float], files: list[dic
             dur = f.get("duration")
         if dur is not None:
             devs.append(abs(float(dur) - planned))
-    copy_ok = n > 0
     format_ok_all = n > 0
+    br_ok_all = n > 0
+    ratios = []
     copy_detail = []
     for f in files:
         src = f.get("source_probe") or source or {}
@@ -308,16 +325,35 @@ def score_output(n_planned: int, planned_durations: list[float], files: list[dic
               and pr.get("channels") == src.get("channels"))
         sb, pb = src.get("bitrate_kbps") or 0, pr.get("bitrate_kbps") or 0
         br_ok = bool(sb) and abs(pb - sb) <= 0.05 * sb
+        if sb and pb:
+            ratios.append(pb / sb)
         if not (ok and br_ok):
             copy_detail.append({"file": f.get("file"), "codec": pr.get("codec"), "sample_rate": pr.get("sample_rate"),
                                 "channels": pr.get("channels"), "bitrate_kbps": pb,
                                 "source_bitrate_kbps": sb, "format_ok": ok, "bitrate_ok": br_ok})
-        copy_ok = copy_ok and ok and br_ok
         format_ok_all = format_ok_all and ok
+        br_ok_all = br_ok_all and br_ok
     return {"files": n, "planned_tracks": n_planned, "files_match_plan": n == n_planned, "tag_completeness": comp,
-            "max_duration_dev": _r(max(devs)) if devs else None, "stream_copy_ok": copy_ok,
-            "stream_copy_format_ok": format_ok_all,
-            "stream_copy_mismatches": copy_detail}
+            "max_duration_dev": _r(max(devs)) if devs else None,
+            # Stream copy = same codec, sample rate and channels. Bitrate is reported apart: a VBR source's
+            # bitrate varies along the file, so short cuts drift from the average without re-encoding.
+            "stream_copy_ok": format_ok_all, "stream_copy_format_ok": format_ok_all,
+            "bitrate_ratio": {"min": _r(min(ratios)), "max": _r(max(ratios))} if ratios else None,
+            "bitrate_within_5pct": br_ok_all,
+            "stream_copy_mismatches": copy_detail,
+            "traditional_strings": traditional_strings(files)}
+
+
+def traditional_strings(files: list[dict]) -> list[dict]:
+    """Tag values (not lyrics) that OpenCC t2s would still change and that carry no kana (owner rule:
+    Chinese is always Simplified; Japanese is left alone)."""
+    out = []
+    for f in files:
+        for tag in TEXT_TAGS:
+            v = f.get(tag)
+            if isinstance(v, str) and v and not _KANA.search(v) and t2s(v) != v:
+                out.append({"file": f.get("file"), "tag": tag, "value": v, "simplified": t2s(v)})
+    return out
 
 
 # ----------------------------------------------------------------------------- one run
@@ -550,10 +586,39 @@ def summarize(runs: list[tuple[dict, dict]]) -> dict:
                 "realtime_factor": div(speed_audio, speed_wall),
                 "timings": {k: round(v, 1) for k, v in timings.items()},
                 "review_confusion": conf,
+                "auto_ok": conf["no_review_no_problem"], "auto_wrong": conf["no_review_problem"],
+                "held_wrong": conf["review_problem"], "held_ok": conf["review_no_problem"],
                 "trim_first_median_abs": _r(statistics.median(trim_first)) if trim_first else None,
                 "trim_last_median_abs": _r(statistics.median(trim_last)) if trim_last else None,
                 "alt_truth": dict(rates_from_counts(alt["n_tb"], alt["n_pb"], alt["hits"], alt["errs"]),
                                   boundaries=alt["n_tb"],
                                   basis="synthetic multipart scored against cases.yaml starts; "
                                         "other cases as in the primary numbers")})
+    return out
+
+
+# ----------------------------------------------------------------------------- model review
+
+REVIEWED_FIELDS = ("ok", "kind_pred", "kind_ok", "needs_review", "review_reasons", "had_problem", "problems",
+                   "album", "tracks_pred", "boundaries", "extra_boundaries", "trim", "titles", "metrics")
+
+
+def review_info(review: dict | None, seconds: float | None = None) -> dict:
+    """Compact summary of a plan's ``review`` object (written by ``bili-album review``)."""
+    rv = review or {}
+    return {"verdict": rv.get("verdict"), "confidence": rv.get("confidence"),
+            "edits_applied": len(rv.get("edits_applied") or []),
+            "edits_rejected": len(rv.get("edits_rejected") or []),
+            "flagged_tracks": list(rv.get("flagged_tracks") or []),
+            "replanned": bool(rv.get("replan")),
+            "seconds": seconds if seconds is not None else (rv.get("timing") or {}).get("total_s"),
+            "error": rv.get("error")}
+
+
+def reviewed_run(score: dict, review: dict | None, *, ok: bool, seconds: float | None = None) -> dict:
+    """The ``runs[mode].reviewed`` object: the scoring fields of the reviewed plan plus ``review``."""
+    out = {k: score.get(k) for k in REVIEWED_FIELDS if k != "ok"}
+    out = {"ok": ok, **out}
+    out["boundaries_alt_truth"] = score.get("boundaries_alt_truth")
+    out["review"] = review_info(review, seconds)
     return out

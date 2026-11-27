@@ -222,10 +222,10 @@ def test_score_output():
     assert o["max_duration_dev"] == 0.1
     assert o["stream_copy_ok"]
     o2 = sc.score_output(2, [100.0, 50.0], [_file(100.0)], dict(src, bitrate_kbps=320))
-    assert not o2["files_match_plan"] and not o2["stream_copy_ok"]
-    assert o2["stream_copy_format_ok"]          # only the bitrate differs (VBR source, short cut)
+    assert not o2["files_match_plan"] and not o2["bitrate_within_5pct"]
+    assert o2["stream_copy_ok"] and o2["stream_copy_format_ok"]   # only the bitrate differs (VBR source)
     o3 = sc.score_output(1, [100.0], [_file(100.0)], dict(src, sample_rate=44100))
-    assert not o3["stream_copy_format_ok"]
+    assert not o3["stream_copy_ok"] and not o3["stream_copy_format_ok"]
 
 
 # ---------------------------------------------------------------- summary pooling
@@ -326,3 +326,86 @@ def test_measured_truth_is_primary_and_yaml_is_alt():
     assert [b["error"] for b in r["boundaries"]] == [0.015, 2.577]
     assert r["boundaries_alt_truth"]["basis"] == sc.YAML_BASIS
     assert [b["error"] for b in r["boundaries_alt_truth"]["boundaries"]] == [-0.3, 2.0]
+
+
+# ---------------------------------------------------------------- stricter artist rule
+
+@pytest.mark.parametrize("truth,pred,ok", [
+    ("黄霄雲", "黄霄云 原创", False),                       # a stray word is not a second artist
+    ("黄霄雲", "黄霄云", True),
+    ("Billie Eilish", "Billie Eilish & Vince Staples", True),
+    ("FLY COAST feat. Ai Ninomiya", "FLY COAST feat.Ai Ninomiya", True),
+    ("周杰伦", "周杰倫 (Jay Chou)", True),
+    ("The Weeknd", "The Weeknd, Daft Punk", True),
+    ("A2O", "A2O SOUL", False),
+    ("soldier", "苏也莉", False),
+    ("Coldplay", "Various Artists", False),
+])
+def test_artist_rule_names_not_substrings(truth, pred, ok):
+    assert sc.artist_ok(truth, pred) is ok
+
+
+def test_credited_names():
+    assert sc.credited_names("周杰倫 (Jay Chou)、费玉清") == ["周杰倫 (Jay Chou)", "周杰倫", "Jay Chou", "费玉清"]
+
+
+# ---------------------------------------------------------------- output: stream copy, bitrate, script
+
+def test_stream_copy_is_format_check_and_bitrate_reported_apart():
+    src = {"codec": "aac", "sample_rate": 48000, "channels": 2, "bitrate_kbps": 150.0}
+    o = sc.score_output(2, [100.0, 50.0], [_file(100.0), _file(50.0)], src)   # files at 200 kbps (VBR drift)
+    assert o["stream_copy_ok"] and not o["bitrate_within_5pct"]
+    assert o["bitrate_ratio"] == {"min": 1.333, "max": 1.333}
+
+
+def test_traditional_strings():
+    files = [_file(10.0, title="擱淺", artist="周杰伦", genre="華語流行樂", lyrics="擱淺 lyrics are skipped"),
+             _file(10.0, title="さくら（独唱）", album="風の詩"),        # kana in the string: Japanese, left alone
+             _file(10.0, album_artist="張學友")]
+    hits = sc.score_output(3, [10.0, 10.0, 10.0], files, None)["traditional_strings"]
+    assert [(h["tag"], h["value"], h["simplified"]) for h in hits] == [
+        ("title", "擱淺", "搁浅"), ("genre", "華語流行樂", "华语流行乐"), ("album_artist", "張學友", "张学友")]
+    assert sc.score_output(1, [10.0], [_file(10.0)], None)["traditional_strings"] == []
+
+
+# ---------------------------------------------------------------- reviewed plan and owner counts
+
+REVIEW = {"verdict": "edited", "confidence": 0.82, "edits_applied": [{"op": "relabel_track"}, {"op": "x"}],
+          "edits_rejected": [{"edit": {"op": "move_boundary"}, "why": "w"}], "flagged_tracks": [3],
+          "replan": {"request": {"album_hint": "A - B"}}, "timing": {"total_s": 41.5}, "error": None}
+
+
+def test_review_info_counts_and_flags():
+    info = sc.review_info(REVIEW, 44.0)
+    assert info == {"verdict": "edited", "confidence": 0.82, "edits_applied": 2, "edits_rejected": 1,
+                    "flagged_tracks": [3], "replanned": True, "seconds": 44.0, "error": None}
+    assert sc.review_info(dict(REVIEW, replan=None))["seconds"] == 41.5
+    assert sc.review_info(None)["verdict"] is None
+
+
+def test_reviewed_run_scores_the_reviewed_plan():
+    raw = _plan([0.0, 100.0, 210.0, 300.0], ["One", "Two", "Nope", "Four"], review=True)
+    fixed = dict(_plan([0.0, 100.0, 200.0, 300.0], ["One", "Two", "Three", "Four"]), review=REVIEW)
+    s_raw = sc.score_run(CASE, "blind", raw)
+    s_rev = sc.score_run(CASE, "blind", fixed)
+    rev = sc.reviewed_run(s_rev, fixed["review"], ok=True, seconds=44.0)
+    assert s_raw["had_problem"] and not rev["had_problem"]
+    assert set(sc.REVIEWED_FIELDS) <= set(rev) and rev["review"]["verdict"] == "edited"
+    assert rev["metrics"]["title_acc"] == 1.0 and rev["needs_review"] is False
+
+
+def test_summary_owner_counts():
+    clean = _plan([0.0, 100.0, 200.0, 300.0], ["One", "Two", "Three", "Four"])
+    wrong = _plan([0.0, 150.0], ["One", "X"])
+    runs = []
+    for plan, review in ((clean, False), (clean, False), (wrong, False), (wrong, True), (clean, True)):
+        r = sc.score_run(CASE, "blind", dict(plan, needs_review=review))
+        r.update(ok=True, wall_seconds=1.0)
+        runs.append((CASE, r))
+    failed = sc.score_run(CASE, "blind", None)
+    failed.update(ok=False, wall_seconds=0.0)
+    runs.append((CASE, failed))
+    s = sc.summarize(runs)
+    assert (s["auto_ok"], s["auto_wrong"], s["held_wrong"], s["held_ok"]) == (2, 1, 1, 1)
+    assert s["review_confusion"]["failed"] == 1
+    assert "review" in s["timings"]

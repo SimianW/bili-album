@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-26T23:23:12-05:00",
+  "generated_at": "2026-11-27T00:29:24-05:00",
   "partial": true,
   "not_run": [
     "huangxiaoyun-meiyu/blind",
@@ -21,13 +21,20 @@
     "weeknd-starboy-gapless/blind_norecog"
   ],
   "tool_commit": "c06e92d510f11ddbd447106bad98eea8d1414a73",
-  "head_commit": "6090bd4dc463018907103a7786ceb20cb26d6375",
+  "tool_commits": {
+    "c06e92d510f11ddbd447106bad98eea8d1414a73": 28
+  },
+  "head_commit": "4682e9069450ce973641d5a812a523aeedfa4f06",
   "src_dirty": false,
   "modes": [
     "hints",
     "blind",
     "blind_norecog"
   ],
+  "review": {
+    "enabled": false,
+    "label": "Sol"
+  },
   "scoring": {
     "match_window_s": 15.0,
     "hit_tolerances_s": [
@@ -38,7 +45,7 @@
     "f_tolerance_s": 3.0,
     "problem_tolerance_s": 3.0,
     "title_ratio": 0.85,
-    "notes": "Rates are pooled over boundaries / tracks. Failed runs count fully (all boundaries missed, all titles wrong); case+mode pairs that were never run (see not_run) are left out of the summaries. Multipart truth starts are the measured part offsets (see truth.start_basis); stream_copy_ok follows the 5 % bitrate rule, which VBR sources can fail on short cuts, so stream_copy_format_ok (codec, rate, channels) is given too. Multipart cases are boundary-scored only in blind modes (synthetic concatenation). wall_seconds sums every tool invocation of a run."
+    "notes": "Rates are pooled over boundaries / tracks. Failed runs count fully (all boundaries missed, all titles wrong); case+mode pairs that were never run (see not_run) are left out of the summaries. Multipart truth starts are the measured part offsets (see truth.start_basis). stream_copy_ok = same codec, sample rate and channels; the bitrate ratio is reported apart (VBR). Multipart cases are boundary-scored only in blind modes (synthetic concatenation). wall_seconds sums every tool invocation of a run, including the review (timings.review). Fields directly under runs[mode] describe the raw plan; runs[mode].reviewed the plan after the model review, and the summary_reviewed* blocks pool those. auto_ok / auto_wrong / held_wrong / held_ok count runs by needs_review (false = imported without asking) and had_problem."
   },
   "cases": [
     {
@@ -49,7 +56,7 @@
       "duration": 241.0,
       "truth_source": "single",
       "truth_quality": "exact",
-      "seen_in_dev": false,
+      "seen_in_dev": true,
       "truth": {
         "album": "七里香",
         "album_artist": "周杰伦",
@@ -86,7 +93,8 @@
             "analyze": 0.0,
             "catalog": 7.5,
             "recognize": 0.27,
-            "total": 14.98
+            "total": 14.98,
+            "review": 0.0
           },
           "album": {
             "title": "七里香",
@@ -170,7 +178,39 @@
             "max_duration_dev": 0.0,
             "stream_copy_ok": true,
             "stream_copy_format_ok": true,
-            "stream_copy_mismatches": []
+            "bitrate_ratio": {
+              "min": 1.0,
+              "max": 1.0
+            },
+            "bitrate_within_5pct": true,
+            "stream_copy_mismatches": [],
+            "traditional_strings": [
+              {
+                "file": "周杰倫 - 擱淺.m4a",
+                "tag": "title",
+                "value": "擱淺",
+                "simplified": "搁浅"
+              },
+              {
+                "file": "周杰倫 - 擱淺.m4a",
+                "tag": "artist",
+                "value": "周杰倫",
+                "simplified": "周杰伦"
+              },
+              {
+                "file": "周杰倫 - 擱淺.m4a",
+                "tag": "album_artist",
+                "value": "周杰倫",
+                "simplified": "周杰伦"
+              },
+              {
+                "file": "周杰倫 - 擱淺.m4a",
+                "tag": "genre",
+                "value": "華語流行樂",
+                "simplified": "华语流行乐"
+              }
+            ],
+            "from": "raw"
           },
           "problems": [],
           "boundaries_alt_truth": null,
@@ -230,7 +270,8 @@
               "wall_seconds": 0.27,
               "stderr_tail": ""
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind": {
           "ok": true,
@@ -251,7 +292,8 @@
             "analyze": 0.0,
             "catalog": 7.13,
             "recognize": 0.26,
-            "total": 13.53
+            "total": 13.53,
+            "review": 0.0
           },
           "album": {
             "title": "七里香",
@@ -344,7 +386,8 @@
               "wall_seconds": 13.81,
               "stderr_tail": "WARNING bili_album.catalog: catalog: NetEase: netease /api/search/get: code 200\nkind: single (duration 4:00.35 <= 9:00.00 and no tracklist hints)\nalbum: 周杰倫 - 七里香 [2004-08-03] itunes\n#  start    end      title  artist  conf\n-  -------  -------  -----  ------  ----\n1  0:00.00  4:00.35  擱淺   周杰倫  0.95\ntimings: fetch 2.49s, download 3.46s, analyze 0.0s, catalog 7.13s, recognize 0.26s, total 13.53s\n"
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": true,
@@ -370,7 +413,8 @@
             "analyze": 0.0,
             "catalog": 2.06,
             "recognize": 0.0,
-            "total": 8.52
+            "total": 8.52,
+            "review": 0.0
           },
           "album": {
             "title": "搁浅",
@@ -379,7 +423,7 @@
             "provider": "",
             "match_reason": "",
             "title_ok": false,
-            "artist_ok": true,
+            "artist_ok": false,
             "year_ok": false
           },
           "tracks_pred": [
@@ -410,7 +454,7 @@
               "truth_artist": "周杰伦",
               "pred_artist": "在专业录音棚听 周杰伦",
               "title_ok": true,
-              "artist_ok": true,
+              "artist_ok": false,
               "overlap": 0.9973,
               "confidence": 0.35,
               "pred_index": 1
@@ -431,11 +475,13 @@
             "n_truth_boundaries": 0,
             "n_pred_boundaries": 0,
             "title_acc": 1.0,
-            "artist_acc": 1.0
+            "artist_acc": 0.0
           },
           "output": null,
           "problems": [
+            "wrong artist: tracks [1]",
             "album title wrong",
+            "album artist wrong",
             "album year wrong"
           ],
           "boundaries_alt_truth": null,
@@ -466,7 +512,8 @@
               "wall_seconds": 8.77,
               "stderr_tail": "WARNING bili_album.catalog: catalog: NetEase: netease /api/search/get: code 200\nkind: single (duration 4:00.35 <= 9:00.00 and no tracklist hints)\nalbum: 在专业录音棚听 周杰伦 - 搁浅 [] \n#  start    end      title  artist                 conf\n-  -------  -------  -----  ---------------------  ----\n1  0:00.00  4:00.35  搁浅   在专业录音棚听 周杰伦  0.35\nneeds_review:\n  - track 1: no confident catalog match; title '搁浅' is the guess from the video title (recognition found nothing)\n  - cover: no catalog artwork; used a centre-cropped Bilibili cover\n  - track 1 '搁浅': low confidence 0.35\n  - catalog errors: NetEase: netease /api/search/get: code 200\ntimings: fetch 2.58s, download 3.81s, analyze 0.0s, catalog 2.06s, recognize 0.0s, total 8.52s\n"
             }
-          ]
+          ],
+          "reviewed": null
         }
       }
     },
@@ -478,7 +525,7 @@
       "duration": 271.0,
       "truth_source": "single",
       "truth_quality": "exact",
-      "seen_in_dev": false,
+      "seen_in_dev": true,
       "truth": {
         "album": "Parachutes",
         "album_artist": "Coldplay",
@@ -515,7 +562,8 @@
             "analyze": 0.0,
             "catalog": 10.84,
             "recognize": 0.25,
-            "total": 19.33
+            "total": 19.33,
+            "review": 0.0
           },
           "album": {
             "title": "Best 00s Pop Ever",
@@ -599,7 +647,14 @@
             "max_duration_dev": 0.0,
             "stream_copy_ok": true,
             "stream_copy_format_ok": true,
-            "stream_copy_mismatches": []
+            "bitrate_ratio": {
+              "min": 1.0,
+              "max": 1.0
+            },
+            "bitrate_within_5pct": true,
+            "stream_copy_mismatches": [],
+            "traditional_strings": [],
+            "from": "raw"
           },
           "problems": [
             "album title wrong",
@@ -663,7 +718,8 @@
               "wall_seconds": 0.27,
               "stderr_tail": ""
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind": {
           "ok": true,
@@ -684,7 +740,8 @@
             "analyze": 0.0,
             "catalog": 7.53,
             "recognize": 0.26,
-            "total": 14.43
+            "total": 14.43,
+            "review": 0.0
           },
           "album": {
             "title": "Best 00s Pop Ever",
@@ -781,7 +838,8 @@
               "wall_seconds": 14.7,
               "stderr_tail": "kind: single (duration 4:29.95 <= 9:00.00 and no tracklist hints)\nalbum: Various Artists - Best 00s Pop Ever [2021-01-08] netease\n#  start    end      title   artist    conf\n-  -------  -------  ------  --------  ----\n1  0:00.00  4:29.95  Yellow  Coldplay  0.95\ntimings: fetch 2.74s, download 3.71s, analyze 0.0s, catalog 7.53s, recognize 0.26s, total 14.43s\n"
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": true,
@@ -805,7 +863,8 @@
             "analyze": 0.0,
             "catalog": 6.25,
             "recognize": 0.0,
-            "total": 12.49
+            "total": 12.49,
+            "review": 0.0
           },
           "album": {
             "title": "Yellow",
@@ -900,7 +959,8 @@
               "wall_seconds": 12.75,
               "stderr_tail": "kind: single (duration 4:29.95 <= 9:00.00 and no tracklist hints)\nalbum: Coldplay - Yellow [2000-06-26] netease\n#  start    end      title   artist    conf\n-  -------  -------  ------  --------  ----\n1  0:00.00  4:29.95  Yellow  Coldplay  0.5\nneeds_review:\n  - track 1: matched Coldplay - Yellow on title and length only; the video title names no artist and recognition found nothing, so this may be a different version (cover, fan edit, AI remake)\n  - track 1 'Yellow': low confidence 0.50\ntimings: fetch 2.63s, download 3.58s, analyze 0.0s, catalog 6.25s, recognize 0.0s, total 12.49s\n"
             }
-          ]
+          ],
+          "reviewed": null
         }
       }
     },
@@ -949,7 +1009,8 @@
             "analyze": 0.0,
             "catalog": 6.0,
             "recognize": 6.32,
-            "total": 18.9
+            "total": 18.9,
+            "review": 0.0
           },
           "album": {
             "title": "5th",
@@ -1032,7 +1093,14 @@
             "max_duration_dev": 0.0,
             "stream_copy_ok": true,
             "stream_copy_format_ok": true,
-            "stream_copy_mismatches": []
+            "bitrate_ratio": {
+              "min": 1.0,
+              "max": 1.0
+            },
+            "bitrate_within_5pct": true,
+            "stream_copy_mismatches": [],
+            "traditional_strings": [],
+            "from": "raw"
           },
           "problems": [],
           "boundaries_alt_truth": null,
@@ -1092,7 +1160,8 @@
               "wall_seconds": 0.27,
               "stderr_tail": ""
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind": {
           "ok": true,
@@ -1113,7 +1182,8 @@
             "analyze": 0.0,
             "catalog": 6.01,
             "recognize": 81.52,
-            "total": 93.13
+            "total": 93.13,
+            "review": 0.0
           },
           "album": {
             "title": "5th",
@@ -1205,7 +1275,8 @@
               "wall_seconds": 93.41,
               "stderr_tail": "kind: single (duration 3:25.33 <= 9:00.00 and no tracklist hints)\nalbum: 石衍恺 - 5th [2023-12-18] netease\n#  start    end      title  artist  conf\n-  -------  -------  -----  ------  ----\n1  0:00.00  3:25.33  5th    石衍恺  0.75\ntimings: fetch 2.39s, download 3.01s, analyze 0.0s, catalog 6.01s, recognize 81.52s, total 93.13s\n"
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": true,
@@ -1226,7 +1297,8 @@
             "analyze": 0.0,
             "catalog": 5.29,
             "recognize": 0.0,
-            "total": 12.14
+            "total": 12.14,
+            "review": 0.0
           },
           "album": {
             "title": "5th",
@@ -1319,7 +1391,8 @@
               "wall_seconds": 12.39,
               "stderr_tail": "kind: single (duration 3:25.33 <= 9:00.00 and no tracklist hints)\nalbum: 石衍恺 - 5th [2023-12-18] netease\n#  start    end      title  artist  conf\n-  -------  -------  -----  ------  ----\n1  0:00.00  3:25.33  5th    石衍恺  0.75\ntimings: fetch 2.42s, download 4.39s, analyze 0.0s, catalog 5.29s, recognize 0.0s, total 12.14s\n"
             }
-          ]
+          ],
+          "reviewed": null
         }
       }
     },
@@ -1371,7 +1444,8 @@
             "analyze": 0.0,
             "catalog": 5.52,
             "recognize": 6.33,
-            "total": 18.3
+            "total": 18.3,
+            "review": 0.0
           },
           "album": {
             "title": "520am",
@@ -1454,7 +1528,14 @@
             "max_duration_dev": 0.0,
             "stream_copy_ok": true,
             "stream_copy_format_ok": true,
-            "stream_copy_mismatches": []
+            "bitrate_ratio": {
+              "min": 1.0,
+              "max": 1.0
+            },
+            "bitrate_within_5pct": true,
+            "stream_copy_mismatches": [],
+            "traditional_strings": [],
+            "from": "raw"
           },
           "problems": [
             "wrong artist: tracks [1]",
@@ -1517,7 +1598,8 @@
               "wall_seconds": 0.27,
               "stderr_tail": ""
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind": {
           "ok": true,
@@ -1541,7 +1623,8 @@
             "analyze": 0.0,
             "catalog": 5.49,
             "recognize": 6.3,
-            "total": 17.57
+            "total": 17.57,
+            "review": 0.0
           },
           "album": {
             "title": "520am",
@@ -1636,7 +1719,8 @@
               "wall_seconds": 17.84,
               "stderr_tail": "kind: single (duration 2:00.79 <= 9:00.00 and no tracklist hints)\nalbum: 苏也莉 - 520am [2026-11-25] netease\n#  start    end      title  artist  conf\n-  -------  -------  -----  ------  ----\n1  0:00.00  2:00.79  520am  苏也莉  0.5\nneeds_review:\n  - track 1: matched 苏也莉 - 520am on title and length only; the video title names no artist and recognition found nothing, so this may be a different version (cover, fan edit, AI remake)\n  - track 1 '520am': low confidence 0.50\ntimings: fetch 2.34s, download 3.24s, analyze 0.0s, catalog 5.49s, recognize 6.3s, total 17.57s\n"
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": true,
@@ -1660,7 +1744,8 @@
             "analyze": 0.0,
             "catalog": 5.53,
             "recognize": 0.0,
-            "total": 11.11
+            "total": 11.11,
+            "review": 0.0
           },
           "album": {
             "title": "520am",
@@ -1756,7 +1841,8 @@
               "wall_seconds": 11.38,
               "stderr_tail": "kind: single (duration 2:00.79 <= 9:00.00 and no tracklist hints)\nalbum: 苏也莉 - 520am [2026-11-25] netease\n#  start    end      title  artist  conf\n-  -------  -------  -----  ------  ----\n1  0:00.00  2:00.79  520am  苏也莉  0.5\nneeds_review:\n  - track 1: matched 苏也莉 - 520am on title and length only; the video title names no artist and recognition found nothing, so this may be a different version (cover, fan edit, AI remake)\n  - track 1 '520am': low confidence 0.50\ntimings: fetch 2.46s, download 3.09s, analyze 0.0s, catalog 5.53s, recognize 0.0s, total 11.11s\n"
             }
-          ]
+          ],
+          "reviewed": null
         }
       }
     },
@@ -1869,7 +1955,8 @@
             "analyze": 0.0,
             "catalog": 23.06,
             "recognize": 0.0,
-            "total": 111.4
+            "total": 111.4,
+            "review": 0.0
           },
           "album": {
             "title": "要得",
@@ -2165,7 +2252,14 @@
             "max_duration_dev": 0.0,
             "stream_copy_ok": true,
             "stream_copy_format_ok": true,
-            "stream_copy_mismatches": []
+            "bitrate_ratio": {
+              "min": 1.0,
+              "max": 1.0
+            },
+            "bitrate_within_5pct": true,
+            "stream_copy_mismatches": [],
+            "traditional_strings": [],
+            "from": "raw"
           },
           "problems": [],
           "boundaries_alt_truth": null,
@@ -2225,7 +2319,8 @@
               "wall_seconds": 0.62,
               "stderr_tail": ""
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind": {
           "ok": true,
@@ -2246,7 +2341,8 @@
             "analyze": 7.42,
             "catalog": 22.98,
             "recognize": 279.88,
-            "total": 311.9
+            "total": 311.9,
+            "review": 0.0
           },
           "album": {
             "title": "要得",
@@ -2733,7 +2829,8 @@
               "wall_seconds": 312.15,
               "stderr_tail": "kind: compilation (long video (41:16.31) without hints; catalog album fits: netease:张杰 - 要得 (10 tracks, 2476s vs video 2476s; name 1.00, duration 1.00))\nalbum: 张杰 - 要得 [2024-04-01] netease\n#   start     end       title       artist  conf\n--  --------  --------  ----------  ------  ----\n1   0:00.00   3:54.40   回          张杰    0.9\n2   3:54.40   7:44.40   再生之地    张杰    1.0\n3   7:44.40   11:24.20  宿命之眼    张杰    1.0\n4   11:24.20  15:39.40  穿堂风      张杰    1.0\n5   15:39.40  19:43.20  老子数道三  张杰    1.0\n6   19:43.20  22:58.10  张三丰      张杰    1.0\n7   22:58.10  26:17.50  来我家      张杰    1.0\n8   26:17.50  30:33.20  月光下      张杰    1.0\n9   30:33.20  36:04.30  轻舟        张杰    1.0\n10  36:04.30  41:16.00  树呢        张杰    1.0\ntimings: fetch 0.0s, download 0.47s, analyze 7.42s, catalog 22.98s, recognize 279.88s, total 311.9s\n"
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": true,
@@ -2754,7 +2851,8 @@
             "analyze": 7.68,
             "catalog": 22.91,
             "recognize": 0.0,
-            "total": 31.99
+            "total": 31.99,
+            "review": 0.0
           },
           "album": {
             "title": "要得",
@@ -3233,7 +3331,8 @@
               "wall_seconds": 32.22,
               "stderr_tail": "kind: compilation (long video (41:16.31) without hints; catalog album fits: netease:张杰 - 要得 (10 tracks, 2476s vs video 2476s; name 1.00, duration 1.00))\nalbum: 张杰 - 要得 [2024-04-01] netease\n#   start     end       title       artist  conf\n--  --------  --------  ----------  ------  ----\n1   0:00.00   3:54.40   回          张杰    0.7\n2   3:54.40   7:44.40   再生之地    张杰    0.8\n3   7:44.40   11:24.20  宿命之眼    张杰    0.8\n4   11:24.20  15:39.40  穿堂风      张杰    0.8\n5   15:39.40  19:43.20  老子数道三  张杰    0.8\n6   19:43.20  22:58.10  张三丰      张杰    0.8\n7   22:58.10  26:17.50  来我家      张杰    0.8\n8   26:17.50  30:33.20  月光下      张杰    0.8\n9   30:33.20  36:04.30  轻舟        张杰    0.8\n10  36:04.30  41:16.00  树呢        张杰    0.8\ntimings: fetch 0.0s, download 0.48s, analyze 7.68s, catalog 22.91s, recognize 0.0s, total 31.99s\n"
             }
-          ]
+          ],
+          "reviewed": null
         }
       }
     },
@@ -3311,7 +3410,8 @@
             "analyze": 0.0,
             "catalog": 19.08,
             "recognize": 0.0,
-            "total": 36.03
+            "total": 36.03,
+            "review": 0.0
           },
           "album": {
             "title": "SIX HEARTS",
@@ -3487,7 +3587,14 @@
             "max_duration_dev": 0.0,
             "stream_copy_ok": true,
             "stream_copy_format_ok": true,
-            "stream_copy_mismatches": []
+            "bitrate_ratio": {
+              "min": 1.0,
+              "max": 1.0
+            },
+            "bitrate_within_5pct": true,
+            "stream_copy_mismatches": [],
+            "traditional_strings": [],
+            "from": "raw"
           },
           "problems": [],
           "boundaries_alt_truth": null,
@@ -3547,7 +3654,8 @@
               "wall_seconds": 0.43,
               "stderr_tail": ""
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind": {
           "ok": true,
@@ -3571,7 +3679,8 @@
             "analyze": 2.52,
             "catalog": 21.31,
             "recognize": 97.04,
-            "total": 121.45
+            "total": 121.45,
+            "review": 0.0
           },
           "album": {
             "title": "SIX HEARTS",
@@ -3861,7 +3970,8 @@
               "wall_seconds": 121.74,
               "stderr_tail": "kind: compilation (long video (14:29.47) without hints; catalog album fits: netease:WE GO-6 - SIX HEARTS (5 tracks, 869s vs video 869s; name 1.00, duration 0.98))\nalbum: WE GO-6 - SIX HEARTS [2026-11-17] netease\n#  start     end       title                artist   conf\n-  --------  --------  -------------------  -------  ----\n1  0:00.00   3:11.60   괴물(Monster)        WE GO-6  0.9\n2  3:11.60   5:17.70   Lucky Charm          WE GO-6  1.0\n3  5:17.70   8:09.60   처음이자 마지막으로  WE GO-6  0.5\n4  8:09.60   11:21.60  Luminaria            WE GO-6  1.0\n5  11:21.60  14:29.10  1004                 WE GO-6  1.0\nneeds_review:\n  - track 3: Shazam heard 'First and Last' by 'WE GO-6' at 5:42.70, plan says '처음이자 마지막으로'\n  - track 3 '처음이자 마지막으로': low confidence 0.50\ntimings: fetch 0.0s, download 0.2s, analyze 2.52s, catalog 21.31s, recognize 97.04s, total 121.45s\n"
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": true,
@@ -3882,7 +3992,8 @@
             "analyze": 2.63,
             "catalog": 19.3,
             "recognize": 0.0,
-            "total": 22.35
+            "total": 22.35,
+            "review": 0.0
           },
           "album": {
             "title": "SIX HEARTS",
@@ -4169,7 +4280,8 @@
               "wall_seconds": 22.58,
               "stderr_tail": "kind: compilation (long video (14:29.47) without hints; catalog album fits: netease:WE GO-6 - SIX HEARTS (5 tracks, 869s vs video 869s; name 1.00, duration 0.98))\nalbum: WE GO-6 - SIX HEARTS [2026-11-17] netease\n#  start     end       title                artist   conf\n-  --------  --------  -------------------  -------  ----\n1  0:00.00   3:11.60   괴물(Monster)        WE GO-6  0.7\n2  3:11.60   5:17.70   Lucky Charm          WE GO-6  0.8\n3  5:17.70   8:09.60   처음이자 마지막으로  WE GO-6  0.8\n4  8:09.60   11:21.60  Luminaria            WE GO-6  0.8\n5  11:21.60  14:29.10  1004                 WE GO-6  0.8\ntimings: fetch 0.0s, download 0.2s, analyze 2.63s, catalog 19.3s, recognize 0.0s, total 22.35s\n"
             }
-          ]
+          ],
+          "reviewed": null
         }
       }
     },
@@ -4181,7 +4293,7 @@
       "duration": 1569.0,
       "truth_source": "parts",
       "truth_quality": "exact",
-      "seen_in_dev": false,
+      "seen_in_dev": true,
       "truth": {
         "album": "dont smile at me",
         "album_artist": "Billie Eilish",
@@ -4268,7 +4380,8 @@
             "analyze": 0.0,
             "catalog": 37.51,
             "recognize": 0.0,
-            "total": 236.85
+            "total": 236.85,
+            "review": 0.0
           },
           "album": {
             "title": "dont smile at me",
@@ -4516,7 +4629,14 @@
             "max_duration_dev": 0.0,
             "stream_copy_ok": true,
             "stream_copy_format_ok": true,
-            "stream_copy_mismatches": []
+            "bitrate_ratio": {
+              "min": 1.0,
+              "max": 1.0
+            },
+            "bitrate_within_5pct": true,
+            "stream_copy_mismatches": [],
+            "traditional_strings": [],
+            "from": "raw"
           },
           "problems": [],
           "boundaries_alt_truth": null,
@@ -4576,7 +4696,8 @@
               "wall_seconds": 0.61,
               "stderr_tail": ""
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind": {
           "ok": true,
@@ -4607,7 +4728,8 @@
             "analyze": 6.71,
             "catalog": 41.74,
             "recognize": 197.87,
-            "total": 247.43
+            "total": 247.43,
+            "review": 0.0
           },
           "album": {
             "title": "dont smile at me",
@@ -5024,7 +5146,8 @@
               "wall_seconds": 247.7,
               "stderr_tail": "WARNING bili_album.catalog: catalog: NetEase: netease /api/search/get: code 200\nkind: compilation (long video (26:05.21) without hints; recognition found 3 different songs at 20/50/80%)\nalbum: Billie Eilish - dont smile at me [2017-08-11] itunes\n#  start     end       title                   artist                         conf\n-  --------  --------  ----------------------  -----------------------------  ----\n1  0:03.10   3:14.80   COPYCAT                 Billie Eilish                  1.0\n2  3:14.80   6:39.40   idontwannabeyouanymore  Billie Eilish                  1.0\n3  6:39.40   9:31.30   my boy                  Billie Eilish                  1.0\n4  9:31.30   12:58.00  party favor             Billie Eilish                  1.0\n5  12:58.00  15:54.80  bellyache               Billie Eilish                  0.5\n6  15:54.80  19:15.00  ocean eyes              Billie Eilish                  0.5\n7  19:15.00  23:04.80  hostage                 Billie Eilish                  0.3\n8  23:04.80  26:04.90  &burn                   Billie Eilish & Vince Staples  0.5\nneeds_review:\n  - catalog track 4 'watch' was not found in the audio\n  - track 5: Shazam heard 'watch' by 'Billie Eilish' at 13:23.00, plan says 'bellyache'\n  - track 6: Shazam heard 'bellyache' by 'Billie Eilish' at 16:19.80, plan says 'ocean eyes'\n  - track 7: Shazam heard 'ocean eyes' by 'Billie Eilish' at 19:40.00, plan says 'hostage'\n  - track 8: Shazam heard 'hostage' by 'Billie Eilish' at 23:29.80, plan says '&burn'\n  - track 5 'bellyache': low confidence 0.50\n  - track 6 'ocean eyes': low confidence 0.50\n  - track 7 'hostage': low confidence 0.30\n  - track 8 '&burn': low confidence 0.50\ntimings: fetch 0.0s, download 0.33s, analyze 6.71s, catalog 41.74s, recognize 197.87s, total 247.43s\n"
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": true,
@@ -5047,7 +5170,8 @@
             "analyze": 5.35,
             "catalog": 36.55,
             "recognize": 0.0,
-            "total": 42.82
+            "total": 42.82,
+            "review": 0.0
           },
           "album": {
             "title": "dont smile at me",
@@ -5458,7 +5582,8 @@
               "wall_seconds": 43.1,
               "stderr_tail": "WARNING bili_album.catalog: catalog: NetEase: netease /api/search/get: code 200\nkind: compilation (long video (26:05.21) without hints; recognition found 0 different songs at 20/50/80%)\nalbum: Billie Eilish - dont smile at me [2017-08-11] itunes\n#  start     end       title                   artist                         conf\n-  --------  --------  ----------------------  -----------------------------  ----\n1  0:03.10   3:14.80   COPYCAT                 Billie Eilish                  0.8\n2  3:14.80   6:39.40   idontwannabeyouanymore  Billie Eilish                  0.8\n3  6:39.40   9:30.40   my boy                  Billie Eilish                  0.8\n4  9:30.40   12:58.00  party favor             Billie Eilish                  0.8\n5  12:58.00  15:54.80  bellyache               Billie Eilish                  0.8\n6  15:54.80  19:15.00  ocean eyes              Billie Eilish                  0.8\n7  19:15.00  23:04.80  hostage                 Billie Eilish                  0.6\n8  23:04.80  26:04.90  &burn                   Billie Eilish & Vince Staples  0.8\nneeds_review:\n  - catalog track 4 'watch' was not found in the audio\ntimings: fetch 0.0s, download 0.35s, analyze 5.35s, catalog 36.55s, recognize 0.0s, total 42.82s\n"
             }
-          ]
+          ],
+          "reviewed": null
         }
       }
     },
@@ -5561,7 +5686,8 @@
             "analyze": 7.56,
             "catalog": 37.9,
             "recognize": 0.0,
-            "total": 88.56
+            "total": 88.56,
+            "review": 0.0
           },
           "album": {
             "title": "回到2000",
@@ -5923,8 +6049,13 @@
               "lyrics": 1.0
             },
             "max_duration_dev": 0.023,
-            "stream_copy_ok": false,
+            "stream_copy_ok": true,
             "stream_copy_format_ok": true,
+            "bitrate_ratio": {
+              "min": 0.791,
+              "max": 1.076
+            },
+            "bitrate_within_5pct": false,
             "stream_copy_mismatches": [
               {
                 "file": "回到2000/01-未来等你.m4a",
@@ -5986,7 +6117,9 @@
                 "format_ok": true,
                 "bitrate_ok": false
               }
-            ]
+            ],
+            "traditional_strings": [],
+            "from": "raw"
           },
           "problems": [],
           "boundaries_alt_truth": null,
@@ -6046,7 +6179,8 @@
               "wall_seconds": 0.74,
               "stderr_tail": ""
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind": {
           "ok": true,
@@ -6067,7 +6201,8 @@
             "analyze": 7.2,
             "catalog": 32.91,
             "recognize": 279.98,
-            "total": 563.78
+            "total": 563.78,
+            "review": 0.0
           },
           "album": {
             "title": "回到2000",
@@ -6441,7 +6576,8 @@
               "wall_seconds": 564.06,
               "stderr_tail": "kind: compilation (long video (38:23.00) without hints; catalog album fits: netease:KEY.L刘聪 - 回到2000 (10 tracks, 2306s vs video 2303s; name 0.65, duration 0.97))\nalbum: KEY.L刘聪 - 回到2000 [2023-08-13] netease\n#   start     end       title         artist                                     conf\n--  --------  --------  ------------  -----------------------------------------  ----\n1   0:01.70   3:17.90   未来等你      KEY.L刘聪 & c0de731                        1.0\n2   3:17.90   9:05.10   夜雨          KEY.L刘聪                                  1.0\n3   9:05.10   12:34.90  随身听2000    KEY.L刘聪 & c0de731                        1.0\n4   12:34.90  15:50.70  黑本子        KEY.L刘聪 & c0de731                        1.0\n5   15:50.70  19:26.90  走出核工厂    KEY.L刘聪                                  1.0\n6   19:26.90  22:37.20  苦海          KEY.L刘聪 & 梁笑生AIRBUS130 & c0de731      1.0\n7   22:37.20  26:11.10  Homiez Only   KEY.L刘聪 & c0de731                        1.0\n8   26:11.10  30:38.60  午夜心碎台北  KEY.L刘聪 & 功夫胖KUNGFU-PEN & MC HotDog…  1.0\n9   30:38.60  33:46.20  一个人待会儿  KEY.L刘聪 & c0de731                        1.0\n10  33:46.20  38:22.70  千禧年代      KEY.L刘聪 & Bramble & c0de731              1.0\ntimings: fetch 2.57s, download 240.1s, analyze 7.2s, catalog 32.91s, recognize 279.98s, total 563.78s\n"
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": true,
@@ -6462,7 +6598,8 @@
             "analyze": 7.34,
             "catalog": 31.64,
             "recognize": 0.0,
-            "total": 48.5
+            "total": 48.5,
+            "review": 0.0
           },
           "album": {
             "title": "回到2000",
@@ -6827,7 +6964,8 @@
               "wall_seconds": 48.89,
               "stderr_tail": "kind: compilation (long video (38:23.00) without hints; catalog album fits: netease:KEY.L刘聪 - 回到2000 (10 tracks, 2306s vs video 2303s; name 0.65, duration 0.97))\nalbum: KEY.L刘聪 - 回到2000 [2023-08-13] netease\n#   start     end       title         artist                                     conf\n--  --------  --------  ------------  -----------------------------------------  ----\n1   0:01.70   3:17.90   未来等你      KEY.L刘聪 & c0de731                        0.8\n2   3:17.90   9:05.10   夜雨          KEY.L刘聪                                  0.8\n3   9:05.10   12:34.90  随身听2000    KEY.L刘聪 & c0de731                        0.8\n4   12:34.90  15:50.70  黑本子        KEY.L刘聪 & c0de731                        0.8\n5   15:50.70  19:26.90  走出核工厂    KEY.L刘聪                                  0.8\n6   19:26.90  22:37.20  苦海          KEY.L刘聪 & 梁笑生AIRBUS130 & c0de731      0.8\n7   22:37.20  26:11.10  Homiez Only   KEY.L刘聪 & c0de731                        0.8\n8   26:11.10  30:38.60  午夜心碎台北  KEY.L刘聪 & 功夫胖KUNGFU-PEN & MC HotDog…  0.8\n9   30:38.60  33:46.20  一个人待会儿  KEY.L刘聪 & c0de731                        0.8\n10  33:46.20  38:22.70  千禧年代      KEY.L刘聪 & Bramble & c0de731              0.8\ntimings: fetch 2.5s, download 6.2s, analyze 7.34s, catalog 31.64s, recognize 0.0s, total 48.5s\n"
             }
-          ]
+          ],
+          "reviewed": null
         }
       }
     },
@@ -6839,7 +6977,7 @@
       "duration": 2379.0,
       "truth_source": "chapters",
       "truth_quality": "good",
-      "seen_in_dev": false,
+      "seen_in_dev": true,
       "truth": {
         "album": "是一场烟火",
         "album_artist": "胡彦斌",
@@ -6930,7 +7068,8 @@
             "analyze": 7.15,
             "catalog": 43.13,
             "recognize": 0.0,
-            "total": 85.64
+            "total": 85.64,
+            "review": 0.0
           },
           "album": {
             "title": "是一场烟火",
@@ -7292,8 +7431,13 @@
               "lyrics": 0.4
             },
             "max_duration_dev": 0.02,
-            "stream_copy_ok": false,
+            "stream_copy_ok": true,
             "stream_copy_format_ok": true,
+            "bitrate_ratio": {
+              "min": 0.899,
+              "max": 1.222
+            },
+            "bitrate_within_5pct": false,
             "stream_copy_mismatches": [
               {
                 "file": "是一场烟火/01-你若是風.m4a",
@@ -7335,7 +7479,226 @@
                 "format_ok": true,
                 "bitrate_ok": false
               }
-            ]
+            ],
+            "traditional_strings": [
+              {
+                "file": "是一场烟火/01-你若是風.m4a",
+                "tag": "title",
+                "value": "你若是風",
+                "simplified": "你若是风"
+              },
+              {
+                "file": "是一场烟火/01-你若是風.m4a",
+                "tag": "artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/01-你若是風.m4a",
+                "tag": "album_artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/01-你若是風.m4a",
+                "tag": "genre",
+                "value": "流行樂",
+                "simplified": "流行乐"
+              },
+              {
+                "file": "是一场烟火/02-不去管.m4a",
+                "tag": "artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/02-不去管.m4a",
+                "tag": "album_artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/02-不去管.m4a",
+                "tag": "genre",
+                "value": "流行樂",
+                "simplified": "流行乐"
+              },
+              {
+                "file": "是一场烟火/03-是一場煙火.m4a",
+                "tag": "title",
+                "value": "是一場煙火",
+                "simplified": "是一场烟火"
+              },
+              {
+                "file": "是一场烟火/03-是一場煙火.m4a",
+                "tag": "artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/03-是一場煙火.m4a",
+                "tag": "album_artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/03-是一場煙火.m4a",
+                "tag": "genre",
+                "value": "流行樂",
+                "simplified": "流行乐"
+              },
+              {
+                "file": "是一场烟火/04-世界中心.m4a",
+                "tag": "artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/04-世界中心.m4a",
+                "tag": "album_artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/04-世界中心.m4a",
+                "tag": "genre",
+                "value": "流行樂",
+                "simplified": "流行乐"
+              },
+              {
+                "file": "是一场烟火/05-我們還會一起走到那裡去嗎.m4a",
+                "tag": "title",
+                "value": "我們還會一起走到那裡去嗎",
+                "simplified": "我们还会一起走到那里去吗"
+              },
+              {
+                "file": "是一场烟火/05-我們還會一起走到那裡去嗎.m4a",
+                "tag": "artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/05-我們還會一起走到那裡去嗎.m4a",
+                "tag": "album_artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/05-我們還會一起走到那裡去嗎.m4a",
+                "tag": "genre",
+                "value": "流行樂",
+                "simplified": "流行乐"
+              },
+              {
+                "file": "是一场烟火/06-擁過.m4a",
+                "tag": "title",
+                "value": "擁過",
+                "simplified": "拥过"
+              },
+              {
+                "file": "是一场烟火/06-擁過.m4a",
+                "tag": "artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/06-擁過.m4a",
+                "tag": "album_artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/06-擁過.m4a",
+                "tag": "genre",
+                "value": "流行樂",
+                "simplified": "流行乐"
+              },
+              {
+                "file": "是一场烟火/07-荒原狼.m4a",
+                "tag": "artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/07-荒原狼.m4a",
+                "tag": "album_artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/07-荒原狼.m4a",
+                "tag": "genre",
+                "value": "流行樂",
+                "simplified": "流行乐"
+              },
+              {
+                "file": "是一场烟火/08-敬自己不為誰 (feat. GAI周延).m4a",
+                "tag": "title",
+                "value": "敬自己不為誰 (feat. GAI周延)",
+                "simplified": "敬自己不为谁 (feat. GAI周延)"
+              },
+              {
+                "file": "是一场烟火/08-敬自己不為誰 (feat. GAI周延).m4a",
+                "tag": "artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/08-敬自己不為誰 (feat. GAI周延).m4a",
+                "tag": "album_artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/08-敬自己不為誰 (feat. GAI周延).m4a",
+                "tag": "genre",
+                "value": "流行樂",
+                "simplified": "流行乐"
+              },
+              {
+                "file": "是一场烟火/09-人人.m4a",
+                "tag": "artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/09-人人.m4a",
+                "tag": "album_artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/09-人人.m4a",
+                "tag": "genre",
+                "value": "流行樂",
+                "simplified": "流行乐"
+              },
+              {
+                "file": "是一场烟火/10-開花的星星.m4a",
+                "tag": "title",
+                "value": "開花的星星",
+                "simplified": "开花的星星"
+              },
+              {
+                "file": "是一场烟火/10-開花的星星.m4a",
+                "tag": "artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/10-開花的星星.m4a",
+                "tag": "album_artist",
+                "value": "胡彥斌",
+                "simplified": "胡彦斌"
+              },
+              {
+                "file": "是一场烟火/10-開花的星星.m4a",
+                "tag": "genre",
+                "value": "流行樂",
+                "simplified": "流行乐"
+              }
+            ],
+            "from": "raw"
           },
           "problems": [],
           "boundaries_alt_truth": null,
@@ -7395,7 +7758,8 @@
               "wall_seconds": 0.66,
               "stderr_tail": ""
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind": {
           "ok": true,
@@ -7416,7 +7780,8 @@
             "analyze": 7.2,
             "catalog": 40.13,
             "recognize": 279.96,
-            "total": 335.09
+            "total": 335.09,
+            "review": 0.0
           },
           "album": {
             "title": "是一场烟火",
@@ -7792,7 +8157,8 @@
               "wall_seconds": 335.45,
               "stderr_tail": "kind: compilation (long video (39:38.79) without hints; catalog album fits: itunes:胡彥斌 - 是一场烟火 (10 tracks, 2379s vs video 2379s; name 0.65, duration 1.00))\nalbum: 胡彥斌 - 是一场烟火 [2023-08-18] itunes\n#   start     end       title                         artist  conf\n--  --------  --------  ----------------------------  ------  ----\n1   0:00.00   3:40.40   你若是風                      胡彥斌  0.9\n2   3:40.40   7:38.40   不去管                        胡彥斌  1.0\n3   7:38.40   11:55.20  是一場煙火                    胡彥斌  1.0\n4   11:55.20  15:22.90  世界中心                      胡彥斌  1.0\n5   15:22.90  19:57.80  我們還會一起走到那裡去嗎      胡彥斌  1.0\n6   19:57.80  23:32.70  擁過                          胡彥斌  1.0\n7   23:32.70  27:26.30  荒原狼                        胡彥斌  1.0\n8   27:26.30  31:24.60  敬自己不為誰 (feat. GAI周延)  胡彥斌  1.0\n9   31:24.60  34:52.40  人人                          胡彥斌  1.0\n10  34:52.40  39:38.40  開花的星星                    胡彥斌  1.0\ntimings: fetch 2.38s, download 4.38s, analyze 7.2s, catalog 40.13s, recognize 279.96s, total 335.09s\n"
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": true,
@@ -7813,7 +8179,8 @@
             "analyze": 6.65,
             "catalog": 41.06,
             "recognize": 0.0,
-            "total": 256.16
+            "total": 256.16,
+            "review": 0.0
           },
           "album": {
             "title": "是一场烟火",
@@ -8181,7 +8548,8 @@
               "wall_seconds": 256.41,
               "stderr_tail": "kind: compilation (long video (39:38.79) without hints; catalog album fits: itunes:胡彥斌 - 是一场烟火 (10 tracks, 2379s vs video 2379s; name 0.65, duration 1.00))\nalbum: 胡彥斌 - 是一场烟火 [2023-08-18] itunes\n#   start     end       title                         artist  conf\n--  --------  --------  ----------------------------  ------  ----\n1   0:00.00   3:40.40   你若是風                      胡彥斌  0.7\n2   3:40.40   7:38.40   不去管                        胡彥斌  0.8\n3   7:38.40   11:55.20  是一場煙火                    胡彥斌  0.8\n4   11:55.20  15:22.90  世界中心                      胡彥斌  0.8\n5   15:22.90  19:57.80  我們還會一起走到那裡去嗎      胡彥斌  0.8\n6   19:57.80  23:32.70  擁過                          胡彥斌  0.8\n7   23:32.70  27:26.30  荒原狼                        胡彥斌  0.8\n8   27:26.30  31:24.60  敬自己不為誰 (feat. GAI周延)  胡彥斌  0.8\n9   31:24.60  34:52.40  人人                          胡彥斌  0.8\n10  34:52.40  39:38.40  開花的星星                    胡彥斌  0.8\ntimings: fetch 1.92s, download 205.7s, analyze 6.65s, catalog 41.06s, recognize 0.0s, total 256.16s\n"
             }
-          ]
+          ],
+          "reviewed": null
         }
       }
     },
@@ -8193,7 +8561,7 @@
       "duration": 2741.0,
       "truth_source": "chapters",
       "truth_quality": "good",
-      "seen_in_dev": false,
+      "seen_in_dev": true,
       "truth": {
         "album": "没语季节",
         "album_artist": "黄霄雲",
@@ -8299,7 +8667,8 @@
             "analyze": 7.97,
             "catalog": 23.96,
             "recognize": 202.36,
-            "total": 281.21
+            "total": 281.21,
+            "review": 0.0
           },
           "album": {
             "title": "没语季节",
@@ -8308,7 +8677,7 @@
             "provider": "",
             "match_reason": "",
             "title_ok": true,
-            "artist_ok": true,
+            "artist_ok": false,
             "year_ok": false
           },
           "tracks_pred": [
@@ -8522,7 +8891,7 @@
               "truth_artist": "黄霄雲",
               "pred_artist": "黄霄云 原创",
               "title_ok": true,
-              "artist_ok": true,
+              "artist_ok": false,
               "overlap": 1.0,
               "confidence": 0.7,
               "pred_index": 1
@@ -8534,7 +8903,7 @@
               "truth_artist": "黄霄雲",
               "pred_artist": "黄霄云 原创",
               "title_ok": true,
-              "artist_ok": true,
+              "artist_ok": false,
               "overlap": 0.9928,
               "confidence": 0.7,
               "pred_index": 2
@@ -8546,7 +8915,7 @@
               "truth_artist": "黄霄雲",
               "pred_artist": "黄霄云 原创",
               "title_ok": true,
-              "artist_ok": true,
+              "artist_ok": false,
               "overlap": 1.0,
               "confidence": 0.7,
               "pred_index": 3
@@ -8558,7 +8927,7 @@
               "truth_artist": "黄霄雲",
               "pred_artist": "黄霄云 原创",
               "title_ok": true,
-              "artist_ok": true,
+              "artist_ok": false,
               "overlap": 0.9964,
               "confidence": 0.7,
               "pred_index": 4
@@ -8570,7 +8939,7 @@
               "truth_artist": "黄霄雲",
               "pred_artist": "黄霄云 原创",
               "title_ok": true,
-              "artist_ok": true,
+              "artist_ok": false,
               "overlap": 0.9894,
               "confidence": 0.7,
               "pred_index": 5
@@ -8582,7 +8951,7 @@
               "truth_artist": "黄霄雲",
               "pred_artist": "黄霄云 原创",
               "title_ok": true,
-              "artist_ok": true,
+              "artist_ok": false,
               "overlap": 1.0,
               "confidence": 0.7,
               "pred_index": 6
@@ -8594,7 +8963,7 @@
               "truth_artist": "黄霄雲",
               "pred_artist": "黄霄云 原创",
               "title_ok": true,
-              "artist_ok": true,
+              "artist_ok": false,
               "overlap": 0.999,
               "confidence": 0.7,
               "pred_index": 7
@@ -8606,7 +8975,7 @@
               "truth_artist": "黄霄雲",
               "pred_artist": "黄霄云 原创",
               "title_ok": true,
-              "artist_ok": true,
+              "artist_ok": false,
               "overlap": 0.987,
               "confidence": 0.7,
               "pred_index": 8
@@ -8618,7 +8987,7 @@
               "truth_artist": "黄霄雲",
               "pred_artist": "黄霄云 原创",
               "title_ok": true,
-              "artist_ok": true,
+              "artist_ok": false,
               "overlap": 0.9916,
               "confidence": 0.2,
               "pred_index": 9
@@ -8630,7 +8999,7 @@
               "truth_artist": "黄霄雲",
               "pred_artist": "黄霄云 原创",
               "title_ok": true,
-              "artist_ok": true,
+              "artist_ok": false,
               "overlap": 0.9911,
               "confidence": 0.7,
               "pred_index": 10
@@ -8651,7 +9020,7 @@
             "n_truth_boundaries": 9,
             "n_pred_boundaries": 9,
             "title_acc": 1.0,
-            "artist_acc": 1.0
+            "artist_acc": 0.0
           },
           "output": {
             "files": 10,
@@ -8671,8 +9040,13 @@
               "lyrics": 0.0
             },
             "max_duration_dev": 0.017,
-            "stream_copy_ok": false,
+            "stream_copy_ok": true,
             "stream_copy_format_ok": true,
+            "bitrate_ratio": {
+              "min": 0.95,
+              "max": 1.091
+            },
+            "bitrate_within_5pct": false,
             "stream_copy_mismatches": [
               {
                 "file": "没语季节/05-觉醒时代.m4a",
@@ -8684,10 +9058,14 @@
                 "format_ok": true,
                 "bitrate_ok": false
               }
-            ]
+            ],
+            "traditional_strings": [],
+            "from": "raw"
           },
           "problems": [
             "boundaries missed or off > 3s: tracks [8]",
+            "wrong artist: tracks [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]",
+            "album artist wrong",
             "album year wrong"
           ],
           "boundaries_alt_truth": null,
@@ -8747,7 +9125,8 @@
               "wall_seconds": 0.65,
               "stderr_tail": ""
             }
-          ]
+          ],
+          "reviewed": null
         },
         "blind": {
           "ok": false,
@@ -8984,7 +9363,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": false,
@@ -9221,7 +9601,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         }
       }
     },
@@ -9420,7 +9801,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         },
         "blind": {
           "ok": false,
@@ -9567,7 +9949,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": false,
@@ -9714,7 +10097,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         }
       }
     },
@@ -10081,7 +10465,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         },
         "blind": {
           "ok": false,
@@ -10354,7 +10739,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": false,
@@ -10627,7 +11013,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         }
       }
     },
@@ -10994,7 +11381,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         },
         "blind": {
           "ok": false,
@@ -11267,7 +11655,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": false,
@@ -11540,7 +11929,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         }
       }
     },
@@ -11859,7 +12249,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         },
         "blind": {
           "ok": false,
@@ -12096,7 +12487,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": false,
@@ -12333,7 +12725,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         }
       }
     },
@@ -12844,7 +13237,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         },
         "blind": {
           "ok": false,
@@ -13225,7 +13619,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         },
         "blind_norecog": {
           "ok": false,
@@ -13606,7 +14001,8 @@
           "source_prep": null,
           "started_at": null,
           "plan_file": null,
-          "invocations": []
+          "invocations": [],
+          "reviewed": null
         }
       }
     }
@@ -13629,9 +14025,9 @@
       "p90_abs_err": 2.5,
       "titles": 57,
       "title_acc": 1.0,
-      "artist_acc": 0.9825,
+      "artist_acc": 0.807,
       "album_title_acc": 0.875,
-      "album_artist_acc": 0.8889,
+      "album_artist_acc": 0.7778,
       "year_acc": 0.7,
       "audio_seconds": 13183.0,
       "wall_seconds": 932.1,
@@ -13642,6 +14038,7 @@
         "analyze": 22.7,
         "catalog": 214.5,
         "recognize": 215.5,
+        "review": 0.0,
         "total": 911.2
       },
       "review_confusion": {
@@ -13651,6 +14048,10 @@
         "no_review_no_problem": 7,
         "failed": 0
       },
+      "auto_ok": 7,
+      "auto_wrong": 1,
+      "held_wrong": 2,
+      "held_ok": 0,
       "trim_first_median_abs": 0.0,
       "trim_last_median_abs": 0.666,
       "alt_truth": {
@@ -13696,6 +14097,7 @@
         "analyze": 31.0,
         "catalog": 185.2,
         "recognize": 1223.1,
+        "review": 0.0,
         "total": 1718.3
       },
       "review_confusion": {
@@ -13705,6 +14107,10 @@
         "no_review_no_problem": 3,
         "failed": 0
       },
+      "auto_ok": 3,
+      "auto_wrong": 3,
+      "held_wrong": 2,
+      "held_ok": 1,
       "trim_first_median_abs": 0.0,
       "trim_last_median_abs": 1.048,
       "alt_truth": {
@@ -13737,9 +14143,9 @@
       "p90_abs_err": 2.286,
       "titles": 47,
       "title_acc": 0.9149,
-      "artist_acc": 0.9787,
+      "artist_acc": 0.9574,
       "album_title_acc": 0.7143,
-      "album_artist_acc": 1.0,
+      "album_artist_acc": 0.875,
       "year_acc": 0.7778,
       "audio_seconds": 10442.0,
       "wall_seconds": 448.5,
@@ -13750,6 +14156,7 @@
         "analyze": 29.6,
         "catalog": 170.6,
         "recognize": 0.0,
+        "review": 0.0,
         "total": 446.1
       },
       "review_confusion": {
@@ -13759,6 +14166,10 @@
         "no_review_no_problem": 3,
         "failed": 0
       },
+      "auto_ok": 3,
+      "auto_wrong": 2,
+      "held_wrong": 4,
+      "held_ok": 0,
       "trim_first_median_abs": 0.0,
       "trim_last_median_abs": 1.048,
       "alt_truth": {
@@ -13777,174 +14188,368 @@
   },
   "summary_held_out": {
     "hints": {
-      "cases": 7,
-      "ok": 7,
+      "cases": 2,
+      "ok": 2,
       "kind_acc": 1.0,
       "count_acc": 1.0,
-      "boundaries": 27,
-      "pred_boundaries": 27,
-      "hit_1s": 0.5926,
-      "hit_3s": 0.963,
+      "boundaries": 9,
+      "pred_boundaries": 9,
+      "hit_1s": 0.6667,
+      "hit_3s": 1.0,
       "hit_5s": 1.0,
-      "precision_3s": 0.963,
-      "recall_3s": 0.963,
-      "f1_3s": 0.963,
+      "precision_3s": 1.0,
+      "recall_3s": 1.0,
+      "f1_3s": 1.0,
       "median_abs_err": 0.9,
-      "p90_abs_err": 2.5,
-      "titles": 41,
+      "p90_abs_err": 1.2,
+      "titles": 11,
       "title_acc": 1.0,
       "artist_acc": 1.0,
-      "album_title_acc": 0.8333,
-      "album_artist_acc": 0.8571,
-      "year_acc": 0.7143,
-      "audio_seconds": 9711.0,
-      "wall_seconds": 760.2,
-      "realtime_factor": 12.7741,
+      "album_title_acc": 1.0,
+      "album_artist_acc": 1.0,
+      "year_acc": 1.0,
+      "audio_seconds": 2510.0,
+      "wall_seconds": 111.5,
+      "realtime_factor": 22.5152,
       "timings": {
-        "fetch": 22.3,
-        "download": 322.3,
-        "analyze": 22.7,
-        "catalog": 166.8,
-        "recognize": 209.2,
-        "total": 745.5
+        "fetch": 6.3,
+        "download": 42.9,
+        "analyze": 7.6,
+        "catalog": 43.9,
+        "recognize": 6.3,
+        "review": 0.0,
+        "total": 107.5
       },
       "review_confusion": {
-        "review_problem": 1,
+        "review_problem": 0,
         "review_no_problem": 0,
-        "no_review_problem": 1,
-        "no_review_no_problem": 5,
+        "no_review_problem": 0,
+        "no_review_no_problem": 2,
         "failed": 0
       },
+      "auto_ok": 2,
+      "auto_wrong": 0,
+      "held_wrong": 0,
+      "held_ok": 0,
       "trim_first_median_abs": 0.0,
-      "trim_last_median_abs": 0.857,
+      "trim_last_median_abs": 0.983,
       "alt_truth": {
-        "hit_1s": 0.5926,
-        "hit_3s": 0.963,
+        "hit_1s": 0.6667,
+        "hit_3s": 1.0,
         "hit_5s": 1.0,
-        "precision_3s": 0.963,
-        "recall_3s": 0.963,
-        "f1_3s": 0.963,
+        "precision_3s": 1.0,
+        "recall_3s": 1.0,
+        "f1_3s": 1.0,
         "median_abs_err": 0.9,
-        "p90_abs_err": 2.5,
-        "boundaries": 27,
+        "p90_abs_err": 1.2,
+        "boundaries": 9,
         "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
       }
     },
     "blind": {
-      "cases": 6,
-      "ok": 6,
+      "cases": 2,
+      "ok": 2,
       "kind_acc": 1.0,
       "count_acc": 1.0,
-      "boundaries": 25,
-      "pred_boundaries": 25,
-      "hit_1s": 0.6,
-      "hit_3s": 0.88,
-      "hit_5s": 0.92,
-      "precision_3s": 0.88,
-      "recall_3s": 0.88,
-      "f1_3s": 0.88,
+      "boundaries": 9,
+      "pred_boundaries": 9,
+      "hit_1s": 0.6667,
+      "hit_3s": 1.0,
+      "hit_5s": 1.0,
+      "precision_3s": 1.0,
+      "recall_3s": 1.0,
+      "f1_3s": 1.0,
       "median_abs_err": 0.9,
-      "p90_abs_err": 1.582,
-      "titles": 31,
-      "title_acc": 0.871,
+      "p90_abs_err": 1.2,
+      "titles": 11,
+      "title_acc": 1.0,
       "artist_acc": 1.0,
-      "album_title_acc": 0.8,
-      "album_artist_acc": 0.8333,
-      "year_acc": 0.8333,
-      "audio_seconds": 6970.0,
-      "wall_seconds": 1269.1,
-      "realtime_factor": 5.492,
+      "album_title_acc": 1.0,
+      "album_artist_acc": 1.0,
+      "year_acc": 1.0,
+      "audio_seconds": 2510.0,
+      "wall_seconds": 657.5,
+      "realtime_factor": 3.8177,
       "timings": {
-        "fetch": 12.6,
-        "download": 255.0,
-        "analyze": 21.1,
-        "catalog": 135.4,
-        "recognize": 839.8,
-        "total": 1267.4
+        "fetch": 5.0,
+        "download": 243.1,
+        "analyze": 7.2,
+        "catalog": 38.9,
+        "recognize": 361.5,
+        "review": 0.0,
+        "total": 656.9
       },
       "review_confusion": {
-        "review_problem": 1,
+        "review_problem": 0,
         "review_no_problem": 0,
-        "no_review_problem": 2,
-        "no_review_no_problem": 3,
+        "no_review_problem": 0,
+        "no_review_no_problem": 2,
         "failed": 0
       },
-      "trim_first_median_abs": 0.0,
-      "trim_last_median_abs": 0.857,
+      "auto_ok": 2,
+      "auto_wrong": 0,
+      "held_wrong": 0,
+      "held_ok": 0,
+      "trim_first_median_abs": 0.85,
+      "trim_last_median_abs": 0.983,
       "alt_truth": {
-        "hit_1s": 0.6,
-        "hit_3s": 0.88,
-        "hit_5s": 0.92,
-        "precision_3s": 0.88,
-        "recall_3s": 0.88,
-        "f1_3s": 0.88,
+        "hit_1s": 0.6667,
+        "hit_3s": 1.0,
+        "hit_5s": 1.0,
+        "precision_3s": 1.0,
+        "recall_3s": 1.0,
+        "f1_3s": 1.0,
         "median_abs_err": 0.9,
-        "p90_abs_err": 2.04,
-        "boundaries": 25,
+        "p90_abs_err": 1.2,
+        "boundaries": 9,
         "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
       }
     },
     "blind_norecog": {
-      "cases": 6,
-      "ok": 6,
+      "cases": 2,
+      "ok": 2,
       "kind_acc": 1.0,
       "count_acc": 1.0,
-      "boundaries": 25,
-      "pred_boundaries": 25,
-      "hit_1s": 0.6,
-      "hit_3s": 0.88,
-      "hit_5s": 0.92,
-      "precision_3s": 0.88,
-      "recall_3s": 0.88,
-      "f1_3s": 0.88,
+      "boundaries": 9,
+      "pred_boundaries": 9,
+      "hit_1s": 0.6667,
+      "hit_3s": 1.0,
+      "hit_5s": 1.0,
+      "precision_3s": 1.0,
+      "recall_3s": 1.0,
+      "f1_3s": 1.0,
       "median_abs_err": 0.9,
-      "p90_abs_err": 1.582,
-      "titles": 31,
-      "title_acc": 0.871,
+      "p90_abs_err": 1.2,
+      "titles": 11,
+      "title_acc": 1.0,
       "artist_acc": 1.0,
-      "album_title_acc": 0.6,
+      "album_title_acc": 1.0,
       "album_artist_acc": 1.0,
-      "year_acc": 0.8333,
-      "audio_seconds": 6970.0,
-      "wall_seconds": 382.3,
-      "realtime_factor": 18.2313,
+      "year_acc": 1.0,
+      "audio_seconds": 2510.0,
+      "wall_seconds": 61.3,
+      "realtime_factor": 40.9595,
       "timings": {
-        "fetch": 12.0,
-        "download": 224.0,
-        "analyze": 19.3,
-        "catalog": 122.8,
+        "fetch": 4.9,
+        "download": 10.6,
+        "analyze": 7.3,
+        "catalog": 36.9,
         "recognize": 0.0,
-        "total": 380.6
+        "review": 0.0,
+        "total": 60.6
       },
       "review_confusion": {
-        "review_problem": 3,
+        "review_problem": 0,
         "review_no_problem": 0,
-        "no_review_problem": 1,
+        "no_review_problem": 0,
         "no_review_no_problem": 2,
         "failed": 0
       },
-      "trim_first_median_abs": 0.0,
-      "trim_last_median_abs": 0.857,
+      "auto_ok": 2,
+      "auto_wrong": 0,
+      "held_wrong": 0,
+      "held_ok": 0,
+      "trim_first_median_abs": 0.85,
+      "trim_last_median_abs": 0.983,
       "alt_truth": {
-        "hit_1s": 0.56,
-        "hit_3s": 0.88,
-        "hit_5s": 0.92,
-        "precision_3s": 0.88,
-        "recall_3s": 0.88,
-        "f1_3s": 0.88,
+        "hit_1s": 0.6667,
+        "hit_3s": 1.0,
+        "hit_5s": 1.0,
+        "precision_3s": 1.0,
+        "recall_3s": 1.0,
+        "f1_3s": 1.0,
         "median_abs_err": 0.9,
-        "p90_abs_err": 2.08,
-        "boundaries": 25,
+        "p90_abs_err": 1.2,
+        "boundaries": 9,
         "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
       }
     }
   },
   "summary_seen_in_dev": {
     "hints": {
-      "cases": 3,
-      "ok": 3,
+      "cases": 8,
+      "ok": 8,
       "kind_acc": 1.0,
       "count_acc": 1.0,
+      "boundaries": 18,
+      "pred_boundaries": 18,
+      "hit_1s": 0.5556,
+      "hit_3s": 0.9444,
+      "hit_5s": 1.0,
+      "precision_3s": 0.9444,
+      "recall_3s": 0.9444,
+      "f1_3s": 0.9444,
+      "median_abs_err": 0.95,
+      "p90_abs_err": 2.53,
+      "titles": 46,
+      "title_acc": 1.0,
+      "artist_acc": 0.7609,
+      "album_title_acc": 0.8571,
+      "album_artist_acc": 0.7143,
+      "year_acc": 0.625,
+      "audio_seconds": 10673.0,
+      "wall_seconds": 820.6,
+      "realtime_factor": 13.0057,
+      "timings": {
+        "fetch": 23.8,
+        "download": 381.5,
+        "analyze": 15.1,
+        "catalog": 170.6,
+        "recognize": 209.2,
+        "review": 0.0,
+        "total": 803.7
+      },
+      "review_confusion": {
+        "review_problem": 2,
+        "review_no_problem": 0,
+        "no_review_problem": 1,
+        "no_review_no_problem": 5,
+        "failed": 0
+      },
+      "auto_ok": 5,
+      "auto_wrong": 1,
+      "held_wrong": 2,
+      "held_ok": 0,
+      "trim_first_median_abs": 0.0,
+      "trim_last_median_abs": 0.65,
+      "alt_truth": {
+        "hit_1s": 0.5556,
+        "hit_3s": 0.9444,
+        "hit_5s": 1.0,
+        "precision_3s": 0.9444,
+        "recall_3s": 0.9444,
+        "f1_3s": 0.9444,
+        "median_abs_err": 0.95,
+        "p90_abs_err": 2.53,
+        "boundaries": 18,
+        "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
+      }
+    },
+    "blind": {
+      "cases": 7,
+      "ok": 7,
+      "kind_acc": 1.0,
+      "count_acc": 1.0,
+      "boundaries": 29,
+      "pred_boundaries": 29,
+      "hit_1s": 0.6552,
+      "hit_3s": 0.8276,
+      "hit_5s": 0.931,
+      "precision_3s": 0.8276,
+      "recall_3s": 0.8276,
+      "f1_3s": 0.8276,
+      "median_abs_err": 0.715,
+      "p90_abs_err": 2.84,
+      "titles": 36,
+      "title_acc": 0.8889,
+      "artist_acc": 0.9722,
+      "album_title_acc": 0.8333,
+      "album_artist_acc": 0.8333,
+      "year_acc": 0.7143,
+      "audio_seconds": 7932.0,
+      "wall_seconds": 1063.4,
+      "realtime_factor": 7.4592,
+      "timings": {
+        "fetch": 9.9,
+        "download": 15.8,
+        "analyze": 23.8,
+        "catalog": 146.3,
+        "recognize": 861.6,
+        "review": 0.0,
+        "total": 1061.4
+      },
+      "review_confusion": {
+        "review_problem": 2,
+        "review_no_problem": 1,
+        "no_review_problem": 3,
+        "no_review_no_problem": 1,
+        "failed": 0
+      },
+      "auto_ok": 1,
+      "auto_wrong": 3,
+      "held_wrong": 2,
+      "held_ok": 1,
+      "trim_first_median_abs": 0.0,
+      "trim_last_median_abs": 1.048,
+      "alt_truth": {
+        "hit_1s": 0.5517,
+        "hit_3s": 0.8966,
+        "hit_5s": 0.931,
+        "precision_3s": 0.8966,
+        "recall_3s": 0.8966,
+        "f1_3s": 0.8966,
+        "median_abs_err": 0.8,
+        "p90_abs_err": 2.54,
+        "boundaries": 29,
+        "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
+      }
+    },
+    "blind_norecog": {
+      "cases": 7,
+      "ok": 7,
+      "kind_acc": 1.0,
+      "count_acc": 1.0,
+      "boundaries": 29,
+      "pred_boundaries": 29,
+      "hit_1s": 0.6552,
+      "hit_3s": 0.8276,
+      "hit_5s": 0.931,
+      "precision_3s": 0.8276,
+      "recall_3s": 0.8276,
+      "f1_3s": 0.8276,
+      "median_abs_err": 0.715,
+      "p90_abs_err": 2.84,
+      "titles": 36,
+      "title_acc": 0.8889,
+      "artist_acc": 0.9444,
+      "album_title_acc": 0.6667,
+      "album_artist_acc": 0.8333,
+      "year_acc": 0.7143,
+      "audio_seconds": 7932.0,
+      "wall_seconds": 387.2,
+      "realtime_factor": 20.485,
+      "timings": {
+        "fetch": 9.6,
+        "download": 217.2,
+        "analyze": 22.3,
+        "catalog": 133.7,
+        "recognize": 0.0,
+        "review": 0.0,
+        "total": 385.4
+      },
+      "review_confusion": {
+        "review_problem": 4,
+        "review_no_problem": 0,
+        "no_review_problem": 2,
+        "no_review_no_problem": 1,
+        "failed": 0
+      },
+      "auto_ok": 1,
+      "auto_wrong": 2,
+      "held_wrong": 4,
+      "held_ok": 0,
+      "trim_first_median_abs": 0.0,
+      "trim_last_median_abs": 1.048,
+      "alt_truth": {
+        "hit_1s": 0.5172,
+        "hit_3s": 0.8966,
+        "hit_5s": 0.931,
+        "precision_3s": 0.8966,
+        "recall_3s": 0.8966,
+        "f1_3s": 0.8966,
+        "median_abs_err": 0.9,
+        "p90_abs_err": 2.54,
+        "boundaries": 29,
+        "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
+      }
+    }
+  },
+  "summary_reviewed": {
+    "hints": {
+      "cases": 0,
+      "ok": 0,
+      "kind_acc": null,
+      "count_acc": null,
       "boundaries": 0,
       "pred_boundaries": 0,
       "hit_1s": null,
@@ -13955,32 +14560,37 @@
       "f1_3s": null,
       "median_abs_err": null,
       "p90_abs_err": null,
-      "titles": 16,
-      "title_acc": 1.0,
-      "artist_acc": 0.9375,
-      "album_title_acc": 1.0,
-      "album_artist_acc": 1.0,
-      "year_acc": 0.6667,
-      "audio_seconds": 3472.0,
-      "wall_seconds": 171.9,
-      "realtime_factor": 20.1966,
+      "titles": 0,
+      "title_acc": null,
+      "artist_acc": null,
+      "album_title_acc": null,
+      "album_artist_acc": null,
+      "year_acc": null,
+      "audio_seconds": 0.0,
+      "wall_seconds": 0.0,
+      "realtime_factor": null,
       "timings": {
-        "fetch": 7.9,
-        "download": 102.1,
+        "fetch": 0.0,
+        "download": 0.0,
         "analyze": 0.0,
-        "catalog": 47.7,
-        "recognize": 6.3,
-        "total": 165.7
+        "catalog": 0.0,
+        "recognize": 0.0,
+        "review": 0.0,
+        "total": 0.0
       },
       "review_confusion": {
-        "review_problem": 1,
+        "review_problem": 0,
         "review_no_problem": 0,
         "no_review_problem": 0,
-        "no_review_no_problem": 2,
+        "no_review_no_problem": 0,
         "failed": 0
       },
-      "trim_first_median_abs": 0.0,
-      "trim_last_median_abs": 0.213,
+      "auto_ok": 0,
+      "auto_wrong": 0,
+      "held_wrong": 0,
+      "held_ok": 0,
+      "trim_first_median_abs": null,
+      "trim_last_median_abs": null,
       "alt_truth": {
         "hit_1s": null,
         "hit_3s": null,
@@ -13995,110 +14605,478 @@
       }
     },
     "blind": {
-      "cases": 3,
-      "ok": 3,
-      "kind_acc": 1.0,
-      "count_acc": 1.0,
-      "boundaries": 13,
-      "pred_boundaries": 13,
-      "hit_1s": 0.7692,
-      "hit_3s": 0.8462,
-      "hit_5s": 1.0,
-      "precision_3s": 0.8462,
-      "recall_3s": 0.8462,
-      "f1_3s": 0.8462,
-      "median_abs_err": 0.19,
-      "p90_abs_err": 3.261,
-      "titles": 16,
-      "title_acc": 1.0,
-      "artist_acc": 0.9375,
-      "album_title_acc": 1.0,
-      "album_artist_acc": 1.0,
-      "year_acc": 0.6667,
-      "audio_seconds": 3472.0,
-      "wall_seconds": 451.7,
-      "realtime_factor": 7.686,
+      "cases": 0,
+      "ok": 0,
+      "kind_acc": null,
+      "count_acc": null,
+      "boundaries": 0,
+      "pred_boundaries": 0,
+      "hit_1s": null,
+      "hit_3s": null,
+      "hit_5s": null,
+      "precision_3s": null,
+      "recall_3s": null,
+      "f1_3s": null,
+      "median_abs_err": null,
+      "p90_abs_err": null,
+      "titles": 0,
+      "title_acc": null,
+      "artist_acc": null,
+      "album_title_acc": null,
+      "album_artist_acc": null,
+      "year_acc": null,
+      "audio_seconds": 0.0,
+      "wall_seconds": 0.0,
+      "realtime_factor": null,
       "timings": {
-        "fetch": 2.3,
-        "download": 3.9,
-        "analyze": 9.9,
-        "catalog": 49.8,
-        "recognize": 383.2,
-        "total": 450.9
+        "fetch": 0.0,
+        "download": 0.0,
+        "analyze": 0.0,
+        "catalog": 0.0,
+        "recognize": 0.0,
+        "review": 0.0,
+        "total": 0.0
       },
       "review_confusion": {
-        "review_problem": 1,
-        "review_no_problem": 1,
-        "no_review_problem": 1,
+        "review_problem": 0,
+        "review_no_problem": 0,
+        "no_review_problem": 0,
         "no_review_no_problem": 0,
         "failed": 0
       },
-      "trim_first_median_abs": 0.0,
-      "trim_last_median_abs": 1.9,
+      "auto_ok": 0,
+      "auto_wrong": 0,
+      "held_wrong": 0,
+      "held_ok": 0,
+      "trim_first_median_abs": null,
+      "trim_last_median_abs": null,
       "alt_truth": {
-        "hit_1s": 0.5385,
-        "hit_3s": 1.0,
-        "hit_5s": 1.0,
-        "precision_3s": 1.0,
-        "recall_3s": 1.0,
-        "f1_3s": 1.0,
-        "median_abs_err": 0.4,
-        "p90_abs_err": 2.44,
-        "boundaries": 13,
+        "hit_1s": null,
+        "hit_3s": null,
+        "hit_5s": null,
+        "precision_3s": null,
+        "recall_3s": null,
+        "f1_3s": null,
+        "median_abs_err": null,
+        "p90_abs_err": null,
+        "boundaries": 0,
         "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
       }
     },
     "blind_norecog": {
-      "cases": 3,
-      "ok": 3,
-      "kind_acc": 1.0,
-      "count_acc": 1.0,
-      "boundaries": 13,
-      "pred_boundaries": 13,
-      "hit_1s": 0.7692,
-      "hit_3s": 0.8462,
-      "hit_5s": 1.0,
-      "precision_3s": 0.8462,
-      "recall_3s": 0.8462,
-      "f1_3s": 0.8462,
-      "median_abs_err": 0.19,
-      "p90_abs_err": 3.261,
-      "titles": 16,
-      "title_acc": 1.0,
-      "artist_acc": 0.9375,
-      "album_title_acc": 1.0,
-      "album_artist_acc": 1.0,
-      "year_acc": 0.6667,
-      "audio_seconds": 3472.0,
-      "wall_seconds": 66.2,
-      "realtime_factor": 52.463,
+      "cases": 0,
+      "ok": 0,
+      "kind_acc": null,
+      "count_acc": null,
+      "boundaries": 0,
+      "pred_boundaries": 0,
+      "hit_1s": null,
+      "hit_3s": null,
+      "hit_5s": null,
+      "precision_3s": null,
+      "recall_3s": null,
+      "f1_3s": null,
+      "median_abs_err": null,
+      "p90_abs_err": null,
+      "titles": 0,
+      "title_acc": null,
+      "artist_acc": null,
+      "album_title_acc": null,
+      "album_artist_acc": null,
+      "year_acc": null,
+      "audio_seconds": 0.0,
+      "wall_seconds": 0.0,
+      "realtime_factor": null,
       "timings": {
-        "fetch": 2.5,
-        "download": 3.8,
-        "analyze": 10.3,
-        "catalog": 47.7,
+        "fetch": 0.0,
+        "download": 0.0,
+        "analyze": 0.0,
+        "catalog": 0.0,
         "recognize": 0.0,
-        "total": 65.4
+        "review": 0.0,
+        "total": 0.0
       },
       "review_confusion": {
-        "review_problem": 1,
+        "review_problem": 0,
         "review_no_problem": 0,
-        "no_review_problem": 1,
-        "no_review_no_problem": 1,
+        "no_review_problem": 0,
+        "no_review_no_problem": 0,
         "failed": 0
       },
-      "trim_first_median_abs": 0.0,
-      "trim_last_median_abs": 1.9,
+      "auto_ok": 0,
+      "auto_wrong": 0,
+      "held_wrong": 0,
+      "held_ok": 0,
+      "trim_first_median_abs": null,
+      "trim_last_median_abs": null,
       "alt_truth": {
-        "hit_1s": 0.5385,
-        "hit_3s": 1.0,
-        "hit_5s": 1.0,
-        "precision_3s": 1.0,
-        "recall_3s": 1.0,
-        "f1_3s": 1.0,
-        "median_abs_err": 0.4,
-        "p90_abs_err": 2.44,
-        "boundaries": 13,
+        "hit_1s": null,
+        "hit_3s": null,
+        "hit_5s": null,
+        "precision_3s": null,
+        "recall_3s": null,
+        "f1_3s": null,
+        "median_abs_err": null,
+        "p90_abs_err": null,
+        "boundaries": 0,
+        "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
+      }
+    }
+  },
+  "summary_reviewed_held_out": {
+    "hints": {
+      "cases": 0,
+      "ok": 0,
+      "kind_acc": null,
+      "count_acc": null,
+      "boundaries": 0,
+      "pred_boundaries": 0,
+      "hit_1s": null,
+      "hit_3s": null,
+      "hit_5s": null,
+      "precision_3s": null,
+      "recall_3s": null,
+      "f1_3s": null,
+      "median_abs_err": null,
+      "p90_abs_err": null,
+      "titles": 0,
+      "title_acc": null,
+      "artist_acc": null,
+      "album_title_acc": null,
+      "album_artist_acc": null,
+      "year_acc": null,
+      "audio_seconds": 0.0,
+      "wall_seconds": 0.0,
+      "realtime_factor": null,
+      "timings": {
+        "fetch": 0.0,
+        "download": 0.0,
+        "analyze": 0.0,
+        "catalog": 0.0,
+        "recognize": 0.0,
+        "review": 0.0,
+        "total": 0.0
+      },
+      "review_confusion": {
+        "review_problem": 0,
+        "review_no_problem": 0,
+        "no_review_problem": 0,
+        "no_review_no_problem": 0,
+        "failed": 0
+      },
+      "auto_ok": 0,
+      "auto_wrong": 0,
+      "held_wrong": 0,
+      "held_ok": 0,
+      "trim_first_median_abs": null,
+      "trim_last_median_abs": null,
+      "alt_truth": {
+        "hit_1s": null,
+        "hit_3s": null,
+        "hit_5s": null,
+        "precision_3s": null,
+        "recall_3s": null,
+        "f1_3s": null,
+        "median_abs_err": null,
+        "p90_abs_err": null,
+        "boundaries": 0,
+        "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
+      }
+    },
+    "blind": {
+      "cases": 0,
+      "ok": 0,
+      "kind_acc": null,
+      "count_acc": null,
+      "boundaries": 0,
+      "pred_boundaries": 0,
+      "hit_1s": null,
+      "hit_3s": null,
+      "hit_5s": null,
+      "precision_3s": null,
+      "recall_3s": null,
+      "f1_3s": null,
+      "median_abs_err": null,
+      "p90_abs_err": null,
+      "titles": 0,
+      "title_acc": null,
+      "artist_acc": null,
+      "album_title_acc": null,
+      "album_artist_acc": null,
+      "year_acc": null,
+      "audio_seconds": 0.0,
+      "wall_seconds": 0.0,
+      "realtime_factor": null,
+      "timings": {
+        "fetch": 0.0,
+        "download": 0.0,
+        "analyze": 0.0,
+        "catalog": 0.0,
+        "recognize": 0.0,
+        "review": 0.0,
+        "total": 0.0
+      },
+      "review_confusion": {
+        "review_problem": 0,
+        "review_no_problem": 0,
+        "no_review_problem": 0,
+        "no_review_no_problem": 0,
+        "failed": 0
+      },
+      "auto_ok": 0,
+      "auto_wrong": 0,
+      "held_wrong": 0,
+      "held_ok": 0,
+      "trim_first_median_abs": null,
+      "trim_last_median_abs": null,
+      "alt_truth": {
+        "hit_1s": null,
+        "hit_3s": null,
+        "hit_5s": null,
+        "precision_3s": null,
+        "recall_3s": null,
+        "f1_3s": null,
+        "median_abs_err": null,
+        "p90_abs_err": null,
+        "boundaries": 0,
+        "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
+      }
+    },
+    "blind_norecog": {
+      "cases": 0,
+      "ok": 0,
+      "kind_acc": null,
+      "count_acc": null,
+      "boundaries": 0,
+      "pred_boundaries": 0,
+      "hit_1s": null,
+      "hit_3s": null,
+      "hit_5s": null,
+      "precision_3s": null,
+      "recall_3s": null,
+      "f1_3s": null,
+      "median_abs_err": null,
+      "p90_abs_err": null,
+      "titles": 0,
+      "title_acc": null,
+      "artist_acc": null,
+      "album_title_acc": null,
+      "album_artist_acc": null,
+      "year_acc": null,
+      "audio_seconds": 0.0,
+      "wall_seconds": 0.0,
+      "realtime_factor": null,
+      "timings": {
+        "fetch": 0.0,
+        "download": 0.0,
+        "analyze": 0.0,
+        "catalog": 0.0,
+        "recognize": 0.0,
+        "review": 0.0,
+        "total": 0.0
+      },
+      "review_confusion": {
+        "review_problem": 0,
+        "review_no_problem": 0,
+        "no_review_problem": 0,
+        "no_review_no_problem": 0,
+        "failed": 0
+      },
+      "auto_ok": 0,
+      "auto_wrong": 0,
+      "held_wrong": 0,
+      "held_ok": 0,
+      "trim_first_median_abs": null,
+      "trim_last_median_abs": null,
+      "alt_truth": {
+        "hit_1s": null,
+        "hit_3s": null,
+        "hit_5s": null,
+        "precision_3s": null,
+        "recall_3s": null,
+        "f1_3s": null,
+        "median_abs_err": null,
+        "p90_abs_err": null,
+        "boundaries": 0,
+        "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
+      }
+    }
+  },
+  "summary_reviewed_seen_in_dev": {
+    "hints": {
+      "cases": 0,
+      "ok": 0,
+      "kind_acc": null,
+      "count_acc": null,
+      "boundaries": 0,
+      "pred_boundaries": 0,
+      "hit_1s": null,
+      "hit_3s": null,
+      "hit_5s": null,
+      "precision_3s": null,
+      "recall_3s": null,
+      "f1_3s": null,
+      "median_abs_err": null,
+      "p90_abs_err": null,
+      "titles": 0,
+      "title_acc": null,
+      "artist_acc": null,
+      "album_title_acc": null,
+      "album_artist_acc": null,
+      "year_acc": null,
+      "audio_seconds": 0.0,
+      "wall_seconds": 0.0,
+      "realtime_factor": null,
+      "timings": {
+        "fetch": 0.0,
+        "download": 0.0,
+        "analyze": 0.0,
+        "catalog": 0.0,
+        "recognize": 0.0,
+        "review": 0.0,
+        "total": 0.0
+      },
+      "review_confusion": {
+        "review_problem": 0,
+        "review_no_problem": 0,
+        "no_review_problem": 0,
+        "no_review_no_problem": 0,
+        "failed": 0
+      },
+      "auto_ok": 0,
+      "auto_wrong": 0,
+      "held_wrong": 0,
+      "held_ok": 0,
+      "trim_first_median_abs": null,
+      "trim_last_median_abs": null,
+      "alt_truth": {
+        "hit_1s": null,
+        "hit_3s": null,
+        "hit_5s": null,
+        "precision_3s": null,
+        "recall_3s": null,
+        "f1_3s": null,
+        "median_abs_err": null,
+        "p90_abs_err": null,
+        "boundaries": 0,
+        "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
+      }
+    },
+    "blind": {
+      "cases": 0,
+      "ok": 0,
+      "kind_acc": null,
+      "count_acc": null,
+      "boundaries": 0,
+      "pred_boundaries": 0,
+      "hit_1s": null,
+      "hit_3s": null,
+      "hit_5s": null,
+      "precision_3s": null,
+      "recall_3s": null,
+      "f1_3s": null,
+      "median_abs_err": null,
+      "p90_abs_err": null,
+      "titles": 0,
+      "title_acc": null,
+      "artist_acc": null,
+      "album_title_acc": null,
+      "album_artist_acc": null,
+      "year_acc": null,
+      "audio_seconds": 0.0,
+      "wall_seconds": 0.0,
+      "realtime_factor": null,
+      "timings": {
+        "fetch": 0.0,
+        "download": 0.0,
+        "analyze": 0.0,
+        "catalog": 0.0,
+        "recognize": 0.0,
+        "review": 0.0,
+        "total": 0.0
+      },
+      "review_confusion": {
+        "review_problem": 0,
+        "review_no_problem": 0,
+        "no_review_problem": 0,
+        "no_review_no_problem": 0,
+        "failed": 0
+      },
+      "auto_ok": 0,
+      "auto_wrong": 0,
+      "held_wrong": 0,
+      "held_ok": 0,
+      "trim_first_median_abs": null,
+      "trim_last_median_abs": null,
+      "alt_truth": {
+        "hit_1s": null,
+        "hit_3s": null,
+        "hit_5s": null,
+        "precision_3s": null,
+        "recall_3s": null,
+        "f1_3s": null,
+        "median_abs_err": null,
+        "p90_abs_err": null,
+        "boundaries": 0,
+        "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
+      }
+    },
+    "blind_norecog": {
+      "cases": 0,
+      "ok": 0,
+      "kind_acc": null,
+      "count_acc": null,
+      "boundaries": 0,
+      "pred_boundaries": 0,
+      "hit_1s": null,
+      "hit_3s": null,
+      "hit_5s": null,
+      "precision_3s": null,
+      "recall_3s": null,
+      "f1_3s": null,
+      "median_abs_err": null,
+      "p90_abs_err": null,
+      "titles": 0,
+      "title_acc": null,
+      "artist_acc": null,
+      "album_title_acc": null,
+      "album_artist_acc": null,
+      "year_acc": null,
+      "audio_seconds": 0.0,
+      "wall_seconds": 0.0,
+      "realtime_factor": null,
+      "timings": {
+        "fetch": 0.0,
+        "download": 0.0,
+        "analyze": 0.0,
+        "catalog": 0.0,
+        "recognize": 0.0,
+        "review": 0.0,
+        "total": 0.0
+      },
+      "review_confusion": {
+        "review_problem": 0,
+        "review_no_problem": 0,
+        "no_review_problem": 0,
+        "no_review_no_problem": 0,
+        "failed": 0
+      },
+      "auto_ok": 0,
+      "auto_wrong": 0,
+      "held_wrong": 0,
+      "held_ok": 0,
+      "trim_first_median_abs": null,
+      "trim_last_median_abs": null,
+      "alt_truth": {
+        "hit_1s": null,
+        "hit_3s": null,
+        "hit_5s": null,
+        "precision_3s": null,
+        "recall_3s": null,
+        "f1_3s": null,
+        "median_abs_err": null,
+        "p90_abs_err": null,
+        "boundaries": 0,
         "basis": "synthetic multipart scored against cases.yaml starts; other cases as in the primary numbers"
       }
     }
