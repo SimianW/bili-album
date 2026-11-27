@@ -17,9 +17,9 @@ uv run bili-album inspect ~/Music/incoming/范特西
 
 1. **Source:** page metadata from Bilibili's public API, audio via yt-dlp (anonymous; `--cookies` optional).
 2. **Text hints:** chapters, timestamps in the description or comments (uploader's pinned comment first), part names.
-3. **Catalog:** album/artist guessed from the title (`《》`, `|`, years, noise words such as 无损 / Hi-Res / 全专 stripped), looked up on NetEase Cloud Music and iTunes. The album whose track count and total length fit the video best wins.
-4. **Audio:** one low-rate decode gives silence gaps, level dips and a timbral-novelty curve as boundary candidates. Catalog track lengths are aligned to them with dynamic programming, allowing an intro/outro offset, drift, and missing or extra tracks.
-5. **Recognition:** Shazam (via `shazamio`) checks titles, pins track starts through its match offset, or scans mixed playlists that no album explains.
+3. **Catalog:** album/artist guessed from the title (`《》`, `|`, years, noise words such as 无损 / Hi-Res / 全专 / 原创 and descriptive phrases such as 在录音棚听 stripped), looked up on NetEase Cloud Music and iTunes (one failing or throttled provider falls back to the other). The album whose track count and total length fit the video best wins; an edition may match through its vocal subset (instrumental or bonus blocks ignored). A single is filed under the artist's own earliest album, not a compilation. Derivative uploads (covers, fan edits, AI remakes) are tagged with the original song and flagged. Titles keep the original script.
+4. **Audio:** one low-rate decode gives silence gaps, level dips and a timbral-novelty curve as boundary candidates. A gap is cut at the end of its deepest (digitally silent) part, so soft intros stay with their song. Catalog track lengths are aligned to the candidates with dynamic programming, allowing an intro/outro offset, drift, and missing or extra tracks.
+5. **Recognition:** Shazam (via `shazamio`) checks titles, pins track starts through its match offset (never cutting into a recognised intro), or scans mixed playlists that no album explains. A clean alignment is verified by sampling 3 tracks; when recognition contradicts the catalog order, the album is re-labelled in heard order and re-aligned.
 6. Everything lands in `plan.json` with per-track confidence and evidence. When the sources disagree, `needs_review` is set with concrete reasons. Edit the plan, or re-plan with `--album-hint` / `--tracklist`, then `apply`.
 
 ## Commands
