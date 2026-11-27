@@ -1,0 +1,783 @@
+version: 1
+cases:
+- id: jaychou-geqian
+  url: https://www.bilibili.com/video/BV19Z3n6VEMo
+  bvid: BV19Z3n6VEMo
+  kind: single
+  category: mandarin-pop
+  duration: 241.0
+  album: 七里香
+  album_artist: 周杰伦
+  year: 2004
+  truth_source: single
+  truth_quality: exact
+  reference: https://music.apple.com/tw/album/536115199
+  notes: Studio-listening upload; video is ~3 s longer than the official 238.1 s (silence/fade).
+  tracks:
+  - n: 1
+    start: 0.0
+    title: 搁浅
+    artist: 周杰伦
+    duration: 238.1
+- id: coldplay-yellow
+  url: https://www.bilibili.com/video/BV1VR4y1Y7QS
+  bvid: BV1VR4y1Y7QS
+  kind: single
+  category: western-single
+  duration: 271.0
+  album: Parachutes
+  album_artist: Coldplay
+  year: 2000
+  truth_source: single
+  truth_quality: exact
+  reference: https://music.apple.com/us/album/1122782283
+  notes: JLRS listening upload; 271 s vs official 269.2 s.
+  tracks:
+  - n: 1
+    start: 0.0
+    title: Yellow
+    artist: Coldplay
+    duration: 269.2
+- id: shiyankai-5th
+  url: https://www.bilibili.com/video/BV1T2Wu6KE6V
+  bvid: BV1T2Wu6KE6V
+  kind: single
+  category: noisy-title
+  duration: 206.0
+  album: null
+  album_artist: 石衍恺
+  year: 2023
+  truth_source: single
+  truth_quality: exact
+  reference: https://open.spotify.com/track/3ZTviTQW8ETLnNtwdLPdcZ
+  notes: Title is decorated (Hi-Res math-bold, 《》, quote slogan). Official title is just 5th (Spotify lists 2023-12-18, 3:25); not on Apple Music.
+  tracks:
+  - n: 1
+    start: 0.0
+    title: 5th
+    artist: 石衍恺
+    duration: 205.0
+- id: user-520am-derivative
+  url: https://www.bilibili.com/video/BV1vQybzKEhr
+  bvid: BV1vQybzKEhr
+  kind: single
+  category: user-single
+  duration: 121.0
+  album: null
+  album_artist: null
+  year: 2024
+  truth_source: single
+  truth_quality: approximate
+  reference: https://baike.baidu.com/item/5:20AM/64405830
+  notes: Owner-supplied. Fan AI-MV 'Si Feng edition' (司凤版) of the song 5:20AM, a ~2 min derivative, not the 2:42-3:00 original. Original by soldier (2024-01-18); the viral cover is by 刀酱 and a different song with the same name is by 周明明, so artist credit is debatable. Title in the video is written 520AM. Truth title/artist = original song.
+  tracks:
+  - n: 1
+    start: 0.0
+    title: 5:20AM
+    artist: soldier
+    duration: null
+- id: zhangjie-yaode
+  url: https://www.bilibili.com/video/BV1Rh9mYvEnv
+  bvid: BV1Rh9mYvEnv
+  kind: multipart
+  category: mandarin-pop
+  duration: 2480.0
+  album: 要得
+  album_artist: 张杰
+  year: 2024
+  truth_source: parts
+  truth_quality: exact
+  reference: https://music.apple.com/us/album/6830075856
+  notes: Part durations are 1-2 s longer than official track lengths for some tracks.
+  tracks:
+  - n: 1
+    start: 0.0
+    title: 回
+    artist: 张杰
+    duration: 233.7
+  - n: 2
+    start: 234.0
+    title: 再生之地
+    artist: 张杰
+    duration: 229.7
+  - n: 3
+    start: 464.0
+    title: 宿命之眼
+    artist: 张杰
+    duration: 217.2
+  - n: 4
+    start: 682.0
+    title: 穿堂风
+    artist: 张杰
+    duration: 256.8
+  - n: 5
+    start: 939.0
+    title: 老子数道三
+    artist: 张杰
+    duration: 245.8
+  - n: 6
+    start: 1185.0
+    title: 张三丰
+    artist: 张杰
+    duration: 194.9
+  - n: 7
+    start: 1380.0
+    title: 来我家
+    artist: 张杰
+    duration: 199.4
+  - n: 8
+    start: 1580.0
+    title: 月光下
+    artist: 张杰
+    duration: 255.6
+  - n: 9
+    start: 1836.0
+    title: 轻舟
+    artist: 张杰
+    duration: 327.5
+  - n: 10
+    start: 2164.0
+    title: 树呢
+    artist: 张杰
+    duration: 315.6
+- id: wego6-sixhearts
+  url: https://www.bilibili.com/video/BV1gzsB6tEBt
+  bvid: BV1gzsB6tEBt
+  kind: multipart
+  category: kpop-ep
+  duration: 871.0
+  album: SIX HEARTS
+  album_artist: WE GO-6
+  year: 2026
+  truth_source: parts
+  truth_quality: exact
+  reference: https://music.apple.com/us/album/6833864650
+  notes: Part names are Korean (괴물(Monster), 처음이자 마지막으로(First_and_Last)); titles here use Apple Music's English spelling.
+  tracks:
+  - n: 1
+    start: 0.0
+    title: Monster
+    artist: WE GO-6
+    duration: 191.4
+  - n: 2
+    start: 192.0
+    title: Lucky Charm
+    artist: WE GO-6
+    duration: 125.8
+  - n: 3
+    start: 318.0
+    title: First and Last
+    artist: WE GO-6
+    duration: 172.1
+  - n: 4
+    start: 490.0
+    title: Luminaria
+    artist: WE GO-6
+    duration: 191.7
+  - n: 5
+    start: 683.0
+    title: '1004'
+    artist: WE GO-6
+    duration: 187.6
+- id: billie-dsam-vinyl
+  url: https://www.bilibili.com/video/BV1TK4y1n7S4
+  bvid: BV1TK4y1n7S4
+  kind: multipart
+  category: western-ep-vinyl
+  duration: 1569.0
+  album: dont smile at me
+  album_artist: Billie Eilish
+  year: 2017
+  truth_source: parts
+  truth_quality: exact
+  reference: https://music.apple.com/us/album/1440898929
+  notes: 'Vinyl rip (AT-LP120), so parts run 1-2 s longer than digital durations. Part order is the vinyl order: Party Favor and watch are swapped vs the digital album (digital track 4 watch, 5 party favor); the &burn bonus track is not in the video. Track n follows the video, not the digital order.'
+  tracks:
+  - n: 1
+    start: 0.0
+    title: COPYCAT
+    artist: Billie Eilish
+    duration: 193.4
+  - n: 2
+    start: 194.0
+    title: idontwannabeyouanymore
+    artist: Billie Eilish
+    duration: 203.6
+  - n: 3
+    start: 400.0
+    title: my boy
+    artist: Billie Eilish
+    duration: 170.9
+  - n: 4
+    start: 572.0
+    title: party favor
+    artist: Billie Eilish
+    duration: 204.8
+  - n: 5
+    start: 779.0
+    title: watch
+    artist: Billie Eilish
+    duration: 177.5
+  - n: 6
+    start: 957.0
+    title: bellyache
+    artist: Billie Eilish
+    duration: 179.2
+  - n: 7
+    start: 1137.0
+    title: ocean eyes
+    artist: Billie Eilish
+    duration: 200.4
+  - n: 8
+    start: 1338.0
+    title: hostage
+    artist: Billie Eilish
+    duration: 229.4
+- id: keyl-back-to-2000
+  url: https://www.bilibili.com/video/BV1rV41137jv
+  bvid: BV1rV41137jv
+  kind: compilation
+  category: mandarin-pop
+  duration: 2304.0
+  album: 回到2000
+  album_artist: KEY.L刘聪
+  year: 2023
+  truth_source: chapters
+  truth_quality: good
+  reference: https://music.apple.com/tw/album/1825821687
+  notes: Uploader chapters agree with cumulative official durations within 1.7 s. Titles in simplified script as on the release; Apple's tw storefront shows traditional script.
+  tracks:
+  - n: 1
+    start: 0.0
+    title: 未来等你
+    artist: KEY.L刘聪 feat. c0de731
+    duration: 197.3
+  - n: 2
+    start: 197.0
+    title: 夜雨
+    artist: KEY.L刘聪
+    duration: 348.0
+  - n: 3
+    start: 545.0
+    title: 随身听2000
+    artist: KEY.L刘聪 feat. c0de731
+    duration: 209.1
+  - n: 4
+    start: 754.0
+    title: 黑本子
+    artist: KEY.L刘聪 feat. c0de731
+    duration: 195.8
+  - n: 5
+    start: 950.0
+    title: 走出核工厂
+    artist: KEY.L刘聪
+    duration: 216.3
+  - n: 6
+    start: 1167.0
+    title: 苦海
+    artist: KEY.L刘聪 feat. 梁笑生AIRBUS130 & c0de731
+    duration: 190.0
+  - n: 7
+    start: 1356.0
+    title: Homiez Only
+    artist: KEY.L刘聪 feat. c0de731
+    duration: 214.0
+  - n: 8
+    start: 1570.0
+    title: 午夜心碎台北
+    artist: KEY.L刘聪 feat. 功夫胖KungFuPen, MC HotDog 热狗, c0de731 & Whle
+    duration: 267.9
+  - n: 9
+    start: 1838.0
+    title: 一个人待会儿
+    artist: KEY.L刘聪 feat. c0de731
+    duration: 188.1
+  - n: 10
+    start: 2025.0
+    title: 千禧年代
+    artist: KEY.L刘聪 feat. Bramble & c0de731
+    duration: 279.3
+- id: huyanbin-fireworks
+  url: https://www.bilibili.com/video/BV1i14y1i72b
+  bvid: BV1i14y1i72b
+  kind: compilation
+  category: mandarin-pop
+  duration: 2379.0
+  album: 是一场烟火
+  album_artist: 胡彦斌
+  year: 2023
+  truth_source: chapters
+  truth_quality: good
+  reference: https://music.apple.com/tw/album/1702978283
+  notes: Uploader chapters agree with cumulative official durations within 1.7 s; official total 2378.9 s equals video length.
+  tracks:
+  - n: 1
+    start: 0.0
+    title: 你若是风
+    artist: 胡彦斌
+    duration: 220.2
+  - n: 2
+    start: 219.0
+    title: 不去管
+    artist: 胡彦斌
+    duration: 237.6
+  - n: 3
+    start: 458.0
+    title: 是一场烟火
+    artist: 胡彦斌
+    duration: 255.5
+  - n: 4
+    start: 712.0
+    title: 世界中心
+    artist: 胡彦斌
+    duration: 209.4
+  - n: 5
+    start: 922.0
+    title: 我们还会一起走到那里去吗
+    artist: 胡彦斌
+    duration: 275.1
+  - n: 6
+    start: 1197.0
+    title: 拥过
+    artist: 胡彦斌
+    duration: 215.8
+  - n: 7
+    start: 1412.0
+    title: 荒原狼
+    artist: 胡彦斌
+    duration: 232.6
+  - n: 8
+    start: 1645.0
+    title: 敬自己不为谁
+    artist: 胡彦斌 feat. GAI周延
+    duration: 237.4
+  - n: 9
+    start: 1882.0
+    title: 人人
+    artist: 胡彦斌
+    duration: 209.2
+  - n: 10
+    start: 2092.0
+    title: 开花的星星
+    artist: 胡彦斌
+    duration: 286.2
+- id: huangxiaoyun-meiyu
+  url: https://www.bilibili.com/video/BV1m6mSY1EuS
+  bvid: BV1m6mSY1EuS
+  kind: compilation
+  category: mandarin-pop-long-ish
+  duration: 2741.0
+  album: 没语季节
+  album_artist: 黄霄雲
+  year: 2024
+  truth_source: chapters
+  truth_quality: good
+  reference: https://music.apple.com/tw/album/1779000080
+  notes: Uploader chapters agree with cumulative official durations within 3.5 s. Apple's tw edition has 20 tracks (adds instrumentals); only the 10 vocal tracks are in the video. Artist spelled 黄霄雲 as on the release.
+  tracks:
+  - n: 1
+    start: 0.0
+    title: 没语季节
+    artist: 黄霄雲
+    duration: 269.6
+  - n: 2
+    start: 273.0
+    title: 说谎动物
+    artist: 黄霄雲
+    duration: 267.1
+  - n: 3
+    start: 538.0
+    title: 然后呢 最后呢
+    artist: 黄霄雲
+    duration: 342.8
+  - n: 4
+    start: 881.0
+    title: 没了我你依然拥有太阳
+    artist: 黄霄雲
+    duration: 272.7
+  - n: 5
+    start: 1155.0
+    title: 觉醒时代
+    artist: 黄霄雲
+    duration: 238.6
+  - n: 6
+    start: 1390.0
+    title: 小云
+    artist: 黄霄雲
+    duration: 213.5
+  - n: 7
+    start: 1606.0
+    title: 盲选
+    artist: 黄霄雲
+    duration: 286.4
+  - n: 8
+    start: 1893.0
+    title: 弦上生花
+    artist: 黄霄雲
+    duration: 292.8
+  - n: 9
+    start: 2186.0
+    title: 回音如果
+    artist: 黄霄雲
+    duration: 296.7
+  - n: 10
+    start: 2484.0
+    title: 玫瑰星云
+    artist: 黄霄雲
+    duration: 251.2
+- id: a2o-soul-superstar
+  url: https://www.bilibili.com/video/BV1trWt6HENA
+  bvid: BV1trWt6HENA
+  kind: compilation
+  category: kpop-ep
+  duration: 1011.0
+  album: SUPERSTAR
+  album_artist: A2O & A2O SOUL
+  year: 2026
+  truth_source: description
+  truth_quality: good
+  reference: https://music.apple.com/us/album/6830057356
+  notes: Uploader description timestamps match cumulative official durations to within 1 s.
+  tracks:
+  - n: 1
+    start: 0.0
+    title: SUPERSTAR
+    artist: A2O & A2O SOUL
+    duration: 248.0
+  - n: 2
+    start: 248.0
+    title: Dancing in the Dark
+    artist: A2O & A2O SOUL
+    duration: 168.0
+  - n: 3
+    start: 416.0
+    title: While We're Young
+    artist: A2O & A2O SOUL
+    duration: 198.0
+  - n: 4
+    start: 614.0
+    title: Very First Love (첫사랑)
+    artist: A2O & A2O SOUL
+    duration: 188.0
+  - n: 5
+    start: 802.0
+    title: Moonlight Shadow
+    artist: A2O & A2O SOUL
+    duration: 208.0
+- id: radiohead-ok-computer
+  url: https://www.bilibili.com/video/BV1pp4y177aw
+  bvid: BV1pp4y177aw
+  kind: compilation
+  category: western-album
+  duration: 3209.0
+  album: OK Computer
+  album_artist: Radiohead
+  year: 1997
+  truth_source: comment
+  truth_quality: good
+  reference: https://music.apple.com/us/album/1097861387
+  notes: 'Top comment list (mm:ss) checked against the audio: every boundary is within ~1 s of a silence gap or onset. Tracks 6->7 and 7->8 are tight (Fitter Happier is a 2 min interlude); start of 7 is +-1 s. Video omits ~13 s of official track length overall.'
+  tracks:
+  - n: 1
+    start: 0.0
+    title: Airbag
+    artist: Radiohead
+    duration: 287.9
+  - n: 2
+    start: 284.3
+    title: Paranoid Android
+    artist: Radiohead
+    duration: 387.2
+  - n: 3
+    start: 668.3
+    title: Subterranean Homesick Alien
+    artist: Radiohead
+    duration: 267.7
+  - n: 4
+    start: 935.6
+    title: Exit Music (For a Film)
+    artist: Radiohead
+    duration: 267.2
+  - n: 5
+    start: 1200.7
+    title: Let Down
+    artist: Radiohead
+    duration: 299.6
+  - n: 6
+    start: 1500.2
+    title: Karma Police
+    artist: Radiohead
+    duration: 264.1
+  - n: 7
+    start: 1762.0
+    title: Fitter Happier
+    artist: Radiohead
+    duration: 117.3
+  - n: 8
+    start: 1879.0
+    title: Electioneering
+    artist: Radiohead
+    duration: 230.6
+  - n: 9
+    start: 2109.7
+    title: Climbing Up the Walls
+    artist: Radiohead
+    duration: 285.2
+  - n: 10
+    start: 2394.7
+    title: No Surprises
+    artist: Radiohead
+    duration: 229.1
+  - n: 11
+    start: 2623.3
+    title: Lucky
+    artist: Radiohead
+    duration: 258.8
+  - n: 12
+    start: 2883.1
+    title: The Tourist
+    artist: Radiohead
+    duration: 326.5
+- id: mixed-hot-playlist
+  url: https://www.bilibili.com/video/BV1x44B6pEGm
+  bvid: BV1x44B6pEGm
+  kind: compilation
+  category: mixed-playlist
+  duration: 3045.0
+  album: null
+  album_artist: null
+  year: null
+  truth_source: description
+  truth_quality: good
+  reference: https://music.apple.com/tw/song/6829122414
+  notes: 'Uploader description timestamps verified against audio (silence gaps/onsets within 0.6 s, mostly 0.3 s). Durations of 10 of 12 songs match Apple Music within 3 s. Track 10 (时过境迁): the only Apple match is by 承桓 (236.1 s, equals the video span) while the uploader credits 苏艺馨Chency; artist here follows the uploader and is unverified. Track 6 official title is 甲乙丙丁Strangers (uploader wrote 甲乙丙丁 (你我怎么两清)); track 3 Korean title is 연애의 조건. Artist/title uncertainty on tracks 3, 6, 10 only.'
+  tracks:
+  - n: 1
+    start: 0.0
+    title: Hong Kong (feat. 王菲季候风)
+    artist: The Weeknd
+    duration: 217.0
+  - n: 2
+    start: 216.6
+    title: 天龙八部之宿敌
+    artist: 许嵩
+    duration: 263.3
+  - n: 3
+    start: 481.2
+    title: Love Options (연애의 조건)
+    artist: BESTie
+    duration: 194.1
+  - n: 4
+    start: 675.0
+    title: 我不难过
+    artist: 孙燕姿
+    duration: 320.4
+  - n: 5
+    start: 993.5
+    title: 我好像在哪见过你
+    artist: 薛之谦
+    duration: 279.1
+  - n: 6
+    start: 1274.1
+    title: 甲乙丙丁Strangers
+    artist: 李佳薇
+    duration: 210.5
+  - n: 7
+    start: 1483.4
+    title: 泪海
+    artist: 许茹芸
+    duration: 299.8
+  - n: 8
+    start: 1780.8
+    title: 我怀念的
+    artist: 孙燕姿
+    duration: 289.1
+  - n: 9
+    start: 2069.2
+    title: 情歌
+    artist: 梁静茹
+    duration: 260.1
+  - n: 10
+    start: 2329.3
+    title: 时过境迁
+    artist: 苏艺馨Chency
+    duration: null
+  - n: 11
+    start: 2565.5
+    title: 雨过后的风景
+    artist: Dizzy Dizzo 蔡诗芸
+    duration: 243.1
+  - n: 12
+    start: 2808.4
+    title: You Are All I Need
+    artist: FLY COAST feat. Ai Ninomiya
+    duration: 239.8
+- id: jaychou-fantasy
+  url: https://www.bilibili.com/video/BV14PVVzNE2R
+  bvid: BV14PVVzNE2R
+  kind: compilation
+  category: user-album
+  duration: 2369.0
+  album: 范特西
+  album_artist: 周杰伦
+  year: 2001
+  truth_source: manual
+  truth_quality: approximate
+  reference: https://music.apple.com/tw/album/535739206
+  notes: 'Owner-supplied. Audio is the MV audio (官方MV), shorter than the album by ~9 s and with silences between songs; starts are the onset of each song from the audio (digital-silence gaps give clean onsets for 2,4,5,6,7,9,10). Ambiguous: track 3 (简单爱) has a quiet ~4 s intro after a 0.25 s gap at 464.1; loud part starts at 468.2, start marks the gap end. Track 1: faint noise from 0.5 s, music from 1.7 s. Uploader comment list agrees within 1 s except track 3 (+0.7), track 5 (+2.3), track 6 (-5.0: it points into a 9 s silence; song begins 1183.0). Official durations (iTunes) are not comparable because the MV audio has its own gaps.'
+  tracks:
+  - n: 1
+    start: 1.7
+    title: 爱在西元前
+    artist: 周杰伦
+    duration: 234.3
+  - n: 2
+    start: 239.5
+    title: 爸我回来了
+    artist: 周杰伦
+    duration: 235.6
+  - n: 3
+    start: 464.3
+    title: 简单爱
+    artist: 周杰伦
+    duration: 271.0
+  - n: 4
+    start: 731.3
+    title: 忍者
+    artist: 周杰伦
+    duration: 158.5
+  - n: 5
+    start: 890.7
+    title: 开不了口
+    artist: 周杰伦
+    duration: 285.0
+  - n: 6
+    start: 1183.0
+    title: 上海一九四三
+    artist: 周杰伦
+    duration: 195.8
+  - n: 7
+    start: 1380.5
+    title: 对不起
+    artist: 周杰伦
+    duration: 225.4
+  - n: 8
+    start: 1604.2
+    title: 威廉古堡
+    artist: 周杰伦
+    duration: 236.2
+  - n: 9
+    start: 1837.6
+    title: 双截棍
+    artist: 周杰伦
+    duration: 201.0
+  - n: 10
+    start: 2037.7
+    title: 安静
+    artist: 周杰伦
+    duration: 334.2
+- id: weeknd-starboy-gapless
+  url: https://www.bilibili.com/video/BV14F4m1M7Lx
+  bvid: BV14F4m1M7Lx
+  kind: compilation
+  category: user-gapless
+  duration: 4114.0
+  album: Starboy
+  album_artist: The Weeknd
+  year: 2016
+  truth_source: manual
+  truth_quality: approximate
+  reference: https://music.apple.com/us/album/1440870373
+  notes: 'Owner-supplied; gapless album with translated lyrics (uploader says 无缝), 68 min. Starts are audio-derived (energy dips, onsets, spectral change) and agree with the top comment''s timestamps within 1 s for 15 of 17 boundaries, the exceptions being tracks 3 and 4 (see below). Ambiguous: track 3 False Alarm (fade-in from a low point at 479.0; start marks 479.5), track 4 Reminder (no cut in the audio; 700.0 comes from official durations and the comment, the beat drop is at 711.5), track 17 Die for You (abrupt change at 3582.8, comment 3583). Other boundaries are within 1 s of a clear dip or onset. ''end'' is where the last song fades out; the video has 2.4 s of silence after it. First song begins 0.9 s into the video.'
+  end: 4110.7
+  tracks:
+  - n: 1
+    start: 0.9
+    title: Starboy
+    artist: The Weeknd feat. Daft Punk
+    duration: 230.5
+  - n: 2
+    start: 230.8
+    title: Party Monster
+    artist: The Weeknd
+    duration: 249.2
+  - n: 3
+    start: 479.5
+    title: False Alarm
+    artist: The Weeknd
+    duration: 220.3
+  - n: 4
+    start: 700.0
+    title: Reminder
+    artist: The Weeknd
+    duration: 218.9
+  - n: 5
+    start: 918.4
+    title: Rockin'
+    artist: The Weeknd
+    duration: 232.9
+  - n: 6
+    start: 1151.4
+    title: Secrets
+    artist: The Weeknd
+    duration: 265.6
+  - n: 7
+    start: 1417.6
+    title: True Colors
+    artist: The Weeknd
+    duration: 206.0
+  - n: 8
+    start: 1622.8
+    title: Stargirl Interlude
+    artist: The Weeknd feat. Lana Del Rey
+    duration: 111.6
+  - n: 9
+    start: 1733.9
+    title: Sidewalks
+    artist: The Weeknd feat. Kendrick Lamar
+    duration: 231.4
+  - n: 10
+    start: 1965.4
+    title: Six Feet Under
+    artist: The Weeknd
+    duration: 237.6
+  - n: 11
+    start: 2202.8
+    title: Love to Lay
+    artist: The Weeknd
+    duration: 223.3
+  - n: 12
+    start: 2426.1
+    title: A Lonely Night
+    artist: The Weeknd
+    duration: 220.2
+  - n: 13
+    start: 2645.7
+    title: Attention
+    artist: The Weeknd
+    duration: 197.7
+  - n: 14
+    start: 2843.3
+    title: Ordinary Life
+    artist: The Weeknd
+    duration: 221.9
+  - n: 15
+    start: 3065.2
+    title: Nothing Without You
+    artist: The Weeknd
+    duration: 198.7
+  - n: 16
+    start: 3263.8
+    title: All I Know
+    artist: The Weeknd feat. Future
+    duration: 321.0
+  - n: 17
+    start: 3582.8
+    title: Die for You
+    artist: The Weeknd
+    duration: 260.3
+  - n: 18
+    start: 3844.2
+    title: I Feel It Coming
+    artist: The Weeknd feat. Daft Punk
+    duration: 269.2
