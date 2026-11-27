@@ -34,7 +34,7 @@ Run everything with `uv run` from the repo root. Never commit downloaded audio, 
 - The web package does not import `library.py`; `serve`'s arguments live in `web/cli.py`.
 - `runner.py` is the only code that knows `bili_album.pipeline`'s names (`PipelineRunner`, `map_event`, `map_result`, `read_plan`); change the mapping there when the pipeline API changes. `fake.py` runs the real pipeline with scripted `Steps`; `tests/test_web_fixtures.py` checks its plans against real reviewed plans in `tests/fixtures/web/` (refresh those from a live run when the plan or review format changes; strip config values and home paths first).
 - Every string sent to the browser is scrubbed of config values (only the public Jellyfin address goes out, as `library_url`) and inserted with `textContent`, never as HTML. No CDN, fonts or other external requests in `static/index.html`.
-- The approved designs are `mockups/web-import.html` and `mockups/web-login.html`.
+- The approved designs are `mockups/web-import.html`, `mockups/web-login.html` and `mockups/web-refine-switch.html` (the 切点精修 menu, `static/refine-menu.html`).
 
 ## Agent skills
 
