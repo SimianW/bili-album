@@ -722,6 +722,8 @@ class Planner:
             self.refine_info.update(reason="refinement off")
             return
         self.refine_info = self.timer.run("refine", refine_cuts, audio, segs, self.o.refine_options)
+        if self.refine_info["moved"]:   # lengths changed: redo the catalog length check where it ran
+            self._check_durations([s for s in segs if hasattr(s, "len_adj")])
 
     def _match_titles(self, titles: list[str], album: CatAlbum | None) -> list[CatTrack | None]:
         if not album:

@@ -74,6 +74,7 @@ class Window:
     upper_ms: int
     clip_start_ms: int
     clip_end_ms: int
+    cap_ms: int | None = None   # the caller's upper bound: the cut, not the edge it is found from, stays at or before it
     pcm: bytearray = field(default_factory=bytearray)
 
 
@@ -97,7 +98,8 @@ def refine_starts(audio: Path | str, guesses: list[float], *, channels: int = 2,
     """Refine increasing start guesses (seconds) on ``audio``; return ``[(start_s, method)]``.
 
     Each window is ``guess ± search_ms``, kept between the midpoints to the neighbouring guesses
-    and inside the caller's ``bounds[i] = (lo_s, hi_s)`` (either may be None). ``channels`` is the
+    and above the caller's ``bounds[i] = (lo_s, hi_s)`` lower bound; ``hi_s`` caps the returned
+    cut (an edge found past it still counts when its backtracked cut lies before it). Either may be None. ``channels`` is the
     channel count of the first audio stream (the decoder keeps it). A guess whose window is empty
     comes back unchanged as ``fallback``."""
     p = RefineParams(search_ms, silence_db, deep_silence_db, min_silence_ms, recovery_ms, tie_ms,
@@ -119,10 +121,9 @@ def refine_starts(audio: Path | str, guesses: list[float], *, channels: int = 2,
             hi = min(hi, (g + ms[i + 1]) // 2)
         if bounds and bounds[i][0] is not None:
             lo = max(lo, math.ceil(bounds[i][0] * 1000))
-        if bounds and bounds[i][1] is not None:
-            hi = min(hi, math.floor(bounds[i][1] * 1000))
+        cap = math.floor(bounds[i][1] * 1000) if bounds and bounds[i][1] is not None else None
         lo = max(lo, 0)
-        windows.append(Window(i, g, lo, hi, max(0, lo - context), hi + context))
+        windows.append(Window(i, g, lo, hi, max(0, lo - context), hi + context, cap))
     out: list[tuple[float, str] | None] = [None] * len(ms)
     for w, start, method in _decode_and_refine(Path(audio), windows, channels, p):
         out[w.index] = (start / 1000.0, method)
@@ -146,9 +147,14 @@ def _decode_and_refine(audio: Path, windows: list[Window], channels: int, p: Ref
         return w
 
     def finish(w: Window):
-        if w.lower_ms > w.upper_ms:
+        if w.lower_ms > (w.upper_ms if w.cap_ms is None else min(w.upper_ms, w.cap_ms)):
             return w, w.guess_ms, "fallback"
         start, method = refine_start(take(w), channels, p)
+        if w.cap_ms is not None and start > w.cap_ms:
+            # A quiet run whose onset lies past the cap may still give a cut before it (backtracking);
+            # only when it does not, search again with the window ending at the cap.
+            w.upper_ms = min(w.upper_ms, w.cap_ms)
+            start, method = refine_start(w, channels, p)
         w.pcm = bytearray()
         return w, start, method
 
