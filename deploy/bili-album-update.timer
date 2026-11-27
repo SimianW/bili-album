@@ -1,0 +1,15 @@
+# systemd user timer for bili-album-update.service.
+# Polls every 3 minutes (~20 req/hr, leaving headroom in GitHub's 60 req/hr unauthenticated IP limit)
+# and sends If-None-Match (ETag) to skip body downloads when unchanged.
+
+[Unit]
+Description=Check for new bili-album GitHub releases every 3 minutes
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=3min
+AccuracySec=15s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

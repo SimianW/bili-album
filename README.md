@@ -69,7 +69,7 @@ uv run bili-album serve --fake         # demo mode, no network/import (login: an
 - **Boundary refinement:** The 切点精修 menu at the top right turns millisecond refinement off or sets its search window, the two silence thresholds and the pre-roll for the links submitted next (sent as `options` with `POST /api/jobs`, checked against `web/runner.REFINE_LIMITS`; the menu lives in `static/refine-menu.html`, which `server.load_index()` inserts into the page). Each browser remembers its own settings.
 - **Auth:** Uses Jellyfin accounts by default when `BILI_ALBUM_JELLYFIN_URL` is configured (`--auth none` to disable). Passwords are verified once against Jellyfin and never stored.
 - **Networking:** Pass `--host` multiple times to bind specific addresses (`0.0.0.0` and `::` are refused). Behind a reverse proxy, forward `Host`, `X-Forwarded-For`, and `X-Forwarded-Proto` (configure `BILI_ALBUM_TRUSTED_PROXIES` if the proxy is not on loopback).
-- **Deployment:** See [`deploy/bili-album-web.service`](deploy/bili-album-web.service) for a systemd user unit.
+- **Deployment:** See [`deploy/bili-album-web.service`](deploy/bili-album-web.service) for a systemd user unit, and [`deploy/bili-album-update.service`](deploy/bili-album-update.service) / [`deploy/bili-album-update.timer`](deploy/bili-album-update.timer) / [`deploy/bili-album-update.py`](deploy/bili-album-update.py) to keep the live checkout updated automatically when a new GitHub release is published.
 
 ## Configuration
 
