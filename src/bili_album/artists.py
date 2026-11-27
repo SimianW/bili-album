@@ -23,7 +23,7 @@ import re
 
 ARTIST_SEP = "/"
 _DELIMS = re.compile(r"\s*[/／|｜;；\\＼、]\s*|(?:\s+|\s*[(（\[【]\s*)(?:feat\.?|ft\.?|featuring)\s+"
-                     r"|(?<=[぀-ヿ㐀-鿿가-힯])\s*(?:feat|ft)\.\s*", re.I)
+                     r"|(?<=[぀-ヿ㐀-鿿가-힯豈-﫿])\s*(?:feat|ft)\.\s*", re.I)
 # A protected name only counts as a whole name: "Jack/David" holds "k/Da" but is two artists.
 _NO_SPLIT = re.compile(r"(?<![A-Za-z0-9])(?:AC[/／]DC|K[/／]DA)(?![A-Za-z0-9])", re.I)
 _CJK_JOIN = re.compile(r"\s*(?:&|＆|,|，)\s*")

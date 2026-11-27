@@ -147,7 +147,8 @@ def test_page_preview_uses_the_same_first_artist_rule():
     cases = ["周杰伦/费玉清", "周杰伦 & 费玉清", "周杰伦、费玉清", "周杰伦，费玉清", "Simon & Garfunkel", "AC/DC",
              "AC/DC Tribute", "K/DA", "A featuring B", "Lady Gaga feat. Bruno Mars", "周杰伦 [feat. 杨瑞代]",
              "周杰伦【feat. 杨瑞代】", "A＼B", "a|b", "IU (아이유)", "周杰伦 & Lara", "周杰伦",
-             "Jack/David", "ac/dc", "周杰伦feat.杨瑞代", "(周杰伦/费玉清)", "/周杰伦", "豈/周杰伦", "AC/DC/K/DA"]
+             "Jack/David", "ac/dc", "周杰伦feat.杨瑞代", "(周杰伦/费玉清)", "/周杰伦", "豈/周杰伦", "AC/DC/K/DA",
+             "豈 & 周杰伦", "豈feat.周杰伦", "&周杰伦", "，周杰伦"]
     out = subprocess.run(["node", "-e", f"const f = {fn}; console.log(JSON.stringify({json.dumps(cases)}.map(f)))"],
                          capture_output=True, text=True, check=True).stdout
     assert json.loads(out) == [first_artist(c) for c in cases]
