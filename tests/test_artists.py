@@ -53,8 +53,12 @@ def test_join_and_first():
 
 
 @pytest.mark.parametrize("title, artists", [
-    ("周杰伦/费玉清《千里之外》", ["周杰伦/费玉清", "周杰伦", "费玉清"]),
-    ("林俊杰 / 金莎《被风吹过的夏天》", ["林俊杰/金莎", "林俊杰", "金莎"]),
+    # "/" in a title: the name next to the bracket first, then the joined set (see hints)
+    ("周杰伦/费玉清《千里之外》", ["费玉清", "周杰伦/费玉清", "周杰伦"]),
+    ("林俊杰 / 金莎《被风吹过的夏天》", ["金莎", "林俊杰/金莎", "林俊杰"]),
+    ("周杰伦/费玉清/林俊杰/金莎/王力宏《歌曲》", ["王力宏", "周杰伦/费玉清/林俊杰/金莎/王力宏", "周杰伦", "费玉清",
+                                       "林俊杰", "金莎"]),
+    ("抖音/周杰伦《晴天》", ["周杰伦", "抖音/周杰伦", "抖音"]),      # an unknown label never comes first
     ("周杰伦 & 费玉清《千里之外》", ["周杰伦/费玉清", "周杰伦", "费玉清"]),
     ("【无损】周杰伦、费玉清 - 千里之外", ["周杰伦/费玉清", "周杰伦", "费玉清"]),
     ("HiRes无损 / 周杰伦《范特西》", ["周杰伦"]),
@@ -143,7 +147,9 @@ def test_page_preview_uses_the_same_first_artist_rule():
     cases = ["周杰伦/费玉清", "周杰伦 & 费玉清", "周杰伦、费玉清", "周杰伦，费玉清", "Simon & Garfunkel", "AC/DC",
              "AC/DC Tribute", "K/DA", "A featuring B", "Lady Gaga feat. Bruno Mars", "周杰伦 [feat. 杨瑞代]",
              "周杰伦【feat. 杨瑞代】", "A＼B", "a|b", "IU (아이유)", "周杰伦 & Lara", "周杰伦",
-             "Jack/David", "ac/dc", "周杰伦feat.杨瑞代", "(周杰伦/费玉清)"]
+             "Jack/David", "ac/dc", "周杰伦feat.杨瑞代", "(周杰伦/费玉清)", "/周杰伦", "豈/周杰伦", "AC/DC/K/DA"]
     out = subprocess.run(["node", "-e", f"const f = {fn}; console.log(JSON.stringify({json.dumps(cases)}.map(f)))"],
                          capture_output=True, text=True, check=True).stdout
     assert json.loads(out) == [first_artist(c) for c in cases]
+    # No lookbehind: Safari before 16.4 rejects it, and a syntax error would stop the whole page script.
+    assert "(?<" not in html

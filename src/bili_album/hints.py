@@ -332,14 +332,16 @@ def guess_from_title(title: str) -> TitleGuess:
                 continue
             names = [frag]
             j = i - 2
-            while j >= 0 and len(names) < 4 and parts[j + 1].strip() in ("/", "／"):
+            while j >= 0 and parts[j + 1].strip() in ("/", "／"):
                 prev = clean_artist(_denoise(_YEAR.sub(" ", parts[j])))
                 if not (_meaningful(prev) and name_like(prev) and cjk_name(prev) and cjk_name(names[0])
                         and not _LABEL.search(prev)):
                     break
                 names.insert(0, prev)
                 j -= 2
-            g.artists.append("/".join(names))
+            # The name next to the bracket is the surest; the "/"-joined set comes second, because a word
+            # before "/" may still be a label no list knows ("抖音/周杰伦"). Searches try both.
+            g.artists += [frag] + (["/".join(names)] if len(names) > 1 else [])
             break
         if not g.artists:
             # "《Title》- Artist" / "《Title》 by Artist": the name follows the bracket.
