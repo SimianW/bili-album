@@ -1,0 +1,24 @@
+# Python / tooling
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+
+# Work dirs, downloads, output
+.work/
+work/
+out/
+output/
+*.m4a
+*.mp4
+*.m4s
+*.flac
+*.wav
+*.zip
+cookies*.txt
+*.cookies
