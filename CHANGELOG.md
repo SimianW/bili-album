@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- Added `deploy/bili-album-update.py` and systemd user units to automatically fetch and install new GitHub releases into the live web checkout.
+
 ### Changed
 
 - Neighbouring tracks no longer repeat a few milliseconds of audio at the boundary: each album is cut in one pass at audio packet boundaries, and every exported file is checked against the source.
