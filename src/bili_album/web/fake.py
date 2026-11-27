@@ -40,7 +40,7 @@ class Script:
     derivative: dict | None = None
     import_status: str = "imported"                # imported | imported_unconfirmed | duplicate
     fail_plan: str = ""                            # exception text raised in the plan stage
-    overlap: int = 0                               # make track N overlap track N+1 (a hard problem)
+    overlap: int = 0                               # index of a song that runs 2 s into the next one (a hard problem)
     cover_jpeg: tuple[int, int, int] | None = None
 
 
