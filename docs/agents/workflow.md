@@ -43,11 +43,13 @@ Every code file stays at or under `500` lines.
 
 ## Delegation
 
-Role models, `target` values, brief rules, and the `Verify` checklist live in `~/.agents/delegation.md` (and are activated for full sessions via `/simian-mode`). Any brief for delegated `implement` work must name the `tdd` skill and `docs/agents/seams.md`.
+Role models, `target` values, brief rules, and the `Verify` checklist live in `~/.agents/delegation.md` ([public copy](https://github.com/SimianW/agents/blob/main/delegation.md)) and are activated for full sessions via `/simian-mode`. Any brief for delegated `implement` work must name the `tdd` skill and `docs/agents/seams.md`.
 
 ## Without the owner's skills or T3 Code
 
-This file and `AGENTS.md` name skills (`review-loop`, `pr`, `code-review`, `tdd`, `diagnosing-bugs`, `mockup-first`, `to-spec`, `to-tickets`, `implement`, `implement-spec`) that live on the owner's machine, not in this repo. When your agent does not have one, do its job by hand as below. CI checks the PR body, tests, size and file length the same way either way; it cannot tell whether a review happened.
+This file, `AGENTS.md`, and `docs/` name skills (`review-loop`, `pr`, `code-review`, `tdd`, `diagnosing-bugs`, `mockup-first`, `to-spec`, `to-tickets`, `implement`, `implement-spec`, `domain-modeling`, `wayfinder`, `triage`, `simian-mode`, `simianize`) and `delegation.md` that live in the public repo [SimianW/agents](https://github.com/SimianW/agents) rather than in this repo.
+
+When your agent does not have a required skill installed locally, read `skills/<name>/SKILL.md` (and `delegation.md` when needed) from [SimianW/agents](https://github.com/SimianW/agents), or clone/install from that repo. If you cannot fetch from GitHub, or if you do not have T3 Code (which `review-loop` uses for its two-model panel), do its job by hand as below. CI checks the PR body, tests, size and file length the same way either way; it cannot tell whether a review happened.
 
 ### Review (in place of `review-loop`)
 

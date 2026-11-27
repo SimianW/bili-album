@@ -38,6 +38,8 @@ Run everything with `uv run` from the repo root. Never commit downloaded audio, 
 
 ## Agent skills
 
+If a skill named here or in `docs/` is not installed locally, read `skills/<name>/SKILL.md` (and `delegation.md` when needed) from the public repo [SimianW/agents](https://github.com/SimianW/agents). If you cannot fetch it or do not have T3 Code, follow "Without the owner's skills or T3 Code" in [docs/agents/workflow.md](docs/agents/workflow.md).
+
 ### Issue tracker
 
 GitHub Issues on `SimianW/bili-album` via `gh`. See `docs/agents/issue-tracker.md`.
@@ -54,7 +56,7 @@ Single-context (`GLOSSARY.md` + `docs/adr/` at repo root). See `docs/agents/doma
 
 - PRs & size: every change reaches `main` through a PR. Before opening, updating, or merging a PR, read [docs/agents/workflow.md](docs/agents/workflow.md).
 - File length: keep code files at or under 500 lines (split along a seam before raising a cap); see [docs/agents/workflow.md](docs/agents/workflow.md) for cap-ratchet rules and `python3 scripts/file-length.py`.
-- Reviews: every gate review before merge (and any branch/PR review request) runs `review-loop` using `python3 scripts/check-pr-body.py tier`; only `implement` / `implement-spec` runs `code-review` before it. Without that skill, follow "Without the owner's skills or T3 Code" in [docs/agents/workflow.md](docs/agents/workflow.md).
+- Reviews: every gate review before merge (and any branch/PR review request) runs `review-loop` using `python3 scripts/check-pr-body.py tier`; only `implement` / `implement-spec` runs `code-review` before it. Without that skill or T3 Code, follow "Without the owner's skills or T3 Code" in [docs/agents/workflow.md](docs/agents/workflow.md).
 - Naming: use [GLOSSARY.md](GLOSSARY.md) terms in modules, tests, and docs; add new terms there.
 - Testing & bugs: test at the seams in [docs/agents/seams.md](docs/agents/seams.md); fix bugs via [docs/bugfix.md](docs/bugfix.md).
 - Dev docs: put each module/test role in its header comment; keep setup, commands, and gotchas in [README.md](README.md).
