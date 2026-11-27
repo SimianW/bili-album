@@ -9,6 +9,7 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 
+from .artists import join_artists, split_artists
 from .textnorm import fold, norm
 
 # ----------------------------------------------------------------------------- timestamps
@@ -314,11 +315,23 @@ def guess_from_title(title: str) -> TitleGuess:
     if first:
         before = _META_BRACKETS.sub(" ", t[: first.start()])
         before = _NOISE_RE.sub(" | ", before)
-        for frag in reversed(_SEP.split(before)):
-            frag = clean_artist(_denoise(_YEAR.sub(" ", frag)))
-            if _meaningful(frag):
-                g.artists.append(frag)
-                break
+        # Separators kept: "周杰伦/费玉清《…》" names two artists joined by "/" (or "／"), and the
+        # name right before the bracket must not lose the one before it.
+        parts = re.split(f"({_SEP.pattern})", before)
+        for i in range(len(parts) - 1, -1, -2):
+            frag = clean_artist(_denoise(_YEAR.sub(" ", parts[i])))
+            if not _meaningful(frag):
+                continue
+            names = [frag]
+            j = i - 2
+            while j >= 0 and len(names) < 4 and parts[j + 1].strip() in ("/", "／"):
+                prev = clean_artist(_denoise(_YEAR.sub(" ", parts[j])))
+                if not (_meaningful(prev) and name_like(prev) and name_like(names[0])):
+                    break
+                names.insert(0, prev)
+                j -= 2
+            g.artists.append("/".join(names))
+            break
         if not g.artists:
             # "《Title》- Artist" / "《Title》 by Artist": the name follows the bracket.
             after = _META_BRACKETS.sub(" | ", t[first.end():])
@@ -355,6 +368,12 @@ def guess_from_title(title: str) -> TitleGuess:
     else:
         g.extra.extend(frags)
     g.extra.extend(m for m in meta if _meaningful(m))
+    # Several artists in one name: one "/"-joined entry first, then each name (for searches).
+    multi: list[str] = []
+    for a in g.artists:
+        names = split_artists(a)
+        multi += [x for x in [join_artists(names)] + (names if len(names) > 1 else []) if x not in multi]
+    g.artists = multi
     return g
 
 

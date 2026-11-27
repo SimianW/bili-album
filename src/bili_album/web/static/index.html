@@ -492,7 +492,7 @@ html, body { margin: 0; background: var(--bg); }
       const only = names.size === 1 ? Array.from(names)[0] : "";
       if (only && only !== artist && tracks.every(t => t.artist === artist)) artist = only;
     }
-    return "将放到音乐库的「" + safeFolder(artist) + " / " + safeFolder(title) + "」文件夹。";
+    return "将放到音乐库的「" + safeFolder(((artist.match(/^AC[\/／]DC/i) || artist.split(/\s*[\/／|｜;；\\、]\s*|\s*[(（]?\s*\b(?:feat|ft)\.?\s+/i))[0] || "").trim() || artist) + " / " + safeFolder(title) + "」文件夹。";
   }
 
   function failedCard(job) {

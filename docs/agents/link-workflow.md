@@ -53,6 +53,7 @@ Work through `review_reasons` in order. Typical fixes:
 - **Track order follows recognition** / **compilation** (`… is a compilation; the artist's own album … was not found`): usually right; confirm the heard order or look for the original album and re-plan with `--album-hint`.
 - **Weak start** (`start … rests only on …`): no silence or recognition supports that boundary; listen around it and hand-edit `start`.
 - **Artist copied from album artist**: confirm each listed track's performer; edit `tracks[].artist` if it differs.
+- **Several artists**: write them joined with `/` (`周杰伦/费玉清`) in `artist` / `album_artist`. `apply` writes each name as its own tag value (plus `ARTISTS` / `ALBUMARTISTS`), and the album goes under its first album artist. `/ | ; \ 、 feat.` always separate names; `&` and commas only between CJK names (`Simon & Garfunkel` stays one artist).
 - **Small boundary errors** (a second or two, a long intro/outro): hand-edit `start`/`end` in `plan.json`. Keep tracks in order and non-overlapping; `end` of track N is normally `start` of track N+1.
 - **Intro/outro trimmed** (`intro of … is not exported`): check it is not a song. If it is, add a track or move `start` of track 1 to 0.
 
