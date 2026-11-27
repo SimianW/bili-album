@@ -1166,7 +1166,8 @@ def _note_zh(item: dict, *, rejected: bool) -> str:
         if "superseded" in item["why"]:
             return f"工具未执行“{what}”：已改为重新分析。"
         return f"工具未执行“{what}”：改动小于 {MIN_BOUNDARY_MOVE} 秒，在测量误差范围内。"
-    return f"工具无法核实“{what}”，未采纳，需要人工确认（{item['why'][:120]}）。"
+    from .messages import rejected_reason_zh  # fully Chinese; the page shows this line to the owner
+    return rejected_reason_zh(item)
 
 
 def _finalize(items: list[dict], final_tracks: list[dict] | None, kind: str) -> list[dict]:

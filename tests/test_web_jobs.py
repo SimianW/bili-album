@@ -133,8 +133,8 @@ def test_failure_and_retry_reuses_workdir(mgr, tmp_path):
     mgr.run_next()
     f = mgr.get(j["id"])
     assert f["status"] == "failed"
-    assert f["error"] == {"stage": "plan", "message": "分析失败：BilibiliError: "
-                          "https://api.bilibili.com/x/web-interface/view: code -404 啥都木有"}
+    assert f["error"] == {"stage": "plan", "message": "分析失败：找不到这个视频：链接可能有误，或视频已被删除。"
+                          "请检查链接后再试。"}
     assert f["stages"]["plan"] == "failed"
     marker = tmp_path / "web" / j["id"] / "work" / "fake.json"
     assert marker.is_file()
@@ -281,7 +281,7 @@ def test_confirm_refused_keeps_edits_and_says_why(mgr, tmp_path):
     mgr.run_next()
     r = mgr.get(j["id"])
     assert r["status"] == "needs_confirmation"
-    assert r["confirm_error"].startswith("方案仍有硬性问题，无法导入：") and "overlap" in r["confirm_error"]
+    assert r["confirm_error"] == "方案还有问题，暂时不能导入。第 3 首和第 4 首的时间重叠。请修改后再确认。"
     assert r["tracks"][2]["title"] == "借口（改）"
     assert r["stages"]["cut"] == "held" and r["error"] is None
     # a later successful hold clears it again
