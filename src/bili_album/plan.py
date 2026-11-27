@@ -332,13 +332,13 @@ class Planner:
         d = plausible_list(parse_timestamps(vi.description), duration)
         if d:
             out.append(HintList("description", "timestamps in the description", d, by_uploader=True))
-        ranked = sorted(vi.comments, key=lambda c: (not (c.pinned and c.by_uploader), not c.by_uploader,
+        ranked = sorted(vi.comments, key=lambda c: (c.reply, not (c.pinned and c.by_uploader), not c.by_uploader,
                                                     not c.pinned, -c.likes))
         for c in ranked:
             e = plausible_list(parse_timestamps(c.text), duration)
             if e:
-                who = "uploader's " if c.by_uploader else ""
-                out.append(HintList("comment", f"{who}{'pinned ' if c.pinned else ''}comment by {c.author}", e,
+                who = ("uploader's " if c.by_uploader else "") + ("pinned " if c.pinned else "")
+                out.append(HintList("comment", f"{who}{'reply' if c.reply else 'comment'} by {c.author}", e,
                                     by_uploader=c.by_uploader, pinned=c.pinned))
         return out
 

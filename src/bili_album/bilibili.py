@@ -3,9 +3,8 @@ cover, and download the audio stream (AAC only, never re-encoded).
 
 Page metadata comes from the public ``x/web-interface/view`` API (one call gives
 description, owner, parts, cover); chapters and the media itself come from the
-yt-dlp Python API. Comments come from ``x/v2/reply`` (first page, hot order,
-plus the pinned ``upper.top`` comment), because yt-dlp's comment extractor walks
-every page and does not mark the pinned comment.
+yt-dlp Python API. Comments (first page in like order, the pinned ones and the
+uploader's own comments and replies) come from :mod:`bili_album.comments`.
 """
 
 from __future__ import annotations
@@ -21,6 +20,7 @@ from http.cookiejar import MozillaCookieJar
 from pathlib import Path
 
 from . import USER_AGENT
+from .comments import Comment, collect_comments  # noqa: F401  (Comment is re-exported)
 from .net import Http, HttpError
 
 log = logging.getLogger(__name__)
@@ -41,15 +41,6 @@ class Part:
     name: str
     duration: float
     cid: int = 0
-
-
-@dataclass
-class Comment:
-    text: str
-    author: str
-    by_uploader: bool
-    pinned: bool
-    likes: int = 0
 
 
 @dataclass
@@ -284,31 +275,7 @@ class Bilibili:
         return out
 
     def _comments(self, vi: VideoInfo) -> list[Comment]:
-        try:
-            d = self._api("https://api.bilibili.com/x/v2/reply",
-                          {"type": 1, "oid": vi.aid, "sort": 1, "ps": 20, "pn": 1})
-        except Exception as e:
-            log.warning("comments unavailable: %s", e)
-            return []
-        out: list[Comment] = []
-        seen = set()
-
-        def add(r, pinned=False):
-            if not r or r.get("rpid") in seen:
-                return
-            seen.add(r.get("rpid"))
-            out.append(Comment(
-                text=(r.get("content") or {}).get("message", ""),
-                author=(r.get("member") or {}).get("uname", ""),
-                by_uploader=int(r.get("mid", 0)) == vi.uploader_mid,
-                pinned=pinned, likes=int(r.get("like", 0))))
-
-        add((d.get("upper") or {}).get("top"), pinned=True)
-        for r in d.get("top_replies") or []:
-            add(r, pinned=True)
-        for r in d.get("replies") or []:
-            add(r)
-        return out
+        return collect_comments(self._api, vi.aid, vi.uploader_mid, vi.duration)
 
     # -- media -----------------------------------------------------------------
 
