@@ -85,3 +85,77 @@ def test_other_codecs_are_encoded_as_alac(tmp_path):
     cuts = cut_tracks(flac, [(0.0, 4.0), (4.0, 10.0)], [tmp_path / "a.m4a", tmp_path / "b.m4a"])
     assert [c.mode for c in cuts] == ["encode", "encode"]
     assert audio_info(tmp_path / "a.m4a")["codec"] == "alac"
+
+
+# ---------------------------------------------------------------- review regressions
+
+def test_percent_in_the_folder_name(aac, tmp_path):
+    for name in ("100% Love", "a%d b"):
+        d = tmp_path / name
+        cuts = cut_tracks(aac, [(0.0, 5.0), (5.0, 10.0)], [d / "1.m4a", d / "2.m4a"])
+        assert [c.mode for c in cuts] == ["packets"] * 2 and (d / "2.m4a").exists()
+
+
+def test_end_slightly_past_the_audio_is_the_end(aac, tmp_path):
+    # apply.validate accepts an end up to 0.05 s past the source; the cut must accept it too.
+    [c] = cut_tracks(aac, [(8.0, 10.03)], [tmp_path / "x.m4a"])
+    assert c.end == pytest.approx(10.0, abs=PACKET)
+    with pytest.raises(PacketCutError, match="does not fit"):
+        cut_tracks(aac, [(8.0, 10.2)], [tmp_path / "y.m4a"])
+
+
+def test_boundary_never_moves_before_the_planned_time():
+    from fractions import Fraction
+    from bili_album.packetcut import packet_ranges
+    pos = [Fraction(1024 * i) for i in range(10)]
+    # 1024.1 samples rounds to 1024, but the packet starting at 1024 lies before the plan.
+    [(first, _)] = packet_ranges([(1024.1 / 44100, 9000 / 44100)], 44100, 10240, pos)
+    assert first == 2
+
+
+def test_overlap_within_a_millisecond_is_one_boundary():
+    from fractions import Fraction
+    from bili_album.packetcut import packet_ranges
+    pos = [Fraction(480 * i) for i in range(200)]   # 10 ms packets at 48 kHz
+    got = packet_ranges([(0.0, 1.0006), (1.0, 1.5)], 48000, 96000, pos)
+    assert got[0][1] == got[1][0]
+
+
+def test_failure_on_a_later_track_leaves_no_file_of_that_source(aac, tmp_path, monkeypatch):
+    real, calls = packetcut._verify, []
+
+    def second_fails(*a, **k):
+        calls.append(1)
+        if len(calls) == 2:
+            raise PacketCutError("audio packets differ from the source range")
+        return real(*a, **k)
+    monkeypatch.setattr(packetcut, "_verify", second_fails)
+    dsts = [tmp_path / "1.m4a", tmp_path / "2.m4a", tmp_path / "3.m4a"]
+    with pytest.raises(PacketCutError):
+        cut_tracks(aac, [(0.0, 3.0), (3.0, 6.0), (6.0, 9.0)], dsts)
+    assert not any(d.exists() for d in dsts) and not list(tmp_path.glob(".*"))
+
+
+def test_apply_removes_earlier_sources_and_reports_a_plan_error(aac, tmp_path, monkeypatch):
+    import json
+    from bili_album.apply import PlanError, apply_plan
+
+    part2 = tmp_path / "p2.m4a"
+    shutil.copy(aac, part2)
+    tracks = [{"index": i, "start": 0.0, "end": 10.0, "title": t, "artist": "x", "album": "al",
+               "album_artist": "x", "audio_path": str(src)} for i, t, src in ((1, "a", aac), (2, "b", part2))]
+    plan = {"version": 1, "kind": "multipart", "tracks": tracks,
+            "source": {"url": "", "title": "t", "audio_path": str(aac), "parts": 2},
+            "album": {"title": "al", "artist": "x", "cover_path": ""}}
+    p = tmp_path / "plan.json"
+    p.write_text(json.dumps(plan, ensure_ascii=False))
+    real = packetcut.cut_tracks
+
+    def fail_second_source(src, *a, **k):
+        if Path(src) == part2:
+            raise PacketCutError("audio packets differ from the source range")
+        return real(src, *a, **k)
+    monkeypatch.setattr("bili_album.apply.cut_tracks", fail_second_source)
+    with pytest.raises(PlanError, match="cut failed"):
+        apply_plan(p, tmp_path / "out")
+    assert not list((tmp_path / "out").rglob("*.m4a"))

@@ -7,8 +7,10 @@ boundaries, so consecutive files never share or drop a packet, and every exporte
 checked against the source: same codec, channels and sample rate, the planned length within
 1 ms, and the SHA-256 of every packet equal to the source packets it came from.
 
-A cut moves to the first packet that starts at or after the planned time (an AAC packet is
-1024 samples, about 21-23 ms; ALAC 4096). Sources that are not AAC or ALAC are left to
+A cut moves to the first packet that starts at or after the planned time (an AAC-LC packet is
+1024 samples: 21-23 ms at 48 / 44.1 kHz; an ALAC packet 4096: about 93 ms at 44.1 kHz). An end
+up to ``END_SLACK`` past the audio (the tolerance ``apply.validate`` allows) is the end of the
+audio, and an overlap of at most ``OVERLAP`` (also allowed there) is a shared boundary. Sources that are not AAC or ALAC are left to
 ``media.cut``, which encodes them as ALAC. Entry point: :func:`cut_tracks`.
 """
 
@@ -24,6 +26,10 @@ from fractions import Fraction
 from pathlib import Path
 
 from .media import COPY_CODECS, cut
+
+
+END_SLACK = 0.05   # seconds an end may run past the audio (apply.validate allows this much)
+OVERLAP = 0.001    # seconds two ranges may overlap and still share one boundary (apply.validate)
 
 
 class PacketCutError(ValueError):
@@ -90,14 +96,15 @@ def timeline(path: Path, stream: dict) -> tuple[int, list[str], list[Fraction]]:
 
 def packet_ranges(ranges: list[tuple[float, float]], rate: int, samples: int,
                   positions: list[Fraction]) -> list[tuple[int, int]]:
-    """Packet index ranges [first, last) for second ranges; both sides of a shared boundary get
-    the same packet index. An end within 1 ms past the audio counts as the end of the audio."""
+    """Packet index ranges [first, last) for second ranges: each side goes to the first packet
+    starting at or after its exact (unrounded) sample position, so both sides of a shared
+    boundary get the same packet index. See the module text for END_SLACK and OVERLAP."""
     out = []
-    slack = (rate + 999) // 1000
+    slack = Fraction(END_SLACK) * rate + (rate + 999) // 1000
     for start, end in ranges:
-        s, e = round(Fraction(start) * rate), round(Fraction(end) * rate)
+        s, e = Fraction(start) * rate, Fraction(end) * rate
         if samples < e <= samples + slack:
-            e = samples
+            e = Fraction(samples)
         if not 0 <= s < e <= samples:
             raise PacketCutError(f"range {start:.3f}-{end:.3f}s does not fit the audio ({samples / rate:.3f}s)")
         first = 0 if s == 0 else bisect.bisect_left(positions, s)
@@ -105,9 +112,12 @@ def packet_ranges(ranges: list[tuple[float, float]], rate: int, samples: int,
         if first >= last:
             raise PacketCutError(f"range {start:.3f}-{end:.3f}s holds no whole audio packet")
         out.append((first, last))
-    for (a0, a1), (b0, _) in zip(out, out[1:]):
+    for i in range(len(out) - 1):
+        (a0, a1), (b0, b1) = out[i], out[i + 1]
         if b0 < a1:
-            raise PacketCutError("ranges overlap once moved to packet boundaries")
+            if ranges[i][1] - ranges[i + 1][0] > OVERLAP or b0 <= a0:
+                raise PacketCutError("ranges overlap once moved to packet boundaries")
+            out[i] = (a0, b0)
     return out
 
 
@@ -152,33 +162,42 @@ def cut_tracks(src: Path, ranges: list[tuple[float, float]], dsts: list[Path], *
     out: list[Cut] = []
     with tempfile.TemporaryDirectory(prefix=".packetcut-", dir=dsts[0].parent) as tmp:
         work = Path(tmp)
+        # The segment muxer reads the whole output path as a template: a "%" in a folder name
+        # (an album called "100% Love") must be doubled.
+        pattern = str(work).replace("%", "%%") + "/segment-%d.m4a"
         _ffmpeg("-i", src, "-map", f"0:{stream['index']}", "-map_metadata", "-1", "-map_chapters", "-1",
                 "-c:a", "copy", "-f", "segment", "-segment_format", "ipod",
                 "-segment_format_options", f"movie_timescale={rate}", "-reset_timestamps", "1",
                 "-break_non_keyframes", "1", "-segment_frames", ",".join(map(str, bounds[1:])),
-                work / "segment-%d.m4a")
+                pattern)
         if len(list(work.glob("segment-*.m4a"))) != len(bounds) - 1:
             raise PacketCutError("ffmpeg made an unexpected number of packet segments")
-        for (first, last), d in zip(idx, dsts):
-            seg = work / f"segment-{seg_of[first]}.m4a"
-            opts = ["-map_metadata", "-1", "-map_chapters", "-1", "-c:a", "copy",
-                    "-movie_timescale", str(rate), "-movflags", "+faststart"]
-            priming = max(0, -round(positions[0])) if first == 0 else 0
-            if priming:
-                # Resetting segment timestamps makes AAC priming audible unless the edit is restored.
-                opts += ["-bsf:a", f"setts=pts=PTS-{priming}:dts=DTS-{priming}", "-use_editlist", "1"]
-            part = d.with_name("." + d.stem + ".part.m4a")
-            part.unlink(missing_ok=True)
-            _ffmpeg("-i", seg, "-map", "0:a:0", *opts, part)
-            start = Fraction(0) if first == 0 else positions[first]
-            end = Fraction(samples) if last == len(positions) else positions[last]
-            try:
-                _verify(part, stream, end - start, hashes[first:last])
-            except PacketCutError:
+        # Every file is written and verified as a hidden .part first; only when all of them pass
+        # are they moved into place, so a failure leaves none of this source's files behind.
+        parts: list[Path] = []
+        try:
+            for (first, last), d in zip(idx, dsts):
+                seg = work / f"segment-{seg_of[first]}.m4a"
+                opts = ["-map_metadata", "-1", "-map_chapters", "-1", "-c:a", "copy",
+                        "-movie_timescale", str(rate), "-movflags", "+faststart"]
+                priming = max(0, -round(positions[0])) if first == 0 else 0
+                if priming:
+                    # Resetting segment timestamps makes AAC priming audible unless the edit is restored.
+                    opts += ["-bsf:a", f"setts=pts=PTS-{priming}:dts=DTS-{priming}", "-use_editlist", "1"]
+                part = d.with_name("." + d.stem + ".part.m4a")
                 part.unlink(missing_ok=True)
-                raise
+                parts.append(part)
+                _ffmpeg("-i", seg, "-map", "0:a:0", *opts, part)
+                start = Fraction(0) if first == 0 else positions[first]
+                end = Fraction(samples) if last == len(positions) else positions[last]
+                _verify(part, stream, end - start, hashes[first:last])
+                out.append(Cut(float(start / rate), float(end / rate), "packets"))
+        except BaseException:
+            for part in parts:
+                part.unlink(missing_ok=True)
+            raise
+        for part, d in zip(parts, dsts):
             if d.exists() and overwrite:
                 d.unlink()
             shutil.move(part, d)
-            out.append(Cut(float(start / rate), float(end / rate), "packets"))
     return out

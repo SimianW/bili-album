@@ -16,7 +16,7 @@ from pathlib import Path
 
 from .hints import fmt_ts
 from .media import audio_info, image_kind
-from .packetcut import Cut, cut_tracks
+from .packetcut import Cut, PacketCutError, cut_tracks
 from .tag import OPTIONAL, REQUIRED, read_tags, write_tags
 
 DUR_TOL = 0.1
@@ -142,11 +142,19 @@ def apply_plan(plan_path: Path, outdir: Path, *, force: bool = False, make_zip: 
     by_source: dict[Path, list[int]] = {}
     for i, t in enumerate(tracks):
         by_source.setdefault(track_source(plan, t), []).append(i)
+    # A source that fails removes the files earlier sources wrote in this run (untagged so far).
     cuts: dict[int, Cut] = {}
-    for src, idx in by_source.items():
-        done = cut_tracks(src, [(float(tracks[i]["start"]), float(tracks[i]["end"])) for i in idx],
-                          [files[i] for i in idx], overwrite=force)
-        cuts.update(zip(idx, done))
+    try:
+        for src, idx in by_source.items():
+            done = cut_tracks(src, [(float(tracks[i]["start"]), float(tracks[i]["end"])) for i in idx],
+                              [files[i] for i in idx], overwrite=force)
+            cuts.update(zip(idx, done))
+    except BaseException as e:
+        for i in cuts:
+            files[i].unlink(missing_ok=True)
+        if isinstance(e, PacketCutError):
+            raise PlanError([f"cut failed: {e}"]) from e
+        raise
     for t, dst in zip(tracks, files):
         span = f"{fmt_ts(t['start'])}-{fmt_ts(t['end'])}"
         comment = f"{url} {span}".strip() if url else f"{plan['source'].get('title', '')} {span}".strip()
