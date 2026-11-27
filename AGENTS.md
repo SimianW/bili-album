@@ -12,6 +12,12 @@ Run everything with `uv run` from the repo root. Never commit downloaded audio, 
 
 `uv run bili-album run <url> -o <OUTDIR>` does plan + apply in one go. Use it only when you will not review the plan.
 
+`uv run bili-album review <plan.json>` lets the configured model review the plan first (in place; the original
+is kept as `plan.unreviewed.json`). Read `review` in the result: `verdict`, `edits_applied`, `edits_rejected`,
+`remaining_concerns`. If `needs_review` is still true, handle it as below. `uv run bili-album import <album-dir>`
+puts a finished album into the owner's Jellyfin library; `uv run bili-album ingest <url>` does everything.
+Import only what the owner asked for; never pass `--replace` unless they say so.
+
 Output layout: album / multi-part → `OUTDIR/<Album>/NN-<Title>.m4a` plus `cover.jpg|png`; single → `OUTDIR/<Artist> - <Title>.m4a`.
 `apply` never overwrites. If it reports existing files, stop and tell the owner; pass `--force` only if they say so.
 
@@ -53,6 +59,11 @@ After edits run `apply` on the edited plan. `apply` validates first (increasing 
 - Tests: `uv run pytest -q` (offline). Live checks: `uv run pytest -m network`.
 - `eval/cases.yaml` and `eval/validate_cases.py` belong to another agent. Do not edit them.
 - Never send personal data (names, emails, hostnames, home paths) in requests. The User-Agent is `bili-album/<version>`.
+- Machine config and API keys live in `~/.config/bili-album/env` (see README). Never print, log, commit or copy key
+  values (not into tests, fixtures or error messages); `Config` hides them from `repr` and `Config.scrub` masks them.
+- `review.py`: the model only proposes; every edit must be confirmed by data (`Editor.op_*`). Keep it that way when
+  adding edit kinds. Offline tests use a local fake endpoint (`tests/test_review.py`); never record real replies.
+- `library.py` writes into the live Jellyfin library: test with a temporary `library_dir` and a fake Jellyfin.
 
 ## Web page (`src/bili_album/web/`)
 

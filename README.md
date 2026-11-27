@@ -30,9 +30,46 @@ bili-album plan --audio FILE --title TEXT [--description TEXT] [...]
 bili-album apply <plan.json> -o OUTDIR [--force] [--zip]
 bili-album run <url> -o OUTDIR [plan flags] [--force] [--zip]
 bili-album inspect <file-or-dir> [--json]
+bili-album review <plan.json> [--out FILE] [--dry-run] [--show-brief] [--no-replan]
+bili-album import <album-dir | single.m4a | plan.json> [--replace] [--dry-run] [--timeout S]
+bili-album ingest <url> [--workdir DIR] [--on-unsure hold|import] [--no-review] [--no-import] [--replace] [--json]
 ```
 
 Requirements: Python 3.12, `uv`, `ffmpeg`/`ffprobe` on PATH. See `AGENTS.md` for the review workflow and `docs/reference/` for the owner's original manual procedure.
+
+## Review by a model, import into Jellyfin
+
+`review` sends a compact brief (plan, catalog tracklist and album candidates, recognition results, measured
+boundary candidates; the uploader's text only when the plan used text hints) to an OpenAI-compatible
+`/chat/completions` endpoint. The model answers with a verdict and edits from a closed set (choose / propose an
+album, relabel, reorder, drop or split tracks, move a boundary to a measured candidate, mark a derivative version,
+ask for one re-plan). Every edit is checked against the catalog, recognition or uploader text before it is applied;
+anything unconfirmed is rejected and keeps `needs_review: true`. The outcome lands in `plan.review` (reasons and
+concerns in Simplified Chinese) and the original plan is kept as `plan.unreviewed.json`. If the model is down or
+answers nonsense, the plan stays as it was with `review.error` set. Derivative versions always stay flagged.
+
+`import` copies an album into `LIBRARY_DIR/<Album Artist>/<Album>/` (a single into `<Artist>/<Album>/01-<Title>.m4a`)
+through a hidden temporary folder renamed into place, never overwrites without `--replace`, then asks Jellyfin to
+scan and waits until the album is listed with all tracks; it prints the Jellyfin item id and the album's web link.
+
+`ingest` runs plan → review → cut → import; with `--on-unsure hold` (default) it stops before cutting when the
+reviewed plan still needs review. The Python API for a web front end is `bili_album.pipeline`
+(`ingest`, `confirm`, `discard`, `load_job`; state in `<workdir>/job.json`).
+
+Configuration lives outside the repo in `~/.config/bili-album/env` (`KEY=VALUE`, mode 600; environment variables
+of the same name win; `BILI_ALBUM_CONFIG` points elsewhere):
+
+| Key | Meaning |
+| --- | --- |
+| `BILI_ALBUM_LLM_BASE_URL`, `BILI_ALBUM_LLM_MODEL`, `BILI_ALBUM_LLM_API_KEY` | chat-completions endpoint for `review` |
+| `BILI_ALBUM_JELLYFIN_URL`, `BILI_ALBUM_JELLYFIN_API_KEY` | Jellyfin API (auth header `Authorization: MediaBrowser Token="…"`) |
+| `BILI_ALBUM_JELLYFIN_PUBLIC_URL` | base of the web links reported after import |
+| `BILI_ALBUM_LIBRARY_DIR` | host folder of the Jellyfin music library |
+| `BILI_ALBUM_JELLYFIN_LIBRARY_PATH` | the same folder inside the Jellyfin container (default `/media/music-videos/music`) |
+
+Request parameters were chosen against the owner's proxy (2026-11-26): `response_format: json_object`,
+`temperature: 0`, `reasoning_effort: medium`, `max_completion_tokens: 6000`, 120 s timeout. A review takes 4–13 s
+of model time (about 3 k prompt tokens for a single, 5.5 k for a 10-track album).
 
 ## Evaluation
 

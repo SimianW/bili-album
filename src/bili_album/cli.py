@@ -1,4 +1,4 @@
-"""Command line: plan / apply / run / inspect."""
+"""Command line: plan / apply / run / inspect / review / import / ingest."""
 
 from __future__ import annotations
 
@@ -118,6 +118,31 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("target", type=Path)
     p.add_argument("--json", action="store_true")
 
+    p = sub.add_parser("review", help="review a plan.json with the configured language model")
+    p.add_argument("plan", type=Path)
+    p.add_argument("--out", type=Path, help="write the reviewed plan here (default: in place, original kept "
+                                            "as plan.unreviewed.json)")
+    p.add_argument("--dry-run", action="store_true", help="review and print, write nothing")
+    p.add_argument("--show-brief", action="store_true", help="print the brief sent to the model (stderr)")
+    p.add_argument("--no-replan", action="store_true", help="do not let the review re-run plan")
+
+    p = sub.add_parser("import", help="copy an album folder / single .m4a / plan.json into the Jellyfin library")
+    p.add_argument("source", type=Path, help="album folder from apply, a single .m4a, or a plan.json")
+    p.add_argument("--replace", action="store_true", help="replace this album's folder if it already exists")
+    p.add_argument("--dry-run", action="store_true", help="show where the files would go, copy nothing")
+    p.add_argument("--timeout", type=float, default=180.0, help="seconds to wait for Jellyfin (default 180)")
+
+    p = sub.add_parser("ingest", help="plan + review + cut + import in one go")
+    p.add_argument("url")
+    p.add_argument("--workdir", type=Path, help="work directory (default: .work/<bvid>/ in the repo)")
+    p.add_argument("--on-unsure", choices=("hold", "import"), default="hold",
+                   help="when the reviewed plan still needs review: stop (hold, default) or import anyway")
+    p.add_argument("--no-review", action="store_true", help="skip the model review")
+    p.add_argument("--no-import", action="store_true", help="stop after cutting (files stay in WORKDIR/out)")
+    p.add_argument("--replace", action="store_true", help="replace the album folder if the library has it")
+    p.add_argument("--no-text-hints", action="store_true", help="plan without uploader text")
+    p.add_argument("--json", action="store_true", help="print the final job state as JSON")
+
     p = sub.add_parser("serve", help="web page: paste a link, the album lands in Jellyfin")
     p.add_argument("--host", default="127.0.0.1", help="address to listen on (default 127.0.0.1; never 0.0.0.0)")
     p.add_argument("--port", type=int, default=5191, help="port (default 5191)")
@@ -167,9 +192,93 @@ def main(argv: list[str] | None = None) -> int:
             total = sum(r["duration"] for r in rows)
             print(f"{len(rows)} file(s), total {total:.2f}s")
         return 0
+    if a.cmd == "review":
+        return _cmd_review(a)
+    if a.cmd == "import":
+        return _cmd_import(a)
+    if a.cmd == "ingest":
+        return _cmd_ingest(a)
     if a.cmd == "serve":
         return _cmd_serve(a, ap)
     return 1
+
+
+def _cmd_review(a) -> int:
+    from .review import review_plan
+
+    res = review_plan(a.plan, out=a.out, dry_run=a.dry_run, allow_replan=not a.no_replan)
+    if a.show_brief and res.brief is not None:
+        from .review import brief_json
+        print(brief_json(res.brief), file=sys.stderr)
+    rv = res.review
+    print(f"verdict: {rv['verdict']} (model confidence {rv['confidence']})", file=sys.stderr)
+    if rv.get("error"):
+        print(f"review error: {rv['error']}", file=sys.stderr)
+    for e in rv["edits_applied"]:
+        print(f"  applied: {e['detail']}", file=sys.stderr)
+    for e in rv["edits_rejected"]:
+        print(f"  rejected: {e['edit'].get('op')}: {e['why']}", file=sys.stderr)
+    for r in rv["reasons"]:
+        print(f"  理由: {r}", file=sys.stderr)
+    for r in rv["remaining_concerns"]:
+        print(f"  待确认: {r}", file=sys.stderr)
+    print(f"needs_review: {str(res.needs_review).lower()}  ({rv['timing']['model_s']}s model, "
+          f"{rv['timing']['calls']} call(s))", file=sys.stderr)
+    if res.out_path:
+        _print_plan_summary(res.out_path)
+        print(res.out_path)
+    else:
+        print(json.dumps(rv, ensure_ascii=False, indent=2))
+    return 0
+
+
+def _cmd_import(a) -> int:
+    from .library import import_album
+
+    try:
+        res = import_album(a.source, replace=a.replace, dry_run=a.dry_run, wait_timeout=a.timeout,
+                           on_progress=lambda m: print(m, file=sys.stderr))
+    except PlanError as e:
+        print("input error:", file=sys.stderr)
+        for pr in e.problems:
+            print(f"  - {pr}", file=sys.stderr)
+        return 2
+    except (FileNotFoundError, RuntimeError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    print(json.dumps(res.to_dict(), ensure_ascii=False, indent=2))
+    return {"imported": 0, "dry_run": 0, "imported_unconfirmed": 1, "duplicate": 3}.get(res.status, 2)
+
+
+def _cmd_ingest(a) -> int:
+    from .bilibili import extract_bvid
+    from .net import Http
+    from .pipeline import ingest
+
+    wd = a.workdir
+    if wd is None:
+        wd = REPO_ROOT / ".work" / extract_bvid(a.url, Http(None))
+
+    def show(ev: dict) -> None:
+        t = f" ({ev['elapsed_s']}s)" if ev.get("elapsed_s") is not None else ""
+        print(f"[{ev['stage']}] {ev['status']}: {ev['message']}{t}", file=sys.stderr)
+
+    job = ingest(a.url, wd, show, on_unsure=a.on_unsure, review=not a.no_review, do_import=not a.no_import,
+                 replace=a.replace, plan_options={"text_hints": not a.no_text_hints})
+    if a.json:
+        print(json.dumps(job.to_dict(), ensure_ascii=False, indent=2))
+    else:
+        print(f"status: {job.status}  {job.message}", file=sys.stderr)
+        if job.status == "needs_confirmation":
+            for r in (job.review or {}).get("remaining_concerns") or []:
+                print(f"  待确认: {r}", file=sys.stderr)
+            for r in job.reasons:
+                print(f"  - {r}", file=sys.stderr)
+        if job.error:
+            print(f"error: {job.error}", file=sys.stderr)
+        print(job.state_path)
+    return {"imported": 0, "done": 0, "needs_confirmation": 3, "duplicate": 3,
+            "imported_unconfirmed": 1}.get(job.status, 2)
 
 
 def _cmd_serve(a, ap) -> int:
