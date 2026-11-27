@@ -68,7 +68,26 @@ def load_cases() -> list[dict]:
     return yaml.safe_load(CASES_FILE.read_text(encoding="utf-8"))["cases"]
 
 
+HOME = str(Path.home())
+
+
+def publishable(obj):
+    """Stored results carry no machine paths: repo paths become repo-relative, other home paths start with ~."""
+    return scoring.scrub_paths(obj, str(REPO), HOME)
+
+
+def _in_results(path: Path) -> bool:
+    try:
+        path.resolve().relative_to(RESULTS.resolve())
+        return True
+    except ValueError:
+        return False
+
+
 def write_json(path: Path, obj) -> None:
+    """Write JSON atomically; everything stored under the results directory is made publishable first."""
+    if _in_results(path):
+        obj = publishable(obj)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -511,6 +530,22 @@ def build_results(cases: list[dict]) -> dict:
     }
 
 
+def scrub_stored() -> int:
+    """Rewrite stored runs, plans and run notes in the results directory without machine paths
+    (``--score-only`` applies this to records written by older harness versions). Returns files changed."""
+    changed = 0
+    files = list((RESULTS / "runs").rglob("*.json")) + list((RESULTS / "plans").rglob("*.json")) + \
+        [RESULTS / "run_notes.json"]
+    for f in files:
+        if not f.exists():
+            continue
+        obj = json.loads(f.read_text(encoding="utf-8"))
+        if publishable(obj) != obj:
+            write_json(f, obj)
+            changed += 1
+    return changed
+
+
 def write_results(cases: list[dict]) -> Path:
     path = RESULTS / "results.json"
     write_json(path, build_results(cases))
@@ -542,6 +577,10 @@ def main() -> int:
         unknown = set(a.case) - {c["id"] for c in cases}
         if unknown:
             ap.error(f"unknown case id(s): {', '.join(sorted(unknown))}")
+    if a.score_only:
+        n = scrub_stored()
+        if n:
+            log(f"removed machine paths from {n} stored file(s)")
     if not a.score_only:
         sel = [c for c in cases if not a.case or c["id"] in a.case]
         modes = [m for m in MODES if not a.mode or m in a.mode]

@@ -622,3 +622,32 @@ def reviewed_run(score: dict, review: dict | None, *, ok: bool, seconds: float |
     out["boundaries_alt_truth"] = score.get("boundaries_alt_truth")
     out["review"] = review_info(review, seconds)
     return out
+
+
+# ----------------------------------------------------------------------------- publishable paths
+
+def scrub_paths(obj, repo: str, home: str):
+    """Copy of a JSON-like value with machine paths removed from every string (keys too).
+
+    Paths inside the repo become repo-relative (``/…/repo/.work/x`` -> ``.work/x``; the repo itself -> ``.``);
+    anything else under the home directory starts with ``~``. Works on substrings, so command lines and stderr
+    tails are covered.
+    """
+    repo, home = repo.rstrip("/"), home.rstrip("/")
+    pat = re.compile(re.escape(repo) + r"(?![\w.-])/?|" + re.escape(home) + r"(?![\w.-])")
+
+    def fix(s: str) -> str:
+        def sub(m: re.Match) -> str:
+            t = m.group(0)
+            if t.startswith(repo):
+                return "" if t.endswith("/") else "."
+            return "~"
+        return pat.sub(sub, s)
+
+    if isinstance(obj, str):
+        return fix(obj)
+    if isinstance(obj, list):
+        return [scrub_paths(x, repo, home) for x in obj]
+    if isinstance(obj, dict):
+        return {fix(k) if isinstance(k, str) else k: scrub_paths(v, repo, home) for k, v in obj.items()}
+    return obj

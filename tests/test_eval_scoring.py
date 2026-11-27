@@ -409,3 +409,24 @@ def test_summary_owner_counts():
     assert (s["auto_ok"], s["auto_wrong"], s["held_wrong"], s["held_ok"]) == (2, 1, 1, 1)
     assert s["review_confusion"]["failed"] == 1
     assert "review" in s["timings"]
+
+
+# ---------------------------------------------------------------- publishable paths
+
+def test_scrub_paths_repo_relative_and_home_tilde():
+    repo, home = "/home/u/Dev/proj", "/home/u"
+    obj = {"audio_path": "/home/u/Dev/proj/.work/eval/hints/c/source.m4a",
+           "cmd": ["uv", "run", "bili-album", "plan", "--workdir", "/home/u/Dev/proj/.work/eval/blind/c"],
+           "stderr_tail": "WARNING x: /home/u/Dev/proj/src/a.py:3 and /home/u/.config/app/env missing",
+           "/home/u/Dev/proj/.work/p1.m4a": 0.0,                     # dict keys (part offsets) too
+           "root": "/home/u/Dev/proj", "other": "/home/u/Music/x", "home": "/home/u",
+           "unrelated": "/home/user2/x and /home/u2/y", "n": 3, "none": None}
+    out = sc.scrub_paths(obj, repo, home)
+    assert out["audio_path"] == ".work/eval/hints/c/source.m4a"
+    assert out["cmd"][-1] == ".work/eval/blind/c"
+    assert out["stderr_tail"] == "WARNING x: src/a.py:3 and ~/.config/app/env missing"
+    assert ".work/p1.m4a" in out
+    assert out["root"] == "." and out["other"] == "~/Music/x" and out["home"] == "~"
+    assert out["unrelated"] == "/home/user2/x and /home/u2/y"
+    assert out["n"] == 3 and out["none"] is None
+    assert sc.scrub_paths(out, repo, home) == out                  # idempotent
