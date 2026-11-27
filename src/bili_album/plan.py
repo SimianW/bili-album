@@ -364,7 +364,8 @@ class Planner:
             e = plausible_list(parse_timestamps(c.text), duration)
             if e:
                 who = "uploader's " if c.by_uploader else ""
-                out.append(HintList("comment", f"{who}{'pinned ' if c.pinned else ''}comment by {c.author}", e,
+                what = "reply" if c.reply else "comment"
+                out.append(HintList("comment", f"{who}{'pinned ' if c.pinned else ''}{what} by {c.author}", e,
                                     by_uploader=c.by_uploader, pinned=c.pinned))
         return out
 

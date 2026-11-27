@@ -38,7 +38,7 @@ uv run bili-album ingest https://www.bilibili.com/video/BV14PVVzNE2R
 
 ## How It Works
 
-1. **Plan** — Fetches metadata from Bilibili and audio via `yt-dlp`, reads uploader hints (chapters, description, pinned comment, part names), matches NetEase Cloud Music / iTunes catalogs, aligns track boundaries using audio analysis (silence, level dips, timbral novelty), and verifies with Shazam. Writes `plan.json` and sets `needs_review` if anything is uncertain.
+1. **Plan** — Fetches metadata from Bilibili and audio via `yt-dlp`, reads uploader hints (chapters, description, pinned comment, the uploader's own comments and replies, part names), matches NetEase Cloud Music / iTunes catalogs, aligns track boundaries using audio analysis (silence, level dips, timbral novelty), and verifies with Shazam. Writes `plan.json` and sets `needs_review` if anything is uncertain.
 2. **Review** *(optional)* — Sends a compact brief to an OpenAI-compatible LLM to validate or fix uncertain plans. Every proposed edit is verified against catalog, recognition, or uploader data before being applied.
 3. **Apply** — Losslessly cuts `.m4a` files and writes tags + cover art (`OUTDIR/<Album>/NN-<Title>.m4a` + `cover.jpg`, or `OUTDIR/<Artist> - <Title>.m4a` for singles).
 4. **Import** — Copies files into `LIBRARY_DIR/<Album Artist>/<Album>/`, triggers a Jellyfin scan, and keeps Simplified Chinese metadata consistent on imported albums.

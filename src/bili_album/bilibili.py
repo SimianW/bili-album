@@ -3,9 +3,11 @@ cover, and download the audio stream (AAC only, never re-encoded).
 
 Page metadata comes from the public ``x/web-interface/view`` API (one call gives
 description, owner, parts, cover); chapters and the media itself come from the
-yt-dlp Python API. Comments come from ``x/v2/reply`` (first page, hot order,
-plus the pinned ``upper.top`` comment), because yt-dlp's comment extractor walks
-every page and does not mark the pinned comment.
+yt-dlp Python API. Comments come from ``x/v2/reply`` (first page, like order,
+plus the pinned ``upper.top`` comment, plus the uploader's own comments and
+replies found in reply previews, in threads they replied in and, when signed in,
+on a few more pages), because yt-dlp's comment extractor walks every page and
+does not mark the pinned comment.
 """
 
 from __future__ import annotations
@@ -33,6 +35,12 @@ CHUNK = 10 * 1024 * 1024
 # hosts when the playurl answer offers no backup URL or every listed host is slow.
 UPOS_MIRRORS = ("upos-sz-mirrorcos.bilivideo.com", "upos-sz-mirrorali.bilivideo.com",
                 "upos-sz-mirrorhw.bilivideo.com")
+# Comments: page size, how many like-ordered pages to scan for the uploader's comments while
+# pages come back full, and how many threads the uploader replied in to open (pages each).
+PAGE_SIZE = 20
+COMMENT_PAGES = 5
+UPLOADER_THREADS = 5
+THREAD_PAGES = 2
 
 
 @dataclass
@@ -50,6 +58,7 @@ class Comment:
     by_uploader: bool
     pinned: bool
     likes: int = 0
+    reply: bool = False   # a reply inside another comment's thread, not a top-level comment
 
 
 @dataclass
@@ -284,31 +293,84 @@ class Bilibili:
         return out
 
     def _comments(self, vi: VideoInfo) -> list[Comment]:
+        """First page of comments in like order plus the pinned ones, and every uploader comment
+        that can be reached cheaply:
+
+        1. uploader replies in the reply previews the page already carries (no extra request);
+        2. threads the uploader replied in (``up_action.reply``) that hold more replies than the
+           preview shows: up to ``UPLOADER_THREADS`` threads, ``THREAD_PAGES`` pages each;
+        3. while pages come back full (signed in: 20 per page; anonymous answers stop after the
+           top 3), up to ``COMMENT_PAGES`` pages, keeping only the uploader's comments from the
+           extra pages.
+
+        Order: pinned, then the uploader's, then the rest in like order."""
+        url = "https://api.bilibili.com/x/v2/reply"
         try:
-            d = self._api("https://api.bilibili.com/x/v2/reply",
-                          {"type": 1, "oid": vi.aid, "sort": 1, "ps": 20, "pn": 1})
+            d = self._api(url, {"type": 1, "oid": vi.aid, "sort": 1, "ps": PAGE_SIZE, "pn": 1})
         except Exception as e:
             log.warning("comments unavailable: %s", e)
             return []
-        out: list[Comment] = []
-        seen = set()
+        pinned: list[Comment] = []
+        uploader: list[Comment] = []
+        rest: list[Comment] = []
+        seen: set = set()
+        mine = vi.uploader_mid
 
-        def add(r, pinned=False):
-            if not r or r.get("rpid") in seen:
+        def is_mine(r) -> bool:
+            return bool(mine) and int(r.get("mid", 0) or 0) == mine
+
+        def add(r, *, pin: bool = False, reply: bool = False, only_mine: bool = False) -> None:
+            if not r or r.get("rpid") in seen or (only_mine and not is_mine(r)):
                 return
             seen.add(r.get("rpid"))
-            out.append(Comment(
-                text=(r.get("content") or {}).get("message", ""),
-                author=(r.get("member") or {}).get("uname", ""),
-                by_uploader=int(r.get("mid", 0)) == vi.uploader_mid,
-                pinned=pinned, likes=int(r.get("like", 0))))
+            c = Comment(text=(r.get("content") or {}).get("message", ""),
+                        author=(r.get("member") or {}).get("uname", ""),
+                        by_uploader=is_mine(r), pinned=pin, likes=int(r.get("like", 0) or 0), reply=reply)
+            (pinned if pin else uploader if c.by_uploader else rest).append(c)
 
-        add((d.get("upper") or {}).get("top"), pinned=True)
-        for r in d.get("top_replies") or []:
-            add(r, pinned=True)
+        def add_previews(r) -> None:
+            for sub in r.get("replies") or []:
+                add(sub, reply=True, only_mine=True)
+
+        tops = [(d.get("upper") or {}).get("top")] + list(d.get("top_replies") or [])
+        threads = [r for r in tops if r] + list(d.get("replies") or [])
+        for r in tops:
+            add(r, pin=True)
         for r in d.get("replies") or []:
             add(r)
-        return out
+        for r in threads:
+            add_previews(r)
+
+        pn = 1
+        while len(d.get("replies") or []) >= PAGE_SIZE and pn < COMMENT_PAGES:
+            pn += 1
+            try:
+                d = self._api(url, {"type": 1, "oid": vi.aid, "sort": 1, "ps": PAGE_SIZE, "pn": pn})
+            except Exception as e:
+                log.info("comment page %d unavailable: %s", pn, e)
+                break
+            for r in d.get("replies") or []:
+                add(r, only_mine=True)
+                add_previews(r)
+                threads.append(r)
+
+        # A preview shows at most three replies; the uploader may have written more than one.
+        todo = [r for r in threads if (r.get("up_action") or {}).get("reply")
+                and int(r.get("rcount", 0) or 0) > len(r.get("replies") or [])]
+        for r in todo[:UPLOADER_THREADS]:
+            for tp in range(1, THREAD_PAGES + 1):
+                try:
+                    t = self._api("https://api.bilibili.com/x/v2/reply/reply",
+                                  {"type": 1, "oid": vi.aid, "root": r.get("rpid"), "ps": PAGE_SIZE, "pn": tp})
+                except Exception as e:
+                    log.info("replies under comment %s unavailable: %s", r.get("rpid"), e)
+                    break
+                subs = t.get("replies") or []
+                for sub in subs:
+                    add(sub, reply=True, only_mine=True)
+                if len(subs) < PAGE_SIZE:
+                    break
+        return pinned + uploader + rest
 
     # -- media -----------------------------------------------------------------
 
