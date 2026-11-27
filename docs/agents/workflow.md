@@ -51,7 +51,7 @@ This file and `AGENTS.md` name skills (`review-loop`, `pr`, `code-review`, `tdd`
 
 ### Review (in place of `review-loop`)
 
-Run `python3 scripts/check-pr-body.py tier <base>` first. Tier 0 needs no review; agent steering files (`AGENTS.md`, `CLAUDE.md`, `CODING_STANDARDS.md`, `docs/bugfix.md`, `docs/agents/*`) are at least tier 1. For tiers 1 and 2, two reviewers from two model families read the committed diff without seeing each other's findings. With the `claude` and `codex` CLIs installed and signed in, run both in the background from the repo root:
+Run `git fetch origin`, then `python3 scripts/check-pr-body.py tier <base>` (`origin/main`, or `origin/<parent PR's branch>` for a stacked PR). Tier 0 needs no review; agent steering files (`AGENTS.md`, `CLAUDE.md`, `CODING_STANDARDS.md`, `docs/bugfix.md`, `docs/agents/*`) are at least tier 1. For tiers 1 and 2, two reviewers from two model families read the committed diff without seeing each other's findings. With the `claude` and `codex` CLIs installed and signed in, run both in the background from the repo root:
 
 ```bash
 BASE_REF=origin/main                    # a stacked PR: origin/<parent PR's branch>
@@ -97,9 +97,9 @@ Then:
    - **Reviewers:** <model> ×<calls>, <model> ×<calls>
    ```
 
-If the rounds run out with a blocker or should open, or with a fix above tier 0 that no reviewer has read, stop: a person chooses another round, or ships anyway and writes ``- **Verdict:** overridden by <login> at `<short sha>` (diff `<12-hex>`)``. Never write `approved at` for a commit the reviewers did not read. With only one CLI, a person is the second reviewer and is named in `Reviewers`.
+If the rounds run out with a blocker or should open, or with a fix above tier 0 that no reviewer has read, stop: a person chooses another round, or ships anyway and writes ``- **Verdict:** overridden by <login> at `<short sha>` (diff `<12-hex>`)``, where an override records the current head and the hash `python3 scripts/check-pr-body.py diff-hash "$BASE_REF" HEAD` prints. Never write `approved at` for a commit the reviewers did not read. With only one CLI, a person is the second reviewer and is named in `Reviewers`.
 
-After approval, update the branch only by merging the base branch in: a rebase, amend or force-push drops the approved commit and fails the `pr-body` check. Leave the Verdict as it is and run the local body check (step 3 of "Pull requests and review gate", with `$BASE_REF` as its argument). If it fails on files the merge conflicted on, both reviewers read the resolution (`git show --remerge-diff <merge>`), and on approval the Verdict moves to the merge commit and its hash. An overridden PR that fails this way goes back to the person who overrode it.
+After approval, update the branch only by merging the base branch in: a rebase, amend or force-push drops the approved commit and fails the `pr-body` check. Leave the Verdict as it is and run the local body check (step 3 of "Pull requests and review gate", with `$BASE_REF` as its argument). If every change it flags comes from resolving a merge conflict, both reviewers read only the resolution (name the merge commit and `git show --remerge-diff <merge>` in the brief's Intent), and on approval the Verdict moves to the merge commit and its hash. If it flags anything else, run a full review round on the new head. An overridden PR that fails this way goes back to the person who overrode it.
 
 ### PR body (in place of `pr`)
 
