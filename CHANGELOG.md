@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed
+
+- Neighbouring tracks no longer repeat a few milliseconds of audio at the boundary: each album is cut in one pass at audio packet boundaries, and every exported file is checked against the source.
+
 ## [0.1.0] - 2026-11-27
 
 ### Added
