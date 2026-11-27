@@ -358,7 +358,7 @@ class Planner:
         d = plausible_list(parse_timestamps(vi.description), duration)
         if d:
             out.append(HintList("description", "timestamps in the description", d, by_uploader=True))
-        ranked = sorted(vi.comments, key=lambda c: (not (c.pinned and c.by_uploader), not c.by_uploader,
+        ranked = sorted(vi.comments, key=lambda c: (c.reply, not (c.pinned and c.by_uploader), not c.by_uploader,
                                                     not c.pinned, -c.likes))
         for c in ranked:
             e = plausible_list(parse_timestamps(c.text), duration)

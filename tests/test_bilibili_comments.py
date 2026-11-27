@@ -9,6 +9,7 @@ from bili_album import comments as bb
 from bili_album.bilibili import Bilibili, BilibiliError, VideoInfo
 
 UP = 42
+TL = "00:00 a\n03:00 b\n06:00 c"          # a tracklist: three times
 LIST = "https://api.bilibili.com/x/v2/reply"
 THREAD = "https://api.bilibili.com/x/v2/reply/reply"
 
@@ -48,12 +49,12 @@ def texts(cs):
 def test_anonymous_page_previews_and_threads():
     pinned = r(1, UP, "pinned tracklist")
     page = {"upper": {"top": pinned}, "top_replies": [pinned],
-            "replies": [r(2, 7, "hot", 30, previews=[r(21, UP, "00:00 a 03:00 b"), r(22, 8)]),
+            "replies": [r(2, 7, "hot", 30, previews=[r(21, UP, "preview " + TL), r(22, 8)]),
                         r(3, 9, "asks for a tracklist", 20, up_reply=True, rcount=12),
                         r(4, 10, "plain", 10)]}
-    f = Fake({1: page}, threads={(3, 1): [r(31, 11), r(32, UP, "up answer in thread")]})
+    f = Fake({1: page}, threads={(3, 1): [r(31, 11), r(32, UP, "thread " + TL)]})
     cs = f._comments(vi())
-    assert texts(cs) == ["pinned tracklist", "00:00 a 03:00 b", "up answer in thread", "hot",
+    assert texts(cs) == ["pinned tracklist", "preview " + TL, "thread " + TL, "hot",
                          "asks for a tracklist", "plain"]
     assert cs[0].pinned and cs[0].by_uploader and not cs[0].reply
     assert cs[1].by_uploader and cs[1].reply and not cs[1].pinned
@@ -63,27 +64,27 @@ def test_anonymous_page_previews_and_threads():
 
 
 def test_thread_is_opened_even_when_the_preview_shows_one_uploader_reply():
-    page = {"replies": [r(2, 7, previews=[r(21, UP, "seen in preview")], up_reply=True, rcount=40)]}
-    f = Fake({1: page}, threads={(2, 1): [r(21, UP, "seen in preview"), r(23, UP, "second up reply")]})
+    page = {"replies": [r(2, 7, previews=[r(21, UP, "seen " + TL)], up_reply=True, rcount=40)]}
+    f = Fake({1: page}, threads={(2, 1): [r(21, UP, "seen " + TL), r(23, UP, "second " + TL)]})
     cs = f._comments(vi())
-    assert texts(cs)[:2] == ["seen in preview", "second up reply"]
+    assert texts(cs)[:2] == ["seen " + TL, "second " + TL]
     assert f.calls == [("list", 1), ("thread", 2, 1)]
 
 
 def test_thread_fully_shown_in_preview_is_not_opened():
-    page = {"replies": [r(2, 7, previews=[r(21, UP, "all here"), r(22, 8)], up_reply=True, rcount=2)]}
+    page = {"replies": [r(2, 7, previews=[r(21, UP, "all here " + TL), r(22, 8)], up_reply=True, rcount=2)]}
     f = Fake({1: page})
-    assert "all here" in texts(f._comments(vi()))
+    assert "all here " + TL in texts(f._comments(vi()))
     assert f.calls == [("list", 1)]
 
 
 def test_full_pages_are_scanned_for_uploader_comments_only():
     full = [r(100 + i, 5, f"p1-{i}", 100 - i) for i in range(bb.PAGE_SIZE)]
-    p2 = [r(200 + i, 5, f"p2-{i}") for i in range(bb.PAGE_SIZE - 1)] + [r(299, UP, "up on page 2")]
-    p3 = [r(300, 6, "short page"), r(301, 6, previews=[r(311, UP, "up preview on page 3")])]
+    p2 = [r(200 + i, 5, f"p2-{i}") for i in range(bb.PAGE_SIZE - 1)] + [r(299, UP, "page 2 " + TL)]
+    p3 = [r(300, 6, "short page"), r(301, 6, previews=[r(311, UP, "page 3 " + TL)])]
     f = Fake({1: {"replies": full}, 2: {"replies": p2}, 3: {"replies": p3}})
     cs = f._comments(vi())
-    assert texts(cs)[:2] == ["up on page 2", "up preview on page 3"]
+    assert texts(cs)[:2] == ["page 2 " + TL, "page 3 " + TL]
     assert len(cs) == bb.PAGE_SIZE + 2          # page 1 kept whole, later pages only the uploader's
     assert [c for c in f.calls if c[0] == "list"] == [("list", 1), ("list", 2), ("list", 3)]
 
@@ -116,6 +117,44 @@ def test_first_page_failure_gives_no_comments():
         def _api(self, url, params):
             raise BilibiliError("down")
     assert Down({})._comments(vi()) == []
+
+
+def test_uploader_chatter_beyond_the_first_page_is_left_out():
+    # Review reads only the first 10 comments: thank-you replies must not take those places.
+    page = {"replies": [r(2, 7, "viewer list " + TL, 9, previews=[r(21, UP, "谢谢支持"), r(22, UP, "03:00 那段")],
+                          up_reply=True, rcount=30)]}
+    f = Fake({1: page}, threads={(2, 1): [r(23, UP, "一看就是新粉"), r(24, UP, "full " + TL)]})
+    assert texts(f._comments(vi())) == ["full " + TL, "viewer list " + TL]
+
+
+def test_reply_address_prefix_is_removed():
+    page = {"replies": [r(2, 7, previews=[r(21, UP, "回复 @某人 :" + TL), r(22, UP, "回复 @x：" + TL + " again")])]}
+    cs = Fake({1: page})._comments(vi())
+    assert texts(cs) == [TL, TL + " again", "c2"]
+
+
+def test_each_thread_is_opened_once_and_the_cap_counts_threads(monkeypatch):
+    monkeypatch.setattr(bb, "UPLOADER_THREADS", 2)
+    pinned = r(1, UP, "pinned", up_reply=True, rcount=9)
+    page = {"upper": {"top": pinned}, "top_replies": [pinned],
+            "replies": [pinned, r(2, 7, up_reply=True, rcount=9), r(3, 8, up_reply=True, rcount=9)]}
+    f = Fake({1: page})
+    f._comments(vi())
+    assert [c for c in f.calls if c[0] == "thread"] == [("thread", 1, 1), ("thread", 2, 1)]
+
+
+def test_uploader_replies_rank_after_every_top_level_comment(tmp_path):
+    from bili_album.bilibili import Comment
+    from bili_album.plan import Planner, PlanOptions
+
+    p = Planner.__new__(Planner)
+    p.o = PlanOptions(workdir=str(tmp_path))
+    v = vi()
+    full = "\n".join(f"{m:02d}:00 song {m}" for m in range(0, 40, 4))
+    v.comments = [Comment("00:00 a\n04:00 b\n08:00 c", "up", True, False, 99, reply=True),
+                  Comment(full, "fan", False, False, 3)]
+    hl = p._hint_lists(v, 2700)
+    assert [h.detail for h in hl] == ["comment by fan", "uploader's reply by up"]
 
 
 @pytest.mark.parametrize("reply, word", [(False, "comment"), (True, "reply")])

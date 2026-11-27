@@ -9,6 +9,7 @@ it needs no session of its own; :class:`bili_album.bilibili.Bilibili` passes its
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from typing import Callable
 
@@ -20,6 +21,12 @@ PAGE_SIZE = 20
 COMMENT_PAGES = 5
 UPLOADER_THREADS = 5
 THREAD_PAGES = 2
+# Uploader comments found beyond the first page (previews, threads, extra pages) are kept only
+# when they look like a tracklist: at least MIN_STAMPS mm:ss times. Replies lose their
+# "回复 @name :" address prefix, which would otherwise end up in a track title.
+MIN_STAMPS = 3
+_STAMP = re.compile(r"\d{1,2}:\d{2}")
+_REPLY_PREFIX = re.compile(r"^\s*回复\s*@[^:：\n]*[:：]\s*")
 
 
 @dataclass
@@ -43,7 +50,8 @@ def collect_comments(api: Callable[[str, dict], dict], aid: int, uploader_mid: i
        top 3), up to ``COMMENT_PAGES`` pages, keeping only the uploader's comments from the
        extra pages.
 
-    Order: pinned, then the uploader's, then the rest in like order."""
+    Uploader comments from 1-3 count only with at least ``MIN_STAMPS`` times in them. Order:
+    pinned, then the uploader's, then the rest in like order."""
     url = "https://api.bilibili.com/x/v2/reply"
     try:
         d = api(url, {"type": 1, "oid": aid, "sort": 1, "ps": PAGE_SIZE, "pn": 1})
@@ -62,8 +70,13 @@ def collect_comments(api: Callable[[str, dict], dict], aid: int, uploader_mid: i
     def add(r, *, pin: bool = False, reply: bool = False, only_mine: bool = False) -> None:
         if not r or r.get("rpid") in seen or (only_mine and not is_mine(r)):
             return
+        text = (r.get("content") or {}).get("message", "")
+        if reply:
+            text = _REPLY_PREFIX.sub("", text, count=1)
+        if only_mine and len(_STAMP.findall(text)) < MIN_STAMPS:
+            return
         seen.add(r.get("rpid"))
-        c = Comment(text=(r.get("content") or {}).get("message", ""),
+        c = Comment(text=text,
                     author=(r.get("member") or {}).get("uname", ""),
                     by_uploader=is_mine(r), pinned=pin, likes=int(r.get("like", 0) or 0), reply=reply)
         (pinned if pin else uploader if c.by_uploader else rest).append(c)
@@ -94,14 +107,15 @@ def collect_comments(api: Callable[[str, dict], dict], aid: int, uploader_mid: i
             add_previews(r)
             threads.append(r)
 
-    # A preview shows at most three replies; the uploader may have written more than one.
-    todo = [r for r in threads if (r.get("up_action") or {}).get("reply")
-            and int(r.get("rcount", 0) or 0) > len(r.get("replies") or [])]
+    # A preview shows at most three replies; the uploader may have written more than one. The same
+    # root can come back as upper.top, in top_replies and in replies: open each thread once.
+    todo = list({r.get("rpid"): r for r in threads if (r.get("up_action") or {}).get("reply")
+                 and int(r.get("rcount", 0) or 0) > len(r.get("replies") or [])}.values())
     for r in todo[:UPLOADER_THREADS]:
         for tp in range(1, THREAD_PAGES + 1):
             try:
                 t = api("https://api.bilibili.com/x/v2/reply/reply",
-                              {"type": 1, "oid": aid, "root": r.get("rpid"), "ps": PAGE_SIZE, "pn": tp})
+                        {"type": 1, "oid": aid, "root": r.get("rpid"), "ps": PAGE_SIZE, "pn": tp})
             except Exception as e:
                 log.info("replies under comment %s unavailable: %s", r.get("rpid"), e)
                 break
