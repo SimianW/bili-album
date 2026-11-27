@@ -382,13 +382,13 @@ def test_replan_runs_once(tmp_path, endpoint):
         new["tracks"][0]["title"] = "爱在西元前"
         return new
 
-    endpoint.replies.append(reply("edited", [{"op": "replan", "album_hint": "周杰伦 - 范特西"},
+    endpoint.replies.append(reply("edited", [{"op": "replan", "album_hint": "周杰伦 - 范特西 (2001)"},
                                              {"op": "relabel_track", "track": 1, "title": "简单爱"}]))
     endpoint.replies.append(reply("edited", [{"op": "replan", "album_hint": "again"}]))
     out = run(path, endpoint, replan=fake_replan)
-    assert calls == [{"album_hint": "周杰伦 - 范特西"}]
+    assert calls == [{"album_hint": "周杰伦 - 范特西 (2001)"}]
     rv = out.review
-    assert rv["replan"]["request"] == {"album_hint": "周杰伦 - 范特西"}
+    assert rv["replan"]["request"] == {"album_hint": "周杰伦 - 范特西 (2001)"}
     assert rv["replan"]["first_review"]["edits_skipped"][0]["why"] == "superseded by the re-plan"
     assert "not available" in rv["edits_rejected"][0]["why"]     # second round may not re-plan
     assert rv["timing"]["calls"] == 2
@@ -485,3 +485,57 @@ def test_parse_reply_shapes():
     assert ok and not errs
     _, errs = parse_reply('{"verdict":"edited","confidence":0.5,"edits":[{"op":"move_boundary","boundary":2}]}')
     assert errs and "'to' must be a number" in errs[0]
+
+
+# ----------------------------------------------------------------------------- owner rules: Simplified, blind
+
+def test_script_only_edits_are_dropped_and_verdict_is_approved(tmp_path, endpoint):
+    wd = make_workdir(tmp_path)
+    path = write_plan(wd, comp_plan(wd))
+    endpoint.replies.append(reply("edited", [
+        {"op": "relabel_track", "track": 1, "title": "愛在西元前", "artist": "周杰倫"},
+        {"op": "relabel_track", "track": 2, "title": "爸，我回來了"},
+        {"op": "propose_album", "artist": "周杰倫", "album": "範特西"},
+        {"op": "replan", "album_hint": "周杰倫 - 範特西"},
+    ]))
+    out = run(path, endpoint)
+    rv = out.review
+    assert rv["verdict"] == "approved" and rv["edits_applied"] == [] and rv["edits_rejected"] == []
+    assert "edits_skipped" not in rv and out.needs_review is False
+    assert [t["title"] for t in out.plan["tracks"]] == ["爱在西元前", "爸，我回来了", "简单爱"]
+    assert out.plan["tracks"][0]["artist"] == "周杰伦"
+
+
+def test_real_correction_kept_script_change_dropped(tmp_path, endpoint):
+    wd = make_workdir(tmp_path)
+    plan = comp_plan(wd)
+    plan["tracks"][2]["title"] = "简单 爱"
+    path = write_plan(wd, plan)
+    endpoint.replies.append(reply("edited", [
+        {"op": "relabel_track", "track": 3, "title": "简单爱", "artist": "周杰倫"},   # title real, artist script-only
+        {"op": "relabel_track", "track": 1, "artist": "周杰倫"},                     # script-only
+    ]))
+    out = run(path, endpoint)
+    rv = out.review
+    assert rv["verdict"] == "edited" and len(rv["edits_applied"]) == 1
+    applied = rv["edits_applied"][0]
+    assert applied["track"] == 3 and "artist" not in applied and applied["tracks"] == [3]
+    assert applied["reason_zh"] == "第 3 首歌名「简单 爱」改为「简单爱」（依据：专辑曲目表）。"
+    assert [t["artist"] for t in out.plan["tracks"]] == ["周杰伦"] * 3
+
+
+def test_uploader_only_in_hinted_brief(tmp_path):
+    wd = make_workdir(tmp_path)
+    cat = Catalog(Http(None, offline=True), providers=[FakeProvider()])
+    blind = single_plan(wd, text_hints=False)
+    b = build_brief(blind, gather_context(blind, None, catalog=cat, text_loader=None))
+    assert "uploader" not in b["video"] and "someone" not in json.dumps(b, ensure_ascii=False)
+    assert b["video"]["title"] == blind["source"]["title"]
+    hinted = single_plan(wd, text_hints=True)
+    b = build_brief(hinted, gather_context(hinted, None, catalog=cat, text_loader=lambda p, h: None))
+    assert b["video"]["uploader"] == "someone"
+
+
+def test_prompt_states_owner_rules():
+    assert "ALWAYS written in Simplified" in SYSTEM_PROMPT and "only effect is a change of script" in SYSTEM_PROMPT
+    assert "original artist filled in" in SYSTEM_PROMPT

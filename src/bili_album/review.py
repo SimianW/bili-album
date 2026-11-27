@@ -22,6 +22,7 @@ import math
 import re
 import shutil
 import time
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
@@ -29,7 +30,7 @@ from typing import Any, Callable
 from .catalog import CatAlbum, Catalog, CatTrack
 from .config import Config, load_config
 from .net import Http, HttpError
-from .textnorm import contains, norm, similarity
+from .textnorm import contains, norm, similarity, to_simplified
 
 log = logging.getLogger(__name__)
 
@@ -375,7 +376,9 @@ def build_brief(plan: dict, ctx: ReviewContext) -> dict:
     tracks = plan.get("tracks") or []
     splits = split_options(plan, ctx)
     brief: dict[str, Any] = {
-        "video": {"title": src.get("title", ""), "uploader": src.get("uploader", ""),
+        # Blind plans (no text hints) must not learn who uploaded the video: no uploader name.
+        "video": {"title": src.get("title", ""),
+                  **({"uploader": src.get("uploader", "")} if src.get("text_hints") else {}),
                   "duration": src.get("duration"), "parts": src.get("parts", 1),
                   "kind": plan.get("kind"), "kind_reason": plan.get("kind_reason", "")},
         "text_hints_allowed": bool(src.get("text_hints")),
@@ -419,7 +422,7 @@ SYSTEM_PROMPT = """You review a plan that a tool made for turning a Bilibili mus
 for a personal music library. Do what a careful person would: confirm the plan, correct it using the evidence \
 in the brief, or say that a human must look.
 
-The brief (JSON) contains: the video (title, uploader, duration, kind and why), the chosen catalog album with its \
+The brief (JSON) contains: the video (title, the uploader when text hints are allowed, duration, kind and why), the chosen catalog album with its \
 tracklist, other album candidates from the catalogs, every planned track (start/end seconds, tags, confidence, the \
 evidence the tool used), the tool's own review reasons, audio-recognition results ("at" = clip position, \
 "starts_at" = where the recognised recording begins in this audio), and measured boundary options.
@@ -428,7 +431,14 @@ Rules:
 - You can only change the plan through the edits listed below. The tool checks every edit against catalog data, \
 recognition results or the uploader's text and rejects edits it cannot confirm. Never invent values: titles and \
 artists must be ones that exist in the catalog, in recognition results or in the uploader's text.
-- Titles and artists use the original-language script of the release (周杰伦 not Jay Chou; 简单爱 not Simple Love).
+- Fixed owner rules (never argue with them, never try to undo them):
+  * Chinese text is ALWAYS written in Simplified script, whatever script the release used (周杰伦《搁浅》, not \
+周杰倫《擱淺》). The tool converts every Chinese value to Simplified itself.
+  * Other languages keep their original script (Japanese kana/kanji, Korean, Latin: 宇多田ヒカル, not a translation).
+  * Titles and artists use the release's own language, not a translation (周杰伦 not Jay Chou; 简单爱 not Simple Love).
+  * A fan-made, cover or AI version always stays flagged for a human, with the original artist filled in.
+- Never propose an edit whose only effect is a change of script (Traditional/Simplified), width, letter case or \
+spacing: such edits are ignored. If that is all you would change, the plan is "approved".
 - A song released as a single belongs on its original studio album when one exists, not on a compilation \
 ("Greatest Hits", "Best of", "Various Artists" collections).
 - If the upload is a derivative version (cover, fan edit, AI remake, live, remix) of an existing song, use \
@@ -616,6 +626,13 @@ VERSION_ZH = {"cover": "翻唱", "fan_edit": "粉丝改编", "ai_remake": "AI �
               "other": "其他改编"}
 KIND_ZH = {"silence": "静音处", "dip": "音量低谷", "novelty": "音色变化处", "recognition": "音频识别给出的歌曲起点",
            "start_of_audio": "音频开头", "end_of_audio": "音频结尾"}
+
+
+def same_text(a: str, b: str) -> bool:
+    """Equal after Traditional->Simplified conversion, width (NFKC), case and surrounding whitespace."""
+    def key(x: str) -> str:
+        return to_simplified(unicodedata.normalize("NFKC", x or "")).strip().casefold()
+    return bool((a or "").strip() or (b or "").strip()) and key(a) == key(b)
 
 
 def length_ok(length: float, ref: float) -> bool:
@@ -1052,6 +1069,9 @@ class Editor:
              "relabel_track": 4, "move_boundary": 5, "split_track": 6, "drop_track": 7}
 
     def apply_all(self, edits: list[dict]) -> None:
+        # Script-only edits (owner rule: Chinese is always Simplified) are dropped up front, silently,
+        # so that they neither count as edits nor supersede real ones (a no-op re-plan).
+        edits = [e for e in edits if not self._script_only(e)]
         if any(e["op"] in ("replan",) for e in edits) and self._can_replan():
             first = next(e for e in edits if e["op"] == "replan")
             self._run(first)
@@ -1082,8 +1102,39 @@ class Editor:
         n = e.get("track")
         return [self.orig[n]] if n in self.orig else []
 
+    def _script_only(self, e: dict) -> bool:
+        """True when the edit changes nothing but script / width / case / spacing (owner rule: Chinese
+        is always Simplified, so such an edit is a no-op). Relabels keep their real fields only."""
+        op = e.get("op")
+        if op == "relabel_track":
+            t = self.orig.get(e.get("track"))
+            if t is None:
+                return False
+            for k in ("title", "artist"):
+                if e.get(k) is not None and same_text(e[k], t.get(k, "")):
+                    e.pop(k)
+            return e.get("title") is None and e.get("artist") is None
+        al = self.plan.get("album") or {}
+        if op == "propose_album":
+            return same_text(e.get("album", ""), al.get("title", "")) and same_text(e.get("artist", ""),
+                                                                                    al.get("artist", ""))
+        if op == "choose_album":
+            row = next((r for r in self.ctx.album_candidates if r["id"] == e.get("candidate")), None)
+            return bool(row) and not row.get("current") and same_text(row.get("album", ""), al.get("title", "")) \
+                and same_text(row.get("album_artist") or "", al.get("artist", ""))
+        if op == "mark_derivative":
+            d = self.plan.get("derivative") or {}
+            return bool(d) and same_text(e.get("original_artist", ""), d.get("original_artist", "")) and \
+                same_text(e.get("original_title") or d.get("original_title", ""), d.get("original_title", ""))
+        if op == "replan" and e.get("album_hint") and not e.get("tracklist"):
+            return same_text(e["album_hint"], f"{al.get('artist', '')} - {al.get('title', '')}")
+        return False
+
     def _run(self, e: dict) -> None:
         self.zh, self.touched = "", []
+        if self._script_only(e):
+            log.debug("dropped script-only edit %s", e)
+            return
         try:
             detail = getattr(self, f"op_{e['op']}")(e)
         except Rejected as r:
