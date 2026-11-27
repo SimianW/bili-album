@@ -33,3 +33,20 @@ bili-album inspect <file-or-dir> [--json]
 ```
 
 Requirements: Python 3.12, `uv`, `ffmpeg`/`ffprobe` on PATH. See `AGENTS.md` for the review workflow and `docs/reference/` for the owner's original manual procedure.
+
+## Evaluation
+
+`eval/cases.yaml` holds 15 ground-truth cases (single, multi-part and compilation videos with true track starts, titles and artists). `eval/run_eval.py` runs the tool on each case in three modes, one at a time and each in a cold work directory under `.work/eval/`:
+
+- `hints`: the real workflow (`plan`, `apply`, `inspect --json`);
+- `blind`: `plan --no-text-hints` (multi-part videos are concatenated losslessly first and passed with `--audio`/`--title`, so the part structure does not give the split away);
+- `blind_norecog`: `blind` plus `--no-recognize`.
+
+```sh
+uv run python eval/run_eval.py                       # all cases and modes; skips runs that already have a result
+uv run python eval/run_eval.py --case ID --mode MODE --force
+uv run python eval/run_eval.py --score-only          # rescore stored runs, rewrite eval/results/results.json
+uv run --with pyyaml python eval/validate_cases.py [--live]
+```
+
+Scoring (`eval/scoring.py`, tested in `tests/test_eval_scoring.py`) compares kind, track count, boundaries (one-to-one matching within 15 s; hit rate at 1/3/5 s, precision/recall/F1 at 3 s), titles and artists, album fields, output tags and stream copy, and whether `needs_review` was raised on runs that had a problem. A full run takes a long time because Shazam is rate-limited; results land in `eval/results/` (`results.json`, plus raw run records and plans per mode).

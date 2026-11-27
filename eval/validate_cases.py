@@ -6,6 +6,7 @@ Run: uv run --with pyyaml python eval/validate_cases.py [--live]
 import json
 import sys
 import time
+import urllib.error
 import urllib.request
 from collections import Counter
 from http.cookiejar import CookieJar
@@ -136,15 +137,33 @@ def check_mix(cases):
     return hours
 
 
+RETRIES_412 = 4
+PAUSE_412 = 25  # Bilibili answers HTTP 412 when hit too fast; it recovers after 20-30 s
+
+
+def open_with_412_retry(opener, url, retries=RETRIES_412, pause=PAUSE_412, sleep=time.sleep):
+    """``opener.open(url)``, pausing and retrying on HTTP 412 (rate limit)."""
+    for attempt in range(retries + 1):
+        try:
+            return opener.open(url, timeout=30)
+        except urllib.error.HTTPError as e:
+            if e.code != 412 or attempt == retries:
+                raise
+            print(f"  HTTP 412 from {url.split('?')[0]}; pausing {pause}s (retry {attempt + 1}/{retries})",
+                  file=sys.stderr)
+            sleep(pause)
+
+
 class Bili:
     def __init__(self):
         self.op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(CookieJar()))
         self.op.addheaders = [("User-Agent", UA), ("Referer", "https://www.bilibili.com/")]
-        self.op.open("https://www.bilibili.com/", timeout=30).read()
+        with open_with_412_retry(self.op, "https://www.bilibili.com/") as r:
+            r.read()
 
     def view(self, bvid):
         time.sleep(1)
-        with self.op.open(f"https://api.bilibili.com/x/web-interface/view?bvid={bvid}", timeout=30) as r:
+        with open_with_412_retry(self.op, f"https://api.bilibili.com/x/web-interface/view?bvid={bvid}") as r:
             return json.load(r)
 
 
