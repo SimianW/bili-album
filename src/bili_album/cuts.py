@@ -56,10 +56,11 @@ def refine_cuts(audio: Path, segs: list, options: dict | None = None) -> dict:
 
     ``segs`` are the planner's tracks (``start``, ``end``, ``evidence``, ``recog``, optional
     ``pinned``); the moved starts and ends are written back. Track 1 and starts after unexported
-    material keep their place. A track keeps at least 1 s on both sides of the cut. A start pinned
-    by recognition may still move earlier, but never later than the recognised start minus
-    ``CUT_MARGIN`` (or its current place, if that is already later: digital silence). ``options`` are keyword arguments for :func:`refine.refine_starts`.
-    Any failure (bad audio, a bad option) leaves every boundary unchanged."""
+    material keep their place. A refined start stays 1 s after the previous track's start and 1 s
+    before its own end, both as placed before refinement. A start pinned by recognition may still
+    move earlier, but never later than the recognised start minus ``CUT_MARGIN`` (or its current
+    place, if that is already later: digital silence). ``options`` are keyword arguments for
+    :func:`refine.refine_starts`. Any failure (bad audio, a bad option) leaves every boundary unchanged."""
     idx = [i for i in range(1, len(segs)) if abs(segs[i - 1].end - segs[i].start) < 1e-6]
     if not idx:
         return {"boundaries": 0, "moved": 0, "methods": {}, "reason": "no boundary between adjacent tracks"}
