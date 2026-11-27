@@ -309,3 +309,32 @@ def test_encode_failure_keeps_an_existing_file_it_did_not_replace(tmp_path, monk
     with pytest.raises(PacketCutError):
         cut_tracks(flac, [(0.0, 4.0)], [d], overwrite=True)
     assert d.read_bytes() == b"old" and not list(tmp_path.glob(".*part*"))
+
+
+def test_two_applies_into_one_folder_stage_apart(aac, tmp_path, monkeypatch):
+    # Two singles written to the same OUTDIR must not share staging files.
+    import json
+    from bili_album import apply as apply_mod
+    seen = []
+    real = apply_mod.cut_tracks
+
+    def spy(src, ranges, dsts, **k):
+        seen.append([d.name for d in dsts])
+        return real(src, ranges, dsts, **k)
+    monkeypatch.setattr(apply_mod, "cut_tracks", spy)
+    for n, title in enumerate(("a", "b")):
+        (tmp_path / str(n)).mkdir()
+        p = _apply_plan_file(tmp_path / str(n), [(aac, 0.0, 2.0)], kind="single")
+        plan = json.loads(p.read_text())
+        plan["tracks"][0]["title"] = title
+        p.write_text(json.dumps(plan))
+        apply_mod.apply_plan(p, tmp_path / "out")
+    assert len(seen) == 2 and seen[0] != seen[1]
+    assert sorted(f.name for f in (tmp_path / "out").iterdir()) == ["x - a.m4a", "x - b.m4a"]
+
+
+def test_overlap_within_one_part_is_a_plan_problem(aac, tmp_path):
+    import json
+    from bili_album.apply import validate
+    p = _apply_plan_file(tmp_path, [(aac, 0.0, 6.0), (aac, 5.0, 9.0)])
+    assert any("overlap" in x for x in validate(json.loads(p.read_text())))

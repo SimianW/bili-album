@@ -7,7 +7,7 @@ Supports:
 - **Album compilations** (full album in one video) → split per track where songs actually change
 - **Multi-part (分P)** videos → one `.m4a` file per part
 
-Audio is cut with `ffmpeg -c copy` at audio packet boundaries and never re-encoded; every file is checked packet by packet against the source.
+Audio is cut with `ffmpeg -c copy` at audio packet boundaries and never re-encoded; every file is checked packet by packet against the source. Neighbouring files never share a packet, so an AAC track after the first starts without the packet before it: played on its own, its first ~20 ms decode without that overlap (in practice inaudible at a gap between songs).
 
 ## Requirements
 

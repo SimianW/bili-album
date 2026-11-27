@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+import secrets
 import shutil
 import unicodedata
 import zipfile
@@ -95,8 +96,15 @@ def validate(plan: dict) -> list[str]:
     for a, b in zip(shared, shared[1:]):
         if b["start"] <= a["start"]:
             problems.append(f"track {b['index']}: start {b['start']} does not increase after track {a['index']}")
-        if b["start"] < a["end"] - 0.001:
-            problems.append(f"tracks {a['index']} and {b['index']} overlap ({a['end']} > {b['start']})")
+    # Overlap per source file (a part's tracks share its file and are cut together, see packetcut).
+    per_source: dict[str, list[dict]] = {}
+    for t in tracks:
+        per_source.setdefault(str(track_source(plan, t)), []).append(t)
+    for group in per_source.values():
+        group = sorted(group, key=lambda t: t["start"])
+        for a, b in zip(group, group[1:]):
+            if b["start"] < a["end"] - 0.001:
+                problems.append(f"tracks {a['index']} and {b['index']} overlap ({a['end']} > {b['start']})")
     missing: dict[str, list[str]] = {}
     for t in tracks:
         for key in ("title", "artist", "album", "album_artist"):
@@ -151,7 +159,9 @@ def apply_plan(plan_path: Path, outdir: Path, *, force: bool = False, make_zip: 
     # Every source is cut into hidden staging files first; only when all succeed do they replace
     # the outputs, so a failure leaves no new file and (with --force) keeps the old ones.
     # Short names, so a long title that fits the filesystem's name limit still fits while staged.
-    staged = [f.with_name(f".bili-album-cut-{i:03d}.m4a") for i, f in enumerate(files)]
+    # A random part per run keeps two applies into the same folder (two singles in one OUTDIR) apart.
+    run = secrets.token_hex(4)
+    staged = [f.with_name(f".bili-album-cut-{run}-{i:03d}.m4a") for i, f in enumerate(files)]
     cuts: dict[int, Cut] = {}
     try:
         for src, idx in by_source.items():
