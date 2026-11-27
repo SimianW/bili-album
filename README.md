@@ -50,3 +50,19 @@ uv run --with pyyaml python eval/validate_cases.py [--live]
 ```
 
 Scoring (`eval/scoring.py`, tested in `tests/test_eval_scoring.py`) compares kind, track count, boundaries (one-to-one matching within 15 s; hit rate at 1/3/5 s, precision/recall/F1 at 3 s), titles and artists, album fields, output tags and stream copy, and whether `needs_review` was raised on runs that had a problem. A full run takes a long time because Shazam is rate-limited; results land in `eval/results/` (`results.json`, plus raw run records and plans per mode).
+
+## Web page
+
+`uv run bili-album serve` serves a one-page front end on `http://127.0.0.1:5191/`: paste a Bilibili link (`bilibili.com/video/BV…`, `b23.tv/…` or a bare `BV…` id) and the job is planned, reviewed by the model, cut and imported into Jellyfin. It stops for the owner only when the review is still unsure (edit titles / artists, then 确认并导入 or 放弃) or when the library already has the album (替换原有专辑 / 保留原来的). One job runs at a time; the rest queue.
+
+```sh
+uv run bili-album serve [--host 127.0.0.1] [--port 5191] [--data-dir DIR]   # real pipeline
+uv run bili-album serve --fake                                                # scripted jobs, no network, no import
+```
+
+- Jobs live in `.work/web/<job-id>/` (`job.json` plus the pipeline's `work/` directory). Finished and held jobs survive a restart; a job that was running becomes failed and can be retried with the same work directory.
+- Standard library only (`http.server`); the page is `src/bili_album/web/static/index.html` (inline CSS and JS, no external requests).
+- `--host` must be a specific address; `0.0.0.0` is refused. `deploy/bili-album-web.service` is a systemd user unit that binds to the Tailscale address (install steps in the file).
+- `--fake` replays scripted jobs chosen by BV id: `BV14PVVzNE2R` clean album, `BV1sT421k7Ps` album with one Sol edit, `BV1Hx4y1z7Qm` derivative single held for confirmation, `BV1Wb411m7Eq` album with one flagged track, `BV1GJ411x7h7` failure in the plan stage, `BV1zt411p7Cn` already in the library, `BV1Ns411D7pE` import Jellyfin did not confirm (any other id behaves like the first). `--fake-speed N` runs N times faster; `--fake-hold review=600` or `--fake-hold cut@6=600` parks a job in one place for screenshots.
+
+API (JSON; mutating requests need `Content-Type: application/json` and a same-origin or absent `Origin`): `GET /api/jobs`, `POST /api/jobs {url}`, `POST /api/jobs/<id>/confirm {tracks:[{index,title,artist}]}`, `POST /api/jobs/<id>/{discard,retry,replace,keep}`, `DELETE /api/jobs/<id>` (queued or failed), `GET /api/jobs/<id>/cover`.

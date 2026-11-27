@@ -53,3 +53,11 @@ After edits run `apply` on the edited plan. `apply` validates first (increasing 
 - Tests: `uv run pytest -q` (offline). Live checks: `uv run pytest -m network`.
 - `eval/cases.yaml` and `eval/validate_cases.py` belong to another agent. Do not edit them.
 - Never send personal data (names, emails, hostnames, home paths) in requests. The User-Agent is `bili-album/<version>`.
+
+## Web page (`src/bili_album/web/`)
+
+- `uv run bili-album serve --fake --port <free port>` for any UI work: scripted jobs, no network, nothing imported. The real mode (no `--fake`) imports into the owner's Jellyfin library; do not start it for testing.
+- Bind to `127.0.0.1` in development; never `0.0.0.0` (the CLI refuses it). Stop the server when done.
+- `runner.py` is the only code that knows `bili_album.pipeline`'s names (`PipelineRunner`, `map_event`, `map_result`, `read_plan`); change the mapping there when the pipeline API changes. `FakeRunner` scripts every page state; keep it in step with new states.
+- Every string sent to the browser is scrubbed of config secrets and inserted with `textContent`, never as HTML. No CDN, fonts or other external requests in `static/index.html`.
+- Tests: `uv run pytest -q tests/test_web_*.py`. The approved design is `mockups/web-import.html`.
