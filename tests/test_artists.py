@@ -35,6 +35,12 @@ from bili_album.artists import first_artist, join_artists, split_artists
     ("AC/DC Tribute", ["AC/DC Tribute"]),
     ("A featuring B", ["A", "B"]),
     ("周杰伦 [feat. 杨瑞代]", ["周杰伦", "杨瑞代"]),
+    # review round 2
+    ("Jack/David", ["Jack", "David"]),                  # "k/Da" inside other names is not K/DA
+    ("Frank/Daniel", ["Frank", "Daniel"]),
+    ("ac/dc", ["ac/dc"]),                               # protected names keep their spelling
+    ("周杰伦feat.杨瑞代", ["周杰伦", "杨瑞代"]),
+    ("(周杰伦/费玉清)", ["周杰伦", "费玉清"]),
 ])
 def test_split_artists(value, names):
     assert split_artists(value) == names
@@ -56,12 +62,20 @@ def test_join_and_first():
     ("国语/周杰伦《范特西》", ["周杰伦"]),                 # a label before "/" is not an artist
     ("华语经典/周杰伦《范特西》", ["周杰伦"]),
     ("Jay Chou/周杰伦《晴天》", ["周杰伦"]),               # an alias in another script: one artist
+    ("民谣/赵雷《成都》", ["赵雷"]),                       # genre and role words are labels
+    ("流行/周杰伦《范特西》", ["周杰伦"]),
 ])
 def test_title_guess_keeps_every_artist(title, artists):
     from bili_album.hints import guess_from_title
     g = guess_from_title(title)
     assert g.artists == artists
     assert g.queries()[0].startswith(artists[0])
+
+
+def test_split_names_are_not_spent_on_extra_searches():
+    from bili_album.hints import guess_from_title
+    g = guess_from_title("周杰伦/费玉清《千里之外》")
+    assert "周杰伦" not in g.extra and "费玉清" not in g.extra
 
 
 def test_netease_lists_are_joined_with_slash():
@@ -128,7 +142,8 @@ def test_page_preview_uses_the_same_first_artist_rule():
     fn = re.search(r"safeFolder\((\(s => \{.*?\|\| s; \}\))\(artist\)\)", html).group(1)
     cases = ["周杰伦/费玉清", "周杰伦 & 费玉清", "周杰伦、费玉清", "周杰伦，费玉清", "Simon & Garfunkel", "AC/DC",
              "AC/DC Tribute", "K/DA", "A featuring B", "Lady Gaga feat. Bruno Mars", "周杰伦 [feat. 杨瑞代]",
-             "周杰伦【feat. 杨瑞代】", "A＼B", "a|b", "IU (아이유)", "周杰伦 & Lara", "周杰伦"]
+             "周杰伦【feat. 杨瑞代】", "A＼B", "a|b", "IU (아이유)", "周杰伦 & Lara", "周杰伦",
+             "Jack/David", "ac/dc", "周杰伦feat.杨瑞代", "(周杰伦/费玉清)"]
     out = subprocess.run(["node", "-e", f"const f = {fn}; console.log(JSON.stringify({json.dumps(cases)}.map(f)))"],
                          capture_output=True, text=True, check=True).stdout
     assert json.loads(out) == [first_artist(c) for c in cases]

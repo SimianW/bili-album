@@ -13,7 +13,7 @@ turns on the library's custom tag delimiters (default ``/ | ; \\``). So the tool
 :func:`split_artists` recognises names joined with Jellyfin's delimiters (``/ | ; \\`` and their
 full-width forms), ``、``, and ``feat.`` / ``ft.`` / ``featuring``. ``&`` and commas are part of many names
 (Simon & Garfunkel, Earth, Wind & Fire), so they split only when every part is written in CJK
-script, as in ``周杰伦 & 费玉清`` from a storefront. ``NO_SPLIT`` holds names that contain a
+script, as in ``周杰伦 & 费玉清`` from a storefront. ``_NO_SPLIT`` matches whole names that contain a
 delimiter themselves.
 """
 
@@ -22,8 +22,10 @@ from __future__ import annotations
 import re
 
 ARTIST_SEP = "/"
-NO_SPLIT = ("AC/DC", "AC／DC", "K/DA", "K／DA")
-_DELIMS = re.compile(r"\s*[/／|｜;；\\＼、]\s*|(?:\s+|\s*[(（\[【]\s*)(?:feat\.?|ft\.?|featuring)\s+", re.I)
+_DELIMS = re.compile(r"\s*[/／|｜;；\\＼、]\s*|(?:\s+|\s*[(（\[【]\s*)(?:feat\.?|ft\.?|featuring)\s+"
+                     r"|(?<=[぀-ヿ㐀-鿿가-힯])\s*(?:feat|ft)\.\s*", re.I)
+# A protected name only counts as a whole name: "Jack/David" holds "k/Da" but is two artists.
+_NO_SPLIT = re.compile(r"(?<![A-Za-z0-9])(?:AC[/／]DC|K[/／]DA)(?![A-Za-z0-9])", re.I)
 _CJK_JOIN = re.compile(r"\s*(?:&|＆|,|，)\s*")
 _CJK = re.compile(r"[぀-ヿ㐀-鿿가-힯豈-﫿]")
 _LATIN = re.compile(r"[A-Za-z]")
@@ -52,12 +54,13 @@ def split_artists(value: str) -> list[str]:
     s = (value or "").strip()
     if not s:
         return []
-    keep = {}
-    for i, name in enumerate(NO_SPLIT):
-        if name.casefold() in s.casefold():
-            token = f"\x00{i}\x00"
-            s = re.sub(re.escape(name), token, s, flags=re.I)
-            keep[token] = name
+    keep: dict[str, str] = {}
+
+    def protect(m: re.Match) -> str:          # keeps the text as written ("ac/dc" stays "ac/dc")
+        token = f"\x00{len(keep)}\x00"
+        keep[token] = m.group(0)
+        return token
+    s = _NO_SPLIT.sub(protect, s)
     out: list[str] = []
     for part in _DELIMS.split(s):
         pieces = _CJK_JOIN.split(part)

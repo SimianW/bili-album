@@ -302,7 +302,9 @@ def derivative_cues(title: str) -> list[str]:
 
 # Words a title puts before an artist with "/" that are not artists themselves.
 _LABEL = re.compile(r"国语|國語|粤语|粵語|华语|華語|闽南语|台语|日语|韩语|英语|中文|纯音乐|伴奏|现场|无损|高音质|"
-                    r"原唱|翻唱|歌词|合集|专辑|单曲|热歌|新歌|经典|怀旧|欧美|日韩|港台|内地")
+                    r"原唱|翻唱|歌词|合集|专辑|单曲|热歌|新歌|经典|怀旧|欧美|日韩|港台|内地|"
+                    r"流行|摇滚|民谣|说唱|嘻哈|古风|国风|电子|爵士|古典|轻音乐|器乐|钢琴|吉他|儿歌|"
+                    r"影视|动漫|游戏|原声|主题曲|插曲|歌手|天王|天后|男声|女声|乐队|组合|合唱|翻弹|治愈|伤感")
 
 
 def guess_from_title(title: str) -> TitleGuess:
@@ -358,7 +360,8 @@ def guess_from_title(title: str) -> TitleGuess:
         seg = _YEAR.sub(" ", seg)
         seg = re.sub(r"^\s*[-–—]\s*|\s*[-–—]\s*$", "", seg)
         d = clean_artist(_denoise(seg))
-        if _meaningful(d) and norm(d) not in {norm(x) for x in g.works + g.artists}:
+        taken = {norm(x) for x in g.works + g.artists + [n for a in g.artists for n in split_artists(a)]}
+        if _meaningful(d) and norm(d) not in taken:
             frags.append(d)
     explicit = bool(re.search(r"[|｜]|\s[-–—]\s", _META_BRACKETS.sub(" ", t)))
     if not g.works:
