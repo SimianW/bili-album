@@ -179,5 +179,6 @@ def test_review_replan_keeps_the_refinement_settings(tmp_path, monkeypatch):
 
 
 def test_clean_options_refuses_an_overflowing_number():
-    with pytest.raises(ValueError):
-        clean_options({"search_ms": float("inf")})
+    for v in (float("inf"), 10 ** 400):            # a huge JSON integer cannot become a float either
+        with pytest.raises(ValueError):
+            clean_options({"search_ms": v})

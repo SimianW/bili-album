@@ -113,7 +113,7 @@ def clean_options(raw: Any) -> dict:
         if name not in raw:
             continue
         v = raw[name]
-        if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or (kind is int and v != int(v)):
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or (isinstance(v, float) and not math.isfinite(v)) or (kind is int and v != int(v)):
             raise ValueError(f"「{label}」要填数字。")
         if not lo <= v <= hi:
             raise ValueError(f"「{label}」要在 {lo:g} 到 {hi:g} 之间。")
